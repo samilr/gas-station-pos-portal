@@ -16,7 +16,7 @@ export const mockTransactions: ITransactionResume[] = [
     taxpayerId: '12345678-9',
     staftId: 1,
     staftName: 'Ana Martínez',
-    cfQr: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+    cfQr: 'https://www.dgii.gov.do/app/WebApps/ConsultasWeb2/consultas/consultaCF.aspx?RNCEmisor=12345678&RNCComprador=98765432&eNCF=CF-001-001-00000001&monto=353.98&FechaEmision=15/01/2024',
     cfSecurityCode: 'ABC123DEF456',
     digitalSignatureDate: '2024-01-15T14:30:00',
     prods: [
@@ -63,7 +63,7 @@ export const mockTransactions: ITransactionResume[] = [
     taxpayerId: '98765432-1',
     staftId: 2,
     staftName: 'Carlos López',
-    cfQr: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+    cfQr: 'https://www.dgii.gov.do/app/WebApps/ConsultasWeb2/consultas/consultaCF.aspx?RNCEmisor=98765432&RNCComprador=12345678&eNCF=CF-001-001-00000002&monto=105.61&FechaEmision=15/01/2024',
     cfSecurityCode: 'XYZ789ABC123',
     digitalSignatureDate: '2024-01-15T12:15:00',
     prods: [
@@ -193,7 +193,7 @@ export const mockTransactions: ITransactionResume[] = [
     taxpayerId: '32165498-7',
     staftId: 2,
     staftName: 'Carlos López',
-    cfQr: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+    cfQr: 'https://www.dgii.gov.do/app/WebApps/ConsultasWeb2/consultas/consultaCF.aspx?RNCEmisor=32165498&RNCComprador=12345678&eNCF=CF-001-001-00000005&monto=94.39&FechaEmision=13/01/2024',
     cfSecurityCode: 'RET123ABC456',
     digitalSignatureDate: '2024-01-13T15:30:00',
     prods: [

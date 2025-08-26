@@ -38,6 +38,7 @@ export const getStatusColor = (cfStatus: number): string => {
  * Obtiene el texto del tipo de pago
  */
 export const getPaymentTypeText = (type: number): string => {
+  console.log(type)
   switch (type) {
     case PaymentType.CASH:
       return 'Efectivo';
@@ -213,4 +214,46 @@ export const getTransactionIcon = (transaction: ITransactionResume): string => {
     default:
       return '📄';
   }
+};
+
+/**
+ * Obtiene la fecha actual en zona horaria de Santo Domingo, República Dominicana
+ */
+export const getSantoDomingoDate = (): string => {
+  const today = new Date();
+  // Obtener la fecha en zona horaria de Santo Domingo
+  const santoDomingoDate = new Date(today.toLocaleString("en-US", {timeZone: "America/Santo_Domingo"}));
+  
+  // Formatear la fecha como YYYY-MM-DD
+  const year = santoDomingoDate.getFullYear();
+  const month = String(santoDomingoDate.getMonth() + 1).padStart(2, '0');
+  const day = String(santoDomingoDate.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
+};
+
+/**
+ * Convierte una fecha a zona horaria de Santo Domingo
+ */
+export const convertToSantoDomingoTime = (dateString: string): Date => {
+  const date = new Date(dateString);
+  return new Date(date.toLocaleString("en-US", {timeZone: "America/Santo_Domingo"}));
+};
+
+/**
+ * Obtiene la fecha actual de Santo Domingo de forma más directa
+ */
+export const getCurrentSantoDomingoDate = (): string => {
+  const now = new Date();
+  
+  // Usar Intl.DateTimeFormat para obtener la fecha en zona horaria de Santo Domingo
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Santo_Domingo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  
+  // El formato 'en-CA' devuelve YYYY-MM-DD
+  return formatter.format(now);
 };

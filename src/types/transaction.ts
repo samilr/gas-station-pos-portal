@@ -5,6 +5,8 @@ export interface ITransactionResume {
   cfType: string; 
   transDate: string;
   siteId: string;
+  siteName: string;
+  terminalId: number;
   status: number;
   cfStatus: number; // Nueva propiedad para el estado del CF
   isReturn: boolean;

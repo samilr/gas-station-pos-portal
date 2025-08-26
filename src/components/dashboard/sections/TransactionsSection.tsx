@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   CreditCard, 
   Filter, 
@@ -23,7 +23,11 @@ import {
   ChevronUp,
   ChevronDown
 } from 'lucide-react';
+import QRCode from 'qrcode';
+import toast from 'react-hot-toast';
+import { Dialog } from '@headlessui/react';
 import { useTransactions } from '../../../hooks/useTransactions';
+import { transactionService } from '../../../services/transactionService';
 import { 
   getStatusText, 
   getStatusColor, 
@@ -38,13 +42,76 @@ import {
   filterTransactionsByStatus,
   getTotalProducts,
   isReturnTransaction,
-  getTransactionIcon
+  getTransactionIcon,
+  getCurrentSantoDomingoDate
 } from '../../../utils/transactionUtils';
 import { TransactionStatus, PaymentType, CFStatus } from '../../../types/transaction';
 import { SortField, SortDirection } from '../../../hooks/useTransactions';
 
+// Componente QR
+const QRCodeComponent: React.FC<{ url: string; size?: number }> = ({ url, size = 128 }) => {
+  const [qrDataUrl, setQrDataUrl] = useState<string>('');
+  const [error, setError] = useState<string>('');
+
+  useEffect(() => {
+    if (url) {
+      QRCode.toDataURL(url, {
+        width: size,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      })
+      .then((dataUrl) => {
+        setQrDataUrl(dataUrl);
+        setError('');
+      })
+      .catch((err) => {
+        console.error('Error generando QR:', err);
+        setError('Error al generar el código QR');
+      });
+    }
+  }, [url, size]);
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center w-32 h-32 border border-red-200 rounded-lg bg-red-50">
+        <div className="text-center">
+          <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-2" />
+          <p className="text-xs text-red-600">Error QR</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!qrDataUrl) {
+    return (
+      <div className="flex items-center justify-center w-32 h-32 border border-gray-200 rounded-lg bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center space-y-2">
+      <img 
+        src={qrDataUrl} 
+        alt="Código QR" 
+        className="border border-gray-200 rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+        style={{ width: size, height: size }}
+        onClick={() => window.open(url, '_blank')}
+        title="Haz click para abrir la URL"
+      />
+    </div>
+  );
+};
+
 const TransactionsSection: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
+  const [isReversing, setIsReversing] = useState(false);
+  const [showReverseDialog, setShowReverseDialog] = useState(false);
+  const [transactionToReverse, setTransactionToReverse] = useState<string | null>(null);
   
   const {
     transactions,
@@ -164,10 +231,9 @@ const TransactionsSection: React.FC = () => {
   };
 
   const handleClearFilters = async () => {
-    // Obtener fecha de hoy
+    // Obtener fecha de hoy en zona horaria de Santo Domingo
     const getTodayDate = () => {
-      const today = new Date();
-      return today.toISOString().split('T')[0];
+      return getCurrentSantoDomingoDate();
     };
     
     // Limpiar todos los filtros
@@ -193,6 +259,54 @@ const TransactionsSection: React.FC = () => {
     };
     
     await searchTransactions(params);
+  };
+
+  const handleReverseTransaction = (transNumber: string) => {
+    setTransactionToReverse(transNumber);
+    setShowReverseDialog(true);
+  };
+
+  const confirmReverseTransaction = async () => {
+    if (!transactionToReverse) return;
+    
+    try {
+      setIsReversing(true);
+      const result = await transactionService.reverseTransaction(transactionToReverse);
+      
+      // Verificar si la API respondió con successful: true
+      if (result.successful) {
+        // Mostrar notificación de éxito
+        toast.success('Transacción reversada exitosamente', {
+          duration: 3000,
+          icon: '✅',
+        });
+        
+        // Cerrar el modal y refrescar las transacciones
+        setSelectedTransaction(null);
+        await refreshTransactions();
+      } else {
+        // Si la API no respondió con successful: true
+        toast.error(`Error: ${result.message || 'No se pudo reversar la transacción'}`, {
+          duration: 5000,
+          icon: '❌',
+        });
+      }
+    } catch (error) {
+      console.error('Error al reversar transacción:', error);
+      toast.error('Error al reversar la transacción. Por favor, inténtalo de nuevo.', {
+        duration: 5000,
+        icon: '❌',
+      });
+    } finally {
+      setIsReversing(false);
+      setShowReverseDialog(false);
+      setTransactionToReverse(null);
+    }
+  };
+
+  const cancelReverseTransaction = () => {
+    setShowReverseDialog(false);
+    setTransactionToReverse(null);
   };
 
   const getStatusIcon = (cfStatus: number) => {
@@ -231,35 +345,10 @@ const TransactionsSection: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <CreditCard className="w-8 h-8 text-blue-600" />
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Transacciones</h2>
-            <p className="text-gray-600">Gestiona y visualiza todas las transacciones de ventas</p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-2">
-          <button 
-            onClick={refreshTransactions}
-            disabled={loading}
-            className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg transition-colors"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            <span>Actualizar</span>
-          </button>
-          <button 
-            onClick={() => handleExport('excel')}
-            className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
-          >
-            <Download className="w-4 h-4" />
-            <span>Exportar</span>
-          </button>
-        </div>
-      </div>
+
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
@@ -269,6 +358,19 @@ const TransactionsSection: React.FC = () => {
             <DollarSign className="w-8 h-8 text-green-500" />
           </div>
         </div>
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Total Retornos</p>
+              <p className="text-2xl font-bold text-red-600">{formatCurrency(transactions.filter(t => t.isReturn).reduce((sum, t) => sum + t.total, 0))}</p>
+            </div>
+            <RefreshCw className="w-8 h-8 text-red-500" />
+          </div>
+        </div>
+
+
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
@@ -295,7 +397,13 @@ const TransactionsSection: React.FC = () => {
             </div>
             <AlertCircle className="w-8 h-8 text-red-500" />
           </div>
+          
         </div>
+
+        
+      </div>
+
+        
       </div>
 
       {/* Search and Filters */}
@@ -354,6 +462,21 @@ const TransactionsSection: React.FC = () => {
                 )}
                 <span>{loading ? 'Limpiando...' : 'Limpiar'}</span>
               </button>
+              <button 
+            onClick={refreshTransactions}
+            disabled={loading}
+            className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg transition-colors"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span>Actualizar</span>
+          </button>
+          <button 
+            onClick={() => handleExport('excel')}
+            className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            <span>Exportar</span>
+          </button>
             </div>
           </div>
         </div>
@@ -379,26 +502,27 @@ const TransactionsSection: React.FC = () => {
 
               {/* Tipo de CF */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de CF</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de comprobante</label>
                 <select 
                   value={cfTypeFilter}
                   onChange={(e) => setCfTypeFilter(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">Todos los tipos</option>
-                  <option value="01">Factura Consumidor Final</option>
-                  <option value="02">Factura de Crédito Fiscal</option>
-                  <option value="03">Nota de Débito</option>
-                  <option value="04">Nota de Crédito</option>
+                  <option value="31">32 - Factura de Crédito Fiscal</option>
+                  <option value="32">31 - Factura Consumidor Final</option>
+                  <option value="34">34 - Factura Nota de Credito</option>
+                  <option value="44">44 - Factura Regimen Especial</option>
+                  <option value="45">45 - Factura Gubernamental</option>
                 </select>
               </div>
 
               {/* Site ID */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Site ID</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sucursal</label>
                 <input
                   type="text"
-                  placeholder="Site ID"
+                  placeholder="CO-0017"
                   value={siteIdFilter}
                   onChange={(e) => setSiteIdFilter(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -407,10 +531,10 @@ const TransactionsSection: React.FC = () => {
 
               {/* Staft ID */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Staft ID</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Código vendedor</label>
                 <input
                   type="number"
-                  placeholder="Staft ID"
+                  placeholder="0000"
                   value={staftIdFilter}
                   onChange={(e) => setStaftIdFilter(e.target.value === '' ? '' : Number(e.target.value))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -421,10 +545,10 @@ const TransactionsSection: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
               {/* Shift */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Shift</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Turno</label>
                 <input
                   type="number"
-                  placeholder="Shift"
+                  placeholder="1, 2 o 3"
                   value={shiftFilter}
                   onChange={(e) => setShiftFilter(e.target.value === '' ? '' : Number(e.target.value))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -488,20 +612,27 @@ const TransactionsSection: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {paginatedTransactions.map((transaction) => (
-                  <tr key={transaction.transNumber} className="hover:bg-gray-50">
+                  <tr key={transaction.transNumber} className={`hover:bg-gray-50 ${transaction.isReturn ? 'text-red-600' : ''} ${transaction.status === 0 ? 'opacity-50' : ''}`}>
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-2">
                         <span className="text-lg">{getStatusIcon(transaction.cfStatus)}</span>
                         <div>
-                          <div className="text-sm font-medium text-gray-900">{transaction.transNumber}</div>
-                          <div className="text-sm text-gray-500">{transaction.cfNumber}</div>
-                          <div className="text-xs text-blue-600">{transaction.staftId} - {transaction.staftName}</div>
+                          <div className={`text-sm font-medium ${transaction.isReturn ? 'text-red-600' : 'text-gray-900'}`}>{transaction.transNumber}</div>
+                          <div className={`text-sm ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`}>{transaction.cfNumber}</div>
+
+                          {transaction.status === 0 && (
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">
+                              Anulada
+                            </span>
+                          )}
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-4">
                       <div>
-                        <div className="text-sm text-gray-900">{transaction.siteId}</div>
+                        <div className={`text-sm font-medium ${transaction.isReturn ? 'text-red-600' : 'text-gray-900'}`}>{transaction.siteId} {transaction.siteName}</div>
+                        {/*<div className="text-sm text-gray-500"> Terminal {transaction.terminalId}</div>*/}
+                        <div className={`text-xs ${transaction.isReturn ? 'text-red-500' : 'text-blue-600'}`}>{transaction.staftId} - {transaction.staftName}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -518,23 +649,25 @@ const TransactionsSection: React.FC = () => {
                           )}
                         </div>
                         <div className="ml-3">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className={`text-sm font-medium ${transaction.isReturn ? 'text-red-600' : 'text-gray-900'}`}>
                             {transaction.taxpayerName || 'Consumidor Final'}
                           </div>
-                          <div className="text-sm text-gray-500">{transaction.taxpayerId}</div>
+                          <div className={`text-sm ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`}>{transaction.taxpayerId}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div>
-                        <div className="text-sm text-gray-900">{formatDateOnly(transaction.transDate)}</div>
-                        <div className="text-sm text-gray-500">{formatTimeOnly(transaction.transDate)}</div>
+                        <div className={`text-sm ${transaction.isReturn ? 'text-red-600' : 'text-gray-900'}`}>{formatDateOnly(transaction.transDate)}</div>
+                        <div className={`text-sm ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`}>{formatTimeOnly(transaction.transDate)}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{formatCurrency(transaction.total)}</div>
-                        <div className="text-xs text-gray-500">
+                        <div className={`text-sm font-medium ${transaction.isReturn ? 'text-red-600' : 'text-gray-900'}`}>
+                          {transaction.isReturn ? `-${formatCurrency(transaction.total)}` : formatCurrency(transaction.total)}
+                        </div>
+                        <div className={`text-xs ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`}>
                           {transaction.prods.length} productos
                         </div>
                       </div>
@@ -638,6 +771,8 @@ const TransactionsSection: React.FC = () => {
                       <span className="text-sm text-gray-600">Total:</span>
                       <span className="text-lg font-bold text-green-600">{formatCurrency(selectedTransaction.total)}</span>
                     </div>
+                    
+
                   </div>
                 </div>
 
@@ -656,18 +791,33 @@ const TransactionsSection: React.FC = () => {
                       <span className="text-sm text-gray-600">Vendedor:</span>
                       <span className="text-sm font-medium">{selectedTransaction.staftName}</span>
                     </div>
-                    {selectedTransaction.cfSecurityCode && (
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Código de Seguridad:</span>
-                        <span className="text-sm font-medium">{selectedTransaction.cfSecurityCode}</span>
+                    {selectedTransaction.cfQr && (
+                      <div className="flex items-end space-x-4">
+                        <QRCodeComponent 
+                          url={selectedTransaction.cfQr} 
+                          size={120}
+                        />
+                        <div className="flex flex-col space-y-2">
+                          {selectedTransaction.cfSecurityCode && (
+                            <div className="text-sm">
+                              <span className="font-medium text-gray-900">Código de Seguridad:</span>
+                              <br />
+                              <span className="font-mono text-gray-700">{selectedTransaction.cfSecurityCode}</span>
+                            </div>
+                          )}
+                          {selectedTransaction.digitalSignatureDate && (
+                            <div className="text-sm">
+                              <span className="font-medium text-gray-900">Fecha Firma Digital:</span>
+                              <br />
+                              <span className="text-gray-700">{selectedTransaction.digitalSignatureDate}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
-                    {selectedTransaction.digitalSignatureDate && (
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Firma Digital:</span>
-                        <span className="text-sm font-medium">{formatDate(selectedTransaction.digitalSignatureDate)}</span>
-                      </div>
-                    )}
+                    
+        
+        
                   </div>
                 </div>
               </div>
@@ -731,7 +881,7 @@ const TransactionsSection: React.FC = () => {
                           <div>
                             <div className="flex items-center space-x-2">
                               <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaymentTypeColor(payment.type)}`}>
-                                {getPaymentTypeText(payment.type)}
+                                {payment.type}
                               </span>
                               {payment.isReturn && (
                                 <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
@@ -739,9 +889,7 @@ const TransactionsSection: React.FC = () => {
                                 </span>
                               )}
                             </div>
-                            <div className="text-sm text-gray-600 mt-1">
-                              ID: {payment.paymentId}
-                            </div>
+                            
                           </div>
                         </div>
                         <div className="text-lg font-bold text-gray-900">
@@ -787,35 +935,37 @@ const TransactionsSection: React.FC = () => {
                 </div>
               )}
 
-              {/* QR Code */}
-              {selectedTransaction.cfQr && (
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
-                    <QrCode className="w-5 h-5 mr-2" />
-                    Código QR
-                  </h4>
-                  <div className="flex justify-center">
-                    <img 
-                      src={selectedTransaction.cfQr} 
-                      alt="Código QR" 
-                      className="w-32 h-32 border border-gray-200 rounded-lg"
-                    />
-                  </div>
-                </div>
-              )}
+
             </div>
 
             {/* Modal Footer */}
-            <div className="flex justify-end space-x-3 p-6 border-t border-gray-200">
+            <div className="flex justify-between items-center p-6 border-t border-gray-200">
               <button
-                onClick={() => setSelectedTransaction(null)}
-                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                onClick={() => handleReverseTransaction(selectedTransaction.transNumber)}
+                disabled={isReversing}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg transition-colors flex items-center space-x-2"
               >
-                Cerrar
+                {isReversing ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Reversando...</span>
+                  </>
+                ) : (
+                  <span>Reversar Transacción</span>
+                )}
               </button>
-              <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                Imprimir Recibo
-              </button>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setSelectedTransaction(null)}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Cerrar
+                </button>
+                <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                  Imprimir Recibo
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -873,6 +1023,65 @@ const TransactionsSection: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Diálogo de Confirmación para Reversar Transacción */}
+      <Dialog
+        open={showReverseDialog}
+        onClose={cancelReverseTransaction}
+        className="relative z-50"
+      >
+        {/* Backdrop */}
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+
+        {/* Contenedor del diálogo */}
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="mx-auto max-w-sm rounded-lg bg-white shadow-xl">
+            <div className="p-6">
+              {/* Icono de advertencia */}
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mb-4">
+                <AlertCircle className="h-6 w-6 text-red-600" />
+              </div>
+
+              {/* Título */}
+              <Dialog.Title className="text-lg font-medium text-gray-900 text-center mb-2">
+                Reversar Transacción
+              </Dialog.Title>
+
+              {/* Mensaje */}
+              <Dialog.Description className="text-sm text-gray-500 text-center mb-6">
+                ¿Estás seguro de que quieres reversar esta transacción? 
+                <br />
+                <span className="font-medium text-red-600">Esta acción no se puede deshacer.</span>
+              </Dialog.Description>
+
+              {/* Botones */}
+              <div className="flex space-x-3">
+                <button
+                  onClick={cancelReverseTransaction}
+                  disabled={isReversing}
+                  className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmReverseTransaction}
+                  disabled={isReversing}
+                  className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:bg-red-400 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                >
+                  {isReversing ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Reversando...</span>
+                    </>
+                  ) : (
+                    <span>Reversar</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </Dialog.Panel>
+        </div>
+      </Dialog>
     </div>
   );
 };

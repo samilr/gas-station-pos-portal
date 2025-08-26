@@ -227,6 +227,36 @@ class TransactionService {
       throw error;
     }
   }
+
+  /**
+   * Reversa una transacción específica
+   */
+  async reverseTransaction(transNumber: string): Promise<{ successful: boolean; message: string }> {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('No hay token de autenticación');
+      }
+
+      const response = await fetch(buildApiUrl(`/trans/return/${transNumber}`), {
+        method: 'POST',
+        headers: getAuthHeaders(token),
+      });
+
+      if (!response.ok) {
+        throw new Error(handleApiError({ response }));
+      }
+
+      const data = await response.json();
+      return {
+        successful: data.successful || false,
+        message: data.message || 'Respuesta del servidor'
+      };
+    } catch (error) {
+      console.error('Error al reversar transacción:', error);
+      throw error;
+    }
+  }
 }
 
 // Instancia singleton del servicio

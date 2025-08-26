@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ITransactionResume, TransactionStatus, CFStatus } from '../types/transaction';
+import { getCurrentSantoDomingoDate } from '../utils/transactionUtils';
 import { transactionService } from '../services/transactionService';
 import { mockTransactions } from '../data/mockTransactions';
 
@@ -81,10 +82,9 @@ export const useTransactions = (): UseTransactionsReturn => {
   const [siteIdFilter, setSiteIdFilter] = useState<string>('');
   const [staftIdFilter, setStaftIdFilter] = useState<number | ''>('');
   const [shiftFilter, setShiftFilter] = useState<number | ''>('');
-  // Obtener fecha de hoy en formato YYYY-MM-DD
+  // Obtener fecha de hoy en formato YYYY-MM-DD en zona horaria de Santo Domingo
   const getTodayDate = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
+    return getCurrentSantoDomingoDate();
   };
 
   const [startDateFilter, setStartDateFilter] = useState<string>(getTodayDate());
