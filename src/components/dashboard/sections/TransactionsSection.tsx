@@ -276,8 +276,8 @@ const TransactionsSection: React.FC = () => {
       // Verificar si la API respondió con successful: true
       if (result.successful) {
         // Mostrar notificación de éxito
-        toast.success('Transacción reversada exitosamente', {
-          duration: 3000,
+        toast.success(`Transacción reversada exitosamente \n #${result.data.transNumber} \n e-NCF: ${result.data.encf}`, {
+          duration: 10000,
           icon: '✅',
         });
         
@@ -739,11 +739,11 @@ const TransactionsSection: React.FC = () => {
                       <span className="text-sm font-medium">{selectedTransaction.transNumber}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Número de CF:</span>
+                      <span className="text-sm text-gray-600">Número de e-NCF:</span>
                       <span className="text-sm font-medium">{selectedTransaction.cfNumber}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Tipo de CF:</span>
+                      <span className="text-sm text-gray-600">Tipo de e-NCF:</span>
                       <span className="text-sm font-medium">{getCfTypeText(selectedTransaction.cfType)}</span>
                     </div>
                     <div className="flex justify-between">
@@ -753,7 +753,7 @@ const TransactionsSection: React.FC = () => {
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Estado:</span>
                       <div className="flex items-center space-x-2">
-                        {getStatusIcon(selectedTransaction.cfStatus)}
+
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedTransaction.cfStatus)}`}>
                           {getStatusText(selectedTransaction.cfStatus)}
                         </span>
@@ -789,7 +789,7 @@ const TransactionsSection: React.FC = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Vendedor:</span>
-                      <span className="text-sm font-medium">{selectedTransaction.staftName}</span>
+                      <span className="text-sm font-medium">{selectedTransaction.staftId + ' - '+ selectedTransaction.staftName}</span>
                     </div>
                     {selectedTransaction.cfQr && (
                       <div className="flex items-end space-x-4">
@@ -797,19 +797,23 @@ const TransactionsSection: React.FC = () => {
                           url={selectedTransaction.cfQr} 
                           size={120}
                         />
+
                         <div className="flex flex-col space-y-2">
+                        <br />
+                        <br />
+                        <br />
                           {selectedTransaction.cfSecurityCode && (
                             <div className="text-sm">
-                              <span className="font-medium text-gray-900">Código de Seguridad:</span>
-                              <br />
-                              <span className="font-mono text-gray-700">{selectedTransaction.cfSecurityCode}</span>
+                              <span className="font-medium text-gray-900">Código de Seguridad: </span>
+                              
+                              <span className="font-medium font-mono text-gray-500">{selectedTransaction.cfSecurityCode}</span>
                             </div>
                           )}
                           {selectedTransaction.digitalSignatureDate && (
                             <div className="text-sm">
-                              <span className="font-medium text-gray-900">Fecha Firma Digital:</span>
-                              <br />
-                              <span className="text-gray-700">{selectedTransaction.digitalSignatureDate}</span>
+                              <span className="font-medium text-gray-900">Fecha Firma Digital: </span>
+                              
+                              <span className="font-medium text-gray-500">{selectedTransaction.digitalSignatureDate}</span>
                             </div>
                           )}
                         </div>
@@ -1044,12 +1048,13 @@ const TransactionsSection: React.FC = () => {
 
               {/* Título */}
               <Dialog.Title className="text-lg font-medium text-gray-900 text-center mb-2">
-                Reversar Transacción
+                Reversar Transacción {selectedTransaction?.transNumber}
               </Dialog.Title>
 
               {/* Mensaje */}
               <Dialog.Description className="text-sm text-gray-500 text-center mb-6">
-                ¿Estás seguro de que quieres reversar esta transacción? 
+                ¿Estás seguro de que quieres aplicar nota de credito a esta transacción? 
+                <br />
                 <br />
                 <span className="font-medium text-red-600">Esta acción no se puede deshacer.</span>
               </Dialog.Description>

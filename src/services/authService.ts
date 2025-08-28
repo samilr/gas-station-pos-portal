@@ -25,7 +25,7 @@ const API_BASE_URL = buildApiUrl('');
 export const authService = {
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await fetch(`${API_BASE_URL}auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

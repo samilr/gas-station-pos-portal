@@ -88,11 +88,7 @@ const DashboardHome: React.FC = () => {
       <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Acciones Rápidas</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="p-4 text-left bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors">
-            <Users className="w-8 h-8 text-blue-600 mb-2" />
-            <h4 className="font-medium text-gray-900">Crear Usuario</h4>
-            <p className="text-sm text-gray-600">Agregar nuevo usuario al sistema</p>
-          </button>
+
           <button className="p-4 text-left bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors">
             <Database className="w-8 h-8 text-green-600 mb-2" />
             <h4 className="font-medium text-gray-900">Conectar API</h4>

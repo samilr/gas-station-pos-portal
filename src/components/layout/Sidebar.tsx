@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { LayoutDashboard, Users, Settings, BarChart3, Database, Shield, FileText, Bell, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, UserPlus, UserCheck, UserX, TrendingUp, PieChart, Activity, Server, HardDrive, DatabaseBackup as Backup, Lock, Key, AlertTriangle, FileBarChart, Download, Upload, Mail, MessageSquare, Sliders, Globe, Palette, CreditCard, Receipt, DollarSign, TrendingDown, Package } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useNavigation } from '../../hooks/useNavigation';
+import { LayoutDashboard, Users, Settings, BarChart3, Database, Shield, FileText, Bell, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, UserPlus, UserCheck, UserX, TrendingUp, PieChart, Activity, Server, HardDrive, DatabaseBackup as Backup, Lock, Key, AlertTriangle, FileBarChart, Download, Upload, Mail, MessageSquare, Sliders, Globe, Palette, CreditCard, Receipt, DollarSign, TrendingDown, Package, Monitor, Smartphone } from 'lucide-react';
 
 interface SidebarProps {
   activeSection: string;
@@ -37,7 +39,6 @@ const menuItems: MenuItem[] = [
     permission: 'users.view',
     subItems: [
       { id: 'users.list', label: 'Lista de Usuarios', icon: Users, permission: 'users.view' },
-      { id: 'users.create', label: 'Crear Usuario', icon: UserPlus, permission: 'users.create' },
       { id: 'users.active', label: 'Usuarios Activos', icon: UserCheck, permission: 'users.view' },
       { id: 'users.inactive', label: 'Usuarios Inactivos', icon: UserX, permission: 'users.view' },
     ]
@@ -73,6 +74,15 @@ const menuItems: MenuItem[] = [
       { id: 'products.list', label: 'Inventario', icon: Package, permission: 'products.view' },
       { id: 'products.create', label: 'Nuevo Producto', icon: UserPlus, permission: 'products.create' },
       { id: 'products.categories', label: 'Categorías', icon: Users, permission: 'products.view' },
+    ]
+  },
+  { 
+    id: 'pos', 
+    label: 'Puntos de Venta', 
+    icon: Monitor,
+    subItems: [
+      { id: 'pos.terminals', label: 'Terminales', icon: Monitor },
+      { id: 'pos.devices', label: 'Dispositivos', icon: Smartphone },
     ]
   },
   { 
@@ -138,7 +148,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   setIsCollapsed 
 }) => {
   const { hasPermission, user } = useAuth();
-  const [expandedItems, setExpandedItems] = useState<string[]>(['users']);
+  const navigate = useNavigate();
+  const { routeMap } = useNavigation();
+  const [expandedItems, setExpandedItems] = useState<string[]>(['users', 'pos']);
 
   const toggleExpanded = (itemId: string) => {
     setExpandedItems(prev => 
@@ -146,6 +158,13 @@ const Sidebar: React.FC<SidebarProps> = ({
         ? prev.filter(id => id !== itemId)
         : [...prev, itemId]
     );
+  };
+
+  const handleNavigation = (sectionId: string) => {
+    const route = routeMap[sectionId];
+    if (route) {
+      navigate(route);
+    }
   };
 
   const filteredMenuItems = menuItems.filter(item => 
@@ -165,7 +184,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex items-center justify-between">
           {!isCollapsed && (
             <div>
-              <h2 className="text-xl font-bold">Portal Admin</h2>
+              <h2 className="text-xl font-bold">MAGIC CLOUD</h2>
               <p className="text-xs text-gray-400 mt-1">{user?.role}</p>
             </div>
           )}
@@ -199,7 +218,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       if (hasSubItems && !isCollapsed) {
                         toggleExpanded(item.id);
                       } else {
-                        setActiveSection(item.id);
+                        handleNavigation(item.id);
                       }
                     }}
                     className={`w-full flex items-center justify-between px-3 py-3 rounded-lg transition-all duration-200 ${
@@ -236,7 +255,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         return (
                           <li key={subItem.id}>
                             <button
-                              onClick={() => setActiveSection(subItem.id)}
+                              onClick={() => handleNavigation(subItem.id)}
                               className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm ${
                                 isSubActive
                                   ? 'bg-blue-500 text-white'

@@ -231,7 +231,7 @@ class TransactionService {
   /**
    * Reversa una transacción específica
    */
-  async reverseTransaction(transNumber: string): Promise<{ successful: boolean; message: string }> {
+  async reverseTransaction(transNumber: string): Promise<{ successful: boolean; message?: string; data: {transNumber: string, encf: string} }> {
     try {
       const token = localStorage.getItem('authToken');
       if (!token) {
@@ -250,7 +250,8 @@ class TransactionService {
       const data = await response.json();
       return {
         successful: data.successful || false,
-        message: data.message || 'Respuesta del servidor'
+        data: data.data,
+        message: data?.message || 'Respuesta del servidor'
       };
     } catch (error) {
       console.error('Error al reversar transacción:', error);
