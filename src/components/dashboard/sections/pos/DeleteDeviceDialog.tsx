@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { AlertTriangle, X, Trash2 } from 'lucide-react';
-import { deviceService, IDevice } from '../../../../services/deviceService';
+import { hostService, IHost } from '../../../../services/deviceService';
 import toast from 'react-hot-toast';
 
 interface DeleteDeviceDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  device: IDevice | null;
+  device: IHost | null;
   onSuccess: () => void;
 }
 
@@ -18,7 +18,7 @@ const DeleteDeviceDialog: React.FC<DeleteDeviceDialogProps> = ({ isOpen, onClose
     
     setLoading(true);
     try {
-      const response = await deviceService.deleteDevice(device.id);
+      const response = await hostService.deleteHost(device.host_id);
       if (response.successful) {
         toast.success(`Dispositivo eliminado exitosamente \n ${device.name}`, {
           duration: 5000,
@@ -99,25 +99,43 @@ const DeleteDeviceDialog: React.FC<DeleteDeviceDialogProps> = ({ isOpen, onClose
             <h4 className="text-sm font-medium text-gray-900 mb-3">Detalles del Dispositivo</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
+                <span className="text-gray-600">Host ID:</span>
+                <span className="font-medium">{device.host_id}</span>
+              </div>
+              <div className="flex justify-between">
                 <span className="text-gray-600">Nombre:</span>
                 <span className="font-medium">{device.name}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">ID del Dispositivo:</span>
-                <span className="font-medium">{device.deviceId}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Tipo:</span>
-                <span className="font-medium">{device.deviceType}</span>
+                <span className="font-medium">{device.device_id || 'N/A'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Sitio:</span>
-                <span className="font-medium">{device.siteId}</span>
+                <span className="font-medium">{device.site_id || 'N/A'}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Estado:</span>
-                <span className={`font-medium ${device.status ? 'text-green-600' : 'text-red-600'}`}>
-                  {device.status ? 'Activo' : 'Inactivo'}
+                <span className="text-gray-600">IP:</span>
+                <span className="font-medium">
+                  {device.ip_address ? 
+                    (device.ip_address.length > 16 ? 
+                      `${device.ip_address.substring(0, 16)}...` : 
+                      device.ip_address
+                    ) : 
+                    'N/A'
+                  }
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Conectado:</span>
+                <span className={`font-medium ${device.connected ? 'text-green-600' : 'text-red-600'}`}>
+                  {device.connected ? 'Sí' : 'No'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Activo:</span>
+                <span className={`font-medium ${device.active ? 'text-green-600' : 'text-red-600'}`}>
+                  {device.active ? 'Sí' : 'No'}
                 </span>
               </div>
             </div>

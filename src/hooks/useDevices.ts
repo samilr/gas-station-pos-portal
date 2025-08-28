@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { deviceService, IDevice } from '../services/deviceService';
+import { hostService, IHost } from '../services/deviceService';
 
 export const useDevices = () => {
-  const [devices, setDevices] = useState<IDevice[]>([]);
+  const [devices, setDevices] = useState<IHost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -10,7 +10,7 @@ export const useDevices = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await deviceService.getDevices();
+      const response = await hostService.getHosts();
       if (response.successful) {
         setDevices(response.data || []);
       } else {

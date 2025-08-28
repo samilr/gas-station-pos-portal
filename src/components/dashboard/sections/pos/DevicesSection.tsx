@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Smartphone, Plus, Search, Filter, RefreshCw, Edit, Trash2, Eye } from 'lucide-react';
+import { Smartphone, Plus, Search, Filter, RefreshCw, Edit, Trash2, Eye, Monitor, Globe } from 'lucide-react';
 import DeviceModal from './DeviceModal';
 import DeleteDeviceDialog from './DeleteDeviceDialog';
 import { useDevices } from '../../../../hooks/useDevices';
-import { IDevice } from '../../../../services/deviceService';
+import { IHost } from '../../../../services/deviceService';
 
-// Función para formatear fecha de creación de dispositivo
-const formatDeviceDate = (dateString: string | Date): { date: string; time: string } => {
+// Función para formatear fecha de conexión
+const formatConnectionDate = (dateString: string | Date | undefined): { date: string; time: string } | null => {
+  if (!dateString) return null;
   const date = new Date(dateString);
   const dateFormatted = date.toLocaleDateString('es-DO', {
     year: 'numeric',
@@ -25,44 +26,46 @@ const DevicesSection: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [siteFilter, setSiteFilter] = useState('');
-  const [deviceTypeFilter, setDeviceTypeFilter] = useState('');
+  const [connectionFilter, setConnectionFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false);
-  const [modalDevice, setModalDevice] = useState<IDevice | null>(null);
+  const [modalDevice, setModalDevice] = useState<IHost | null>(null);
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view'>('create');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [deviceToDelete, setDeviceToDelete] = useState<IDevice | null>(null);
+  const [deviceToDelete, setDeviceToDelete] = useState<IHost | null>(null);
 
   const filteredDevices = (Array.isArray(devices) ? devices : []).filter(device => {
     const matchesSearch = 
       device.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      device.deviceId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      device.siteId.toLowerCase().includes(searchTerm.toLowerCase());
+      (device.device_id && device.device_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (device.site_id && device.site_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (device.ip_address && device.ip_address.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesStatus = statusFilter === '' || 
-      (statusFilter === 'active' && device.status) ||
-      (statusFilter === 'inactive' && !device.status);
-    const matchesSite = siteFilter === '' || device.siteId === siteFilter;
-    const matchesDeviceType = deviceTypeFilter === '' || device.deviceType === deviceTypeFilter;
+      (statusFilter === 'active' && device.active) ||
+      (statusFilter === 'inactive' && !device.active);
+    const matchesSite = siteFilter === '' || device.site_id === siteFilter;
+    const matchesConnection = connectionFilter === '' || 
+      (connectionFilter === 'connected' && device.connected) ||
+      (connectionFilter === 'disconnected' && !device.connected);
 
-    return matchesSearch && matchesStatus && matchesSite && matchesDeviceType;
+    return matchesSearch && matchesStatus && matchesSite && matchesConnection;
   });
 
   const getStatusText = (status: boolean) => status ? 'Activo' : 'Inactivo';
   const getStatusColor = (status: boolean) => status ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
-  const getDeviceTypeText = (deviceType: string) => {
-    switch (deviceType) {
-      case 'smartphone': return 'Smartphone';
-      case 'tablet': return 'Tablet';
-      case 'pos_device': return 'Dispositivo POS';
-      case 'other': return 'Otro';
-      default: return deviceType;
-    }
-  };
+  const getConnectionText = (connected: boolean) => connected ? 'Conectado' : 'Desconectado';
+  const getConnectionColor = (connected: boolean) => connected ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800';
 
-  const handleViewDetails = (device: IDevice) => {
+  // Calcular estadísticas
+  const totalDevices = devices.length;
+  const activeDevices = devices.filter(d => d.active).length;
+  const inactiveDevices = devices.filter(d => !d.active).length;
+  const connectedDevices = devices.filter(d => d.connected).length;
+
+  const handleViewDetails = (device: IHost) => {
     setModalDevice(device);
     setModalMode('view');
     setIsDeviceModalOpen(true);
@@ -74,13 +77,13 @@ const DevicesSection: React.FC = () => {
     setIsDeviceModalOpen(true);
   };
 
-  const handleEditDevice = (device: IDevice) => {
+  const handleEditDevice = (device: IHost) => {
     setModalDevice(device);
     setModalMode('edit');
     setIsDeviceModalOpen(true);
   };
 
-  const handleDeleteDevice = (device: IDevice) => {
+  const handleDeleteDevice = (device: IHost) => {
     setDeviceToDelete(device);
     setIsDeleteDialogOpen(true);
   };
@@ -108,12 +111,11 @@ const DevicesSection: React.FC = () => {
     setSearchTerm('');
     setStatusFilter('');
     setSiteFilter('');
-    setDeviceTypeFilter('');
+    setConnectionFilter('');
   };
 
   // Obtener valores únicos para los filtros
-  const uniqueSites = Array.from(new Set(devices.map(device => device.siteId).filter(Boolean)));
-  const uniqueDeviceTypes = Array.from(new Set(devices.map(device => device.deviceType).filter(Boolean)));
+  const uniqueSites = Array.from(new Set(devices.map(device => device.site_id).filter(Boolean)));
 
   // Calcular paginación
   const totalPages = Math.ceil(filteredDevices.length / itemsPerPage);
@@ -137,7 +139,7 @@ const DevicesSection: React.FC = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Cargando dispositivos...</p>
         </div>
       </div>
@@ -146,74 +148,115 @@ const DevicesSection: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-            <Smartphone className="w-6 h-6 text-green-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Dispositivos</h1>
-            <p className="text-gray-600">Gestiona los dispositivos móviles de punto de venta</p>
-          </div>
-        </div>
-        <button 
-          onClick={handleCreateDevice}
-          className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Nuevo Dispositivo</span>
-        </button>
-      </div>
-
       {/* Search and Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Buscar dispositivos..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        {/* Header con búsqueda y botones */}
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="flex items-center space-x-4">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Buscar dispositivos..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                
+                {/* Stats Cards */}
+                <div className="flex items-center space-x-4">
+                  <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-600">Total</span>
+                      <span className="text-lg font-bold text-gray-900">{totalDevices}</span>
+                      <Smartphone className="w-5 h-5 text-blue-500" />
+                    </div>
+                  </div>
+                  <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-600">Activos</span>
+                      <span className="text-lg font-bold text-green-600">{activeDevices}</span>
+                      <Monitor className="w-5 h-5 text-green-500" />
+                    </div>
+                  </div>
+                  <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-600">Inactivos</span>
+                      <span className="text-lg font-bold text-red-600">{inactiveDevices}</span>
+                      <Monitor className="w-5 h-5 text-red-500" />
+                    </div>
+                  </div>
+                  <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-600">Conectados</span>
+                      <span className="text-lg font-bold text-blue-600">{connectedDevices}</span>
+                      <Globe className="w-5 h-5 text-blue-500" />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <button 
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              <Filter className="w-4 h-4" />
-              <span>Filtros</span>
-            </button>
-            <button 
-              onClick={handleClearFilters}
-              className="px-3 py-2 text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              Limpiar
-            </button>
+            <div className="flex items-center space-x-3 ml-4">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                  showFilters 
+                    ? 'bg-blue-100 text-blue-700 border border-blue-300' 
+                    : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
+                }`}
+              >
+                <Filter className="w-4 h-4" />
+                <span>{showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}</span>
+              </button>
+              <button 
+                onClick={handleClearFilters}
+                disabled={loading}
+                className={`flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg transition-colors ${
+                  loading 
+                    ? 'bg-gray-100 cursor-not-allowed' 
+                    : 'hover:bg-gray-50'
+                }`}
+              >
+                {loading ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                <span>{loading ? 'Limpiando...' : 'Limpiar'}</span>
+              </button>
+              <button 
+                onClick={refreshDevices}
+                disabled={loading}
+                className="flex items-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                <span>Actualizar</span>
+              </button>
+              <button 
+                onClick={handleCreateDevice}
+                className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Nuevo Dispositivo</span>
+              </button>
+            </div>
           </div>
-          <button 
-            onClick={refreshDevices}
-            className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            <RefreshCw className="w-4 h-4" />
-            <span>Actualizar</span>
-          </button>
         </div>
 
-        {/* Filters Section */}
+        {/* Filtros expandibles */}
         {showFilters && (
-          <div className="border-t border-gray-200 pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="p-4 bg-gray-50 border-t border-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Status Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
                 <select 
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">Todos</option>
                   <option value="active">Activos</option>
@@ -227,7 +270,7 @@ const DevicesSection: React.FC = () => {
                 <select 
                   value={siteFilter}
                   onChange={(e) => setSiteFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">Todos</option>
                   {uniqueSites.map(site => (
@@ -236,18 +279,17 @@ const DevicesSection: React.FC = () => {
                 </select>
               </div>
 
-              {/* Device Type Filter */}
+              {/* Connection Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Dispositivo</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Conexión</label>
                 <select 
-                  value={deviceTypeFilter}
-                  onChange={(e) => setDeviceTypeFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  value={connectionFilter}
+                  onChange={(e) => setConnectionFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">Todos</option>
-                  {uniqueDeviceTypes.map(type => (
-                    <option key={type} value={type}>{getDeviceTypeText(type)}</option>
-                  ))}
+                  <option value="connected">Conectados</option>
+                  <option value="disconnected">Desconectados</option>
                 </select>
               </div>
             </div>
@@ -280,48 +322,67 @@ const DevicesSection: React.FC = () => {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Dispositivo</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">ID Dispositivo</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Host ID</th>
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">IP</th>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Sitio</th>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha de Creación</th>
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Conexión</th>
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Última Conexión</th>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {paginatedDevices.map((device) => (
-                <tr key={device.id} className="hover:bg-gray-50">
+                <tr key={device.host_id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-center">
-                      <div className="w-10 h-10 bg-green-100 rounded flex items-center justify-center">
-                        <Smartphone className="w-5 h-5 text-green-600" />
+                      <div className="w-10 h-10 bg-blue-100 rounded flex items-center justify-center">
+                        <Smartphone className="w-5 h-5 text-blue-600" />
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">{device.name}</div>
                         <div className="text-xs text-gray-400">{device.description || 'Sin descripción'}</div>
+                        {device.device_id && (
+                          <div className="text-xs text-gray-500">ID: {device.device_id}</div>
+                        )}
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm text-gray-900">{device.deviceId}</span>
+                    <span className="text-sm text-gray-900">{device.host_id}</span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm text-gray-900">{getDeviceTypeText(device.deviceType)}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-gray-900">{device.siteId}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(device.status)}`}>
-                      {getStatusText(device.status)}
+                    <span className="text-sm text-gray-900">
+                      {device.ip_address ? 
+                        (device.ip_address.length > 16 ? 
+                          `${device.ip_address.substring(0, 16)}...` : 
+                          device.ip_address
+                        ) : 
+                        'N/A'
+                      }
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    {device.createdAt && (
+                    <span className="text-sm text-gray-900">{device.site_id || 'N/A'}</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(device.active)}`}>
+                      {getStatusText(device.active)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getConnectionColor(device.connected)}`}>
+                      {getConnectionText(device.connected)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    {device.connected_last_time ? (
                       <div>
-                        <div className="text-sm text-gray-900">{formatDeviceDate(device.createdAt).date}</div>
-                        <div className="text-sm text-gray-500">{formatDeviceDate(device.createdAt).time}</div>
+                        <div className="text-sm text-gray-900">{formatConnectionDate(device.connected_last_time)?.date}</div>
+                        <div className="text-sm text-gray-500">{formatConnectionDate(device.connected_last_time)?.time}</div>
                       </div>
+                    ) : (
+                      <span className="text-sm text-gray-400">Nunca</span>
                     )}
                   </td>
                   <td className="px-6 py-4">
@@ -393,7 +454,7 @@ const DevicesSection: React.FC = () => {
                     onClick={() => handlePageChange(page)}
                     className={`px-3 py-1 text-sm rounded transition-colors ${
                       page === currentPage
-                        ? 'bg-green-600 text-white'
+                        ? 'bg-blue-600 text-white'
                         : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                     }`}
                   >
