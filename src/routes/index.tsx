@@ -9,6 +9,8 @@ import TransactionsSection from '../components/dashboard/sections/TransactionsSe
 import ProductsSection from '../components/dashboard/sections/ProductsSection';
 import TerminalsSection from '../components/dashboard/sections/pos/TerminalsSection';
 import DevicesSection from '../components/dashboard/sections/pos/DevicesSection';
+import ActionsLogSection from '../components/dashboard/sections/logs/ActionsLogSection';
+import ErrorLogSection from '../components/dashboard/sections/logs/ErrorLogSection';
 import GenericSection from '../components/dashboard/sections/GenericSection';
 import { 
   BarChart3, 
@@ -265,6 +267,24 @@ export const router = createBrowserRouter([
           {
             path: 'devices',
             element: <DevicesSection />
+          }
+        ]
+      },
+      // Rutas de Logs
+      {
+        path: 'logs',
+        children: [
+          {
+            index: true,
+            element: <Navigate to="actions" replace />
+          },
+          {
+            path: 'actions',
+            element: <ActionsLogSection />
+          },
+          {
+            path: 'errors',
+            element: <ErrorLogSection />
           }
         ]
       },

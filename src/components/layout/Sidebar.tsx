@@ -86,6 +86,16 @@ const menuItems: MenuItem[] = [
     ]
   },
   { 
+    id: 'logs', 
+    label: 'Registros', 
+    icon: FileText,
+    permission: 'logs.view',
+    subItems: [
+      { id: 'logs.actions', label: 'Actions Log', icon: Activity, permission: 'logs.view' },
+      { id: 'logs.errors', label: 'Error Log', icon: AlertTriangle, permission: 'logs.view' },
+    ]
+  },
+  { 
     id: 'database', 
     label: 'Base de Datos', 
     icon: Database,
