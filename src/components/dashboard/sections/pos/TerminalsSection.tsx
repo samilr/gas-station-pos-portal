@@ -362,13 +362,13 @@ const TerminalsSection: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    {terminal.last_connection_time && (
+                    {terminal.connected_time && (
                       <div>
-                        <div className="text-sm text-gray-900">{formatTerminalDate(terminal.last_connection_time).date}</div>
-                        <div className="text-sm text-gray-500">{formatTerminalDate(terminal.last_connection_time).time}</div>
+                        <div className="text-sm text-gray-900">{formatTerminalDate(terminal.connected_time ?? "").date}</div>
+                        <div className="text-sm text-gray-500">{formatTerminalDate(terminal.connected_time ?? "").time}</div>
                       </div>
                     )}
-                    {!terminal.last_connection_time && (
+                    {!terminal.connected_time && (
                       <span className="text-sm text-gray-500">Nunca conectada</span>
                     )}
                   </td>

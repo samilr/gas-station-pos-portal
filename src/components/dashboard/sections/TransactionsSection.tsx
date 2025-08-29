@@ -680,6 +680,8 @@ const TransactionsSection: React.FC = () => {
                         <Eye className="w-4 h-4" />
                         <span className="text-sm">Ver detalles</span>
                       </button>
+                      <div className='text-sm text-gray-500'>Terminal {transaction.terminalId}</div>
+
                     </td>
                   </tr>
                 ))}

@@ -343,7 +343,7 @@ const DevicesSection: React.FC = () => {
                         <div className="text-sm font-medium text-gray-900">{device.name}</div>
                         <div className="text-xs text-gray-400">{device.description || 'Sin descripción'}</div>
                         {device.device_id && (
-                          <div className="text-xs text-gray-500">ID: {device.device_id}</div>
+                          <div className="text-xs text-gray-500">ID: {device.device_id?.toUpperCase().substring(10,16)}</div>
                         )}
                       </div>
                     </div>

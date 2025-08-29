@@ -150,13 +150,11 @@ const Sidebar: React.FC<SidebarProps> = ({
   const { hasPermission, user } = useAuth();
   const navigate = useNavigate();
   const { routeMap } = useNavigation();
-  const [expandedItems, setExpandedItems] = useState<string[]>(['users', 'pos']);
+  const [expandedItem, setExpandedItem] = useState<string | null>('users');
 
   const toggleExpanded = (itemId: string) => {
-    setExpandedItems(prev => 
-      prev.includes(itemId) 
-        ? prev.filter(id => id !== itemId)
-        : [...prev, itemId]
+    setExpandedItem(prev => 
+      prev === itemId ? null : itemId
     );
   };
 
@@ -202,12 +200,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Menu Items */}
-      <nav className="flex-1 p-4 overflow-y-auto">
+      <nav className="flex-1 p-4 overflow-y-auto scrollbar-hide">
         <ul className="space-y-2">
           {filteredMenuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeSection === item.id || activeSection.startsWith(item.id + '.');
-            const isExpanded = expandedItems.includes(item.id);
+            const isExpanded = expandedItem === item.id;
             const hasSubItems = item.subItems && getFilteredSubItems(item.subItems).length > 0;
             
             return (
@@ -221,14 +219,18 @@ const Sidebar: React.FC<SidebarProps> = ({
                         handleNavigation(item.id);
                       }
                     }}
-                    className={`w-full flex items-center justify-between px-3 py-3 rounded-lg transition-all duration-200 ${
+                    className={`w-full flex items-center justify-between transition-all duration-200 ${
+                      isCollapsed 
+                        ? 'px-2 py-4 rounded-lg hover:bg-gray-700' 
+                        : 'px-3 py-3 rounded-lg'
+                    } ${
                       isActive
                         ? 'bg-blue-600 text-white'
                         : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                     }`}
                     title={isCollapsed ? item.label : ''}
                   >
-                    <div className="flex items-center space-x-3">
+                    <div className={`flex items-center ${isCollapsed ? 'justify-center w-full' : 'space-x-3'}`}>
                       <Icon className="w-5 h-5 flex-shrink-0" />
                       {!isCollapsed && (
                         <span className="font-medium">{item.label}</span>
@@ -280,7 +282,8 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Footer */}
       <div className="p-4 border-t border-gray-700">
         <div className="text-xs text-gray-400 text-center">
-          {!isCollapsed && 'Portal Admin v1.0'}
+          {!isCollapsed && 'ISLA DOMINICANA DE PETROLEO CORP'}&copy;
+
         </div>
       </div>
     </div>

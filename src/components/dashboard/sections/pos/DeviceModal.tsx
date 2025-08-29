@@ -298,20 +298,20 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
                     <label className="text-sm font-medium text-gray-700">Activo</label>
                     <p className="text-xs text-gray-500">Indica si el dispositivo está activo</p>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
+                  <label className={`relative inline-flex items-center ${isCreating ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                     <input
                       type="checkbox"
                       name="active"
                       checked={formData.active}
                       onChange={handleInputChange}
-                      disabled={isViewing}
+                      disabled={isViewing || isCreating}
                       className="sr-only peer"
                     />
                     <div className={`relative w-12 h-7 rounded-full transition-all duration-300 ease-in-out ${
                       formData.active 
                         ? 'bg-blue-600' 
                         : 'bg-gray-200 border-2 border-gray-300'
-                    } ${isViewing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg'}`}>
+                    } ${(isViewing || isCreating) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg'}`}>
                       <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-all duration-300 ease-in-out transform shadow-sm ${
                         formData.active ? 'translate-x-5' : 'translate-x-0'
                       }`}></div>
