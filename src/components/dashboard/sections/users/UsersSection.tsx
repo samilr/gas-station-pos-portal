@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Search, Plus, Edit, Trash2, MoreHorizontal, RefreshCw, Filter, Eye, EyeIcon } from 'lucide-react';
-import { useUsers } from '../../../hooks/useUsers';
-import { IUser } from '../../../services/userService';
-import UserModal from './UserModal';
+import { useUsers } from '../../../../hooks/useUsers';
+import { IUser } from '../../../../services/userService';
 import DeleteUserDialog from './DeleteUserDialog';
+import UserModal from './UserModal';
 
 // Función para formatear fecha de creación de usuario
 const formatUserDate = (dateString: string | Date): { date: string; time: string } => {

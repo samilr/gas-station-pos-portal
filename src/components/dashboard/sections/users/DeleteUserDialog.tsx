@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AlertTriangle, X, Trash2 } from 'lucide-react';
-import { userService, IUser } from '../../../services/userService';
+import { userService, IUser } from '../../../../services/userService';
 import toast from 'react-hot-toast';
 
 interface DeleteUserDialogProps {

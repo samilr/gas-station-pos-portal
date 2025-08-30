@@ -17,8 +17,8 @@ const ROLE_PERMISSIONS = {
     'analytics.view', 'transactions.view', 'transactions.edit',
     'database.view', 'database.edit', 'security.view', 'security.edit',
     'reports.view', 'reports.create', 'notifications.view', 'notifications.edit',
-    'settings.view', 'settings.edit', 'products.view', 'products.create',
-    'products.edit', 'products.delete', 'logs.view'
+    'settings.view', 'settings.edit',     'products.view', 'products.create',
+    'products.edit', 'products.delete', 'logs.view', 'sites.view'
   ],
   'SELLER': [
     'analytics.view', 'transactions.view', 'reports.view', 'products.view'
@@ -26,16 +26,16 @@ const ROLE_PERMISSIONS = {
   'MANAGER': [
     'users.view', 'analytics.view', 'transactions.view', 'reports.view',
     'reports.create', 'notifications.view', 'products.view', 'products.edit',
-    'logs.view'
+    'logs.view', 'sites.view'
   ],
   'SUPERVISOR': [
     'users.view', 'analytics.view', 'transactions.view', 'transactions.edit',
     'reports.view', 'reports.create', 'products.view', 'products.edit',
-    'logs.view'
+    'logs.view', 'sites.view'
   ],
   'CONFIGURATION': [
     'settings.view', 'settings.edit', 'database.view', 'database.edit',
-    'security.view', 'security.edit', 'logs.view'
+    'security.view', 'security.edit', 'logs.view', 'sites.view'
   ]
 } as const;
 

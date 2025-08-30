@@ -26,8 +26,8 @@ import {
 import QRCode from 'qrcode';
 import toast from 'react-hot-toast';
 import { Dialog } from '@headlessui/react';
-import { useTransactions } from '../../../hooks/useTransactions';
-import { transactionService } from '../../../services/transactionService';
+import { useTransactions } from '../../../../hooks/useTransactions';
+import { transactionService } from '../../../../services/transactionService';
 import { 
   getStatusText, 
   getStatusColor, 
@@ -44,9 +44,9 @@ import {
   isReturnTransaction,
   getTransactionIcon,
   getCurrentSantoDomingoDate
-} from '../../../utils/transactionUtils';
-import { TransactionStatus, PaymentType, CFStatus } from '../../../types/transaction';
-import { SortField, SortDirection } from '../../../hooks/useTransactions';
+} from '../../../../utils/transactionUtils';
+import { TransactionStatus, PaymentType, CFStatus } from '../../../../types/transaction';
+import { SortField, SortDirection } from '../../../../hooks/useTransactions';
 
 // Componente QR
 const QRCodeComponent: React.FC<{ url: string; size?: number }> = ({ url, size = 128 }) => {

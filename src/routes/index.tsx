@@ -4,13 +4,13 @@ import { useAuth } from '../context/AuthContext';
 import Login from '../components/auth/Login';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import DashboardHome from '../components/dashboard/DashboardHome';
-import UsersSection from '../components/dashboard/sections/UsersSection';
-import TransactionsSection from '../components/dashboard/sections/TransactionsSection';
-import ProductsSection from '../components/dashboard/sections/ProductsSection';
+import UsersSection from '../components/dashboard/sections/users/UsersSection';
+import TransactionsSection from '../components/dashboard/sections/transactions/TransactionsSection';
 import TerminalsSection from '../components/dashboard/sections/pos/TerminalsSection';
 import DevicesSection from '../components/dashboard/sections/pos/DevicesSection';
 import ActionsLogSection from '../components/dashboard/sections/logs/ActionsLogSection';
 import ErrorLogSection from '../components/dashboard/sections/logs/ErrorLogSection';
+import SitesSection from '../components/dashboard/sections/sites/SitesSection';
 import GenericSection from '../components/dashboard/sections/GenericSection';
 import { 
   BarChart3, 
@@ -46,6 +46,7 @@ import {
   DollarSign,
   TrendingDown
 } from 'lucide-react';
+import ProductsSection from '../components/dashboard/sections/products/ProductsSection';
 
 // Componente de protección de rutas
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -269,6 +270,11 @@ export const router = createBrowserRouter([
             element: <DevicesSection />
           }
         ]
+      },
+      // Rutas de Sucursales
+      {
+        path: 'sites',
+        element: <SitesSection />
       },
       // Rutas de Logs
       {

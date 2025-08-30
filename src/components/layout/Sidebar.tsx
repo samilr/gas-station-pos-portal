@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useNavigation } from '../../hooks/useNavigation';
-import { LayoutDashboard, Users, Settings, BarChart3, Database, Shield, FileText, Bell, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, UserPlus, UserCheck, UserX, TrendingUp, PieChart, Activity, Server, HardDrive, DatabaseBackup as Backup, Lock, Key, AlertTriangle, FileBarChart, Download, Upload, Mail, MessageSquare, Sliders, Globe, Palette, CreditCard, Receipt, DollarSign, TrendingDown, Package, Monitor, Smartphone } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, BarChart3, Database, Shield, FileText, Bell, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, UserPlus, UserCheck, UserX, TrendingUp, PieChart, Activity, Server, HardDrive, DatabaseBackup as Backup, Lock, Key, AlertTriangle, FileBarChart, Download, Upload, Mail, MessageSquare, Sliders, Globe, Palette, CreditCard, Receipt, DollarSign, TrendingDown, Package, Monitor, Smartphone, Building2 } from 'lucide-react';
 
 interface SidebarProps {
   activeSection: string;
@@ -83,6 +83,15 @@ const menuItems: MenuItem[] = [
     subItems: [
       { id: 'pos.terminals', label: 'Terminales', icon: Monitor },
       { id: 'pos.devices', label: 'Dispositivos', icon: Smartphone },
+    ]
+  },
+  { 
+    id: 'sites', 
+    label: 'Sucursales', 
+    icon: Building2,
+    permission: 'sites.view',
+    subItems: [
+      { id: 'sites.list', label: 'Lista de Sucursales', icon: Building2, permission: 'sites.view' },
     ]
   },
   { 

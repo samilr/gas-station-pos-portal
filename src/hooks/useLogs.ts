@@ -15,7 +15,7 @@ const mockActionLogs: IActionLog[] = [
     terminal_id: 1,
     latitude: '18.4861',
     longitude: '-69.9312',
-    created_at: new Date('2024-01-15T10:30:00')
+    created_at: new Date('2024-01-15T14:30:00Z') // UTC, se mostrará como 10:30 hora local
   },
   {
     actionId: 2,
@@ -28,7 +28,7 @@ const mockActionLogs: IActionLog[] = [
     terminal_id: 1,
     latitude: '18.4861',
     longitude: '-69.9312',
-    created_at: new Date('2024-01-15T10:25:00')
+    created_at: new Date('2024-01-15T14:25:00Z') // UTC, se mostrará como 10:25 hora local
   },
   {
     actionId: 3,
@@ -41,7 +41,7 @@ const mockActionLogs: IActionLog[] = [
     terminal_id: 2,
     latitude: '18.4861',
     longitude: '-69.9312',
-    created_at: new Date('2024-01-15T10:20:00')
+    created_at: new Date('2024-01-15T14:20:00Z') // UTC, se mostrará como 10:20 hora local
   },
   {
     actionId: 4,
@@ -54,7 +54,7 @@ const mockActionLogs: IActionLog[] = [
     terminal_id: 1,
     latitude: '18.4861',
     longitude: '-69.9312',
-    created_at: new Date('2024-01-15T10:15:00')
+    created_at: new Date('2024-01-15T14:15:00Z') // UTC, se mostrará como 10:15 hora local
   },
   {
     actionId: 5,
@@ -67,7 +67,7 @@ const mockActionLogs: IActionLog[] = [
     terminal_id: 1,
     latitude: '18.4861',
     longitude: '-69.9312',
-    created_at: new Date('2024-01-15T10:10:00')
+    created_at: new Date('2024-01-15T14:10:00Z') // UTC, se mostrará como 10:10 hora local
   }
 ];
 
@@ -85,7 +85,7 @@ const mockErrorLogs: IErrorLog[] = [
     terminal_id: 1,
     latitude: '18.4861',
     longitude: '-69.9312',
-    created_at: new Date('2024-01-15T10:30:00'),
+    created_at: new Date('2024-01-15T14:30:00Z'), // UTC, se mostrará como 10:30 hora local
     ip_address: '192.168.1.100'
   },
   {
@@ -100,7 +100,7 @@ const mockErrorLogs: IErrorLog[] = [
     terminal_id: 1,
     latitude: '18.4861',
     longitude: '-69.9312',
-    created_at: new Date('2024-01-15T10:25:00'),
+    created_at: new Date('2024-01-15T14:25:00Z'), // UTC, se mostrará como 10:25 hora local
     ip_address: '192.168.1.101'
   },
   {

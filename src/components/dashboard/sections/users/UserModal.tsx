@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Shield, Building, Save, X, Eye, EyeOff, Edit, UserPlus } from 'lucide-react';
-import { userService, IUser } from '../../../services/userService';
+import { userService, IUser } from '../../../../services/userService';
 import toast from 'react-hot-toast';
 
 interface UserFormData {
