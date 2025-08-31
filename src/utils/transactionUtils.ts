@@ -83,22 +83,50 @@ export const getCfTypeText = (cfType: string | number): string => {
   const cleanCfType = String(cfType).trim();
   
   switch (cleanCfType) {
-    case '01':
-    case '1':
-      return 'Factura Consumidor Final';
-    case '02':
-    case '2':
-      return 'Factura de Crédito Fiscal';
-    case '03':
-    case '3':
-      return 'Nota de Débito';
-    case '04':
-    case '4':
-      return 'Nota de Crédito';
+    case "31":
+      return "Factura de Crédito Fiscal Electrónico";
+    case "32":
+      return "Factura de Consumo Electrónico";
+    case "34":
+      return "Factura de Nota de Crédito Electrónica";
+    case "43":
+      return "Factura de Gastos Menores Electrónico";
+    case "44":
+      return "Factura de Régimen Especial Electrónico";
+    case "45":
+      return "Factura Gubernamental Electrónico";
     default:
-      console.warn(`Tipo de CF no reconocido: "${cfType}" (tipo: ${typeof cfType})`);
-      return `Tipo ${cleanCfType}`;
+      return "Tipo no especificado";
   }
+};
+
+export const getTipoComprobante = (type: string) => {
+  let typeDescription = "";
+  switch (type) {
+    case "31":
+      typeDescription = "Factura de Crédito Fiscal Electrónico";
+      break;
+    case "32":
+      typeDescription = "Factura de Consumo Electrónico";
+      break;
+    case "34":
+      typeDescription = "Factura de Nota de Crédito Electrónica";
+      break;
+    case "43":
+      typeDescription = "Factura de Gastos Menores Electrónico";
+      break;
+    case "44":
+      typeDescription = "Factura de Régimen Especial Electrónico";
+      break;
+    case "45":
+      typeDescription = "Factura Gubernamental Electrónico";
+      break;
+    default:
+      typeDescription = "Tipo no especificado";
+      break;
+  }
+
+  return typeDescription;
 };
 
 /**
@@ -147,6 +175,17 @@ export const formatCurrency = (amount: number): string => {
     currency: 'DOP'
   }).format(amount);
 };
+
+export const formatCurrencyInternational = (amount: number): string => {
+  if (isNaN(amount)) return '0.00';
+  
+  return new Intl.NumberFormat('es-DO', {
+    style: 'decimal',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    useGrouping: true
+  }).format(amount);
+}
 
 /**
  * Filtra transacciones por término de búsqueda

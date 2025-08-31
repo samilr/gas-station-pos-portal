@@ -6,6 +6,7 @@ export interface ITransactionResume {
   transDate: string;
   siteId: string;
   siteName: string;
+  shift: number;
   terminalId: number;
   status: number;
   cfStatus: number; // Nueva propiedad para el estado del CF

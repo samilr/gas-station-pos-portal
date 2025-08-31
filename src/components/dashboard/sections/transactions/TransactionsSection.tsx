@@ -28,6 +28,7 @@ import toast from 'react-hot-toast';
 import { Dialog } from '@headlessui/react';
 import { useTransactions } from '../../../../hooks/useTransactions';
 import { transactionService } from '../../../../services/transactionService';
+import pdfService from '../../../../services/pdfService';
 import { 
   getStatusText, 
   getStatusColor, 
@@ -45,7 +46,7 @@ import {
   getTransactionIcon,
   getCurrentSantoDomingoDate
 } from '../../../../utils/transactionUtils';
-import { TransactionStatus, PaymentType, CFStatus } from '../../../../types/transaction';
+import { TransactionStatus, PaymentType, CFStatus, ITransactionResume } from '../../../../types/transaction';
 import { SortField, SortDirection } from '../../../../hooks/useTransactions';
 
 // Componente QR
@@ -100,7 +101,16 @@ const QRCodeComponent: React.FC<{ url: string; size?: number }> = ({ url, size =
         alt="Código QR" 
         className="border border-gray-200 rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
         style={{ width: size, height: size }}
-        onClick={() => window.open(url, '_blank')}
+        onClick={() => {
+          // Abrir directamente el enlace sin pasar por página intermedia
+          const link = document.createElement('a');
+          link.href = url;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }}
         title="Haz click para abrir la URL"
       />
     </div>
@@ -307,6 +317,30 @@ const TransactionsSection: React.FC = () => {
   const cancelReverseTransaction = () => {
     setShowReverseDialog(false);
     setTransactionToReverse(null);
+  };
+
+  const handlePrintTransaction = async (transaction: ITransactionResume) => {
+    try {
+      const pdfUrl = await pdfService.generateTransactionPDF(transaction, true);
+      
+      // Crear una nueva ventana para imprimir
+      const printWindow = window.open(pdfUrl, '_blank');
+      
+      if (printWindow) {
+        printWindow.onload = () => {
+          printWindow.print();
+        };
+      } else {
+        // Si no se puede abrir la ventana, descargar el PDF
+        await pdfService.generateTransactionPDF(transaction, false);
+      }
+    } catch (error) {
+      console.error('Error al generar el PDF:', error);
+      toast.error('Error al generar el PDF de la transacción', {
+        duration: 5000,
+        icon: '❌',
+      });
+    }
   };
 
   const getStatusIcon = (cfStatus: number) => {
@@ -968,8 +1002,12 @@ const TransactionsSection: React.FC = () => {
                 >
                   Cerrar
                 </button>
-                <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                  Imprimir Recibo
+                <button 
+                  onClick={() => handlePrintTransaction(selectedTransaction)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>Imprimir Recibo</span>
                 </button>
               </div>
             </div>

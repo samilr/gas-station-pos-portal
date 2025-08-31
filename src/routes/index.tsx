@@ -8,8 +8,6 @@ import UsersSection from '../components/dashboard/sections/users/UsersSection';
 import TransactionsSection from '../components/dashboard/sections/transactions/TransactionsSection';
 import TerminalsSection from '../components/dashboard/sections/pos/TerminalsSection';
 import DevicesSection from '../components/dashboard/sections/pos/DevicesSection';
-import ActionsLogSection from '../components/dashboard/sections/logs/ActionsLogSection';
-import ErrorLogSection from '../components/dashboard/sections/logs/ErrorLogSection';
 import SitesSection from '../components/dashboard/sections/sites/SitesSection';
 import GenericSection from '../components/dashboard/sections/GenericSection';
 import { 
@@ -47,6 +45,8 @@ import {
   TrendingDown
 } from 'lucide-react';
 import ProductsSection from '../components/dashboard/sections/products/ProductsSection';
+import ActionsLogSection from '../components/dashboard/sections/logs/ActionsLogSection';
+import ErrorLogSection from '../components/dashboard/sections/logs/ErrorLogSection';
 
 // Componente de protección de rutas
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
