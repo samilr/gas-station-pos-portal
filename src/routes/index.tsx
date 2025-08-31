@@ -120,11 +120,31 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return isAuthenticated ? <Navigate to="/dashboard" replace /> : <>{children}</>;
 };
 
+// Componente para manejar la ruta raíz
+const RootRoute: React.FC = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Si el usuario está autenticado, redirigir al dashboard
+  // Si no está autenticado, redirigir al login
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />;
+};
+
 // Configuración de rutas
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <Navigate to="/dashboard" replace />
+    element: <RootRoute />
   },
   {
     path: '/login',

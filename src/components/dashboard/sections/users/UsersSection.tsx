@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Search, Plus, Edit, Trash2, MoreHorizontal, RefreshCw, Filter, Eye, EyeIcon } from 'lucide-react';
+import { Users, Search, Plus, Edit, Trash2, MoreHorizontal, RefreshCw, Filter, Eye, EyeIcon, CheckCircle, XCircle, UserCheck, UserX, Shield } from 'lucide-react';
 import { useUsers } from '../../../../hooks/useUsers';
 import { useAuth } from '../../../../context/AuthContext';
 import { IUser } from '../../../../services/userService';
@@ -123,6 +123,13 @@ const UsersSection: React.FC = () => {
     setPortalAccessFilter('');
   };
 
+  // Calcular estadísticas
+  const totalUsers = users.length;
+  const activeUsers = users.filter(user => user.active === 1).length;
+  const inactiveUsers = users.filter(user => user.active === 0).length;
+  const adminUsers = users.filter(user => user.role.toLowerCase() === 'admin').length;
+  const portalAccessUsers = users.filter(user => user.portal_access).length;
+
   // Obtener valores únicos para los filtros
   const uniqueSites = Array.from(new Set(users.map(user => user.site_id).filter(Boolean)));
   const uniqueGroups = Array.from(new Set(users.map(user => user.staft_group).filter(Boolean)));
@@ -206,15 +213,58 @@ const UsersSection: React.FC = () => {
         {/* Header con búsqueda y botones de acción */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Buscar usuarios por nombre, usuario o email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+            <div className="flex-1">
+              <div className="flex items-center space-x-4">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    placeholder="Buscar usuarios por nombre, usuario o email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                
+                {/* Stats Cards */}
+                <div className="flex items-center space-x-4">
+                  <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-600">Total</span>
+                      <span className="text-lg font-bold text-gray-900">{totalUsers}</span>
+                      <Users className="w-5 h-5 text-blue-500" />
+                    </div>
+                  </div>
+                  <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-600">Activos</span>
+                      <span className="text-lg font-bold text-green-600">{activeUsers}</span>
+                      <UserCheck className="w-5 h-5 text-green-500" />
+                    </div>
+                  </div>
+                  <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-600">Inactivos</span>
+                      <span className="text-lg font-bold text-red-600">{inactiveUsers}</span>
+                      <UserX className="w-5 h-5 text-red-500" />
+                    </div>
+                  </div>
+                  <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-600">Admins</span>
+                      <span className="text-lg font-bold text-purple-600">{adminUsers}</span>
+                      <Shield className="w-5 h-5 text-purple-500" />
+                    </div>
+                  </div>
+                  <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-600">Portal</span>
+                      <span className="text-lg font-bold text-blue-600">{portalAccessUsers}</span>
+                      <CheckCircle className="w-5 h-5 text-blue-500" />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="flex items-center space-x-3 ml-4">
               <button

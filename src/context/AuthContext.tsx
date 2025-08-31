@@ -133,9 +133,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     // Check if user is already logged in (from localStorage)
     const savedUser = localStorage.getItem('adminUser');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
+    const authToken = localStorage.getItem('authToken');
+    
+    if (savedUser && authToken) {
+      try {
+        const userData = JSON.parse(savedUser);
+        
+        // Verificar si el token no ha expirado
+        const expiresIn = localStorage.getItem('tokenExpiresIn');
+        const isExpired = !expiresIn || new Date() > new Date(expiresIn);
+        
+        if (!isExpired) {
+          setUser(userData);
+        } else {
+          // Token expirado, limpiar datos
+          localStorage.removeItem('adminUser');
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('tokenExpiresIn');
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Error parsing saved user data:', error);
+        // Limpiar datos corruptos
+        localStorage.removeItem('adminUser');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('tokenExpiresIn');
+        setUser(null);
+      }
+    } else {
+      // No hay datos de usuario o token, limpiar todo
+      localStorage.removeItem('adminUser');
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('tokenExpiresIn');
+      setUser(null);
     }
+    
     setIsLoading(false);
   }, []);
 
@@ -193,6 +225,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setUser(null);
       localStorage.removeItem('adminUser');
+      localStorage.removeItem('authToken');
       localStorage.removeItem('tokenExpiresIn');
     }
   };

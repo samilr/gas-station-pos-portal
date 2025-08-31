@@ -11,7 +11,27 @@ export const useNavigation = () => {
     // Extraer la sección principal y subsección
     const segments = path.split('/').filter(Boolean);
     if (segments.length >= 2) {
-      return `${segments[1]}${segments[2] ? `.${segments[2]}` : ''}`;
+      const section = segments[1];
+      const subsection = segments[2];
+      
+      // Casos especiales para rutas específicas
+      if (section === 'sites' && !subsection) {
+        return 'sites.list';
+      }
+      if (section === 'pos' && subsection === 'terminals') {
+        return 'pos.terminals';
+      }
+      if (section === 'pos' && subsection === 'devices') {
+        return 'pos.devices';
+      }
+      if (section === 'logs' && subsection === 'actions') {
+        return 'logs.actions';
+      }
+      if (section === 'logs' && subsection === 'errors') {
+        return 'logs.errors';
+      }
+      
+      return `${section}${subsection ? `.${subsection}` : ''}`;
     }
     return 'dashboard';
   };
@@ -39,9 +59,13 @@ export const useNavigation = () => {
     'products.create': '/dashboard/products/create',
     'products.categories': '/dashboard/products/categories',
     'pos': '/dashboard/pos',
-      'pos.terminals': '/dashboard/pos/terminals',
-  'pos.devices': '/dashboard/pos/devices',
-  'sites.list': '/dashboard/sites',
+    'pos.terminals': '/dashboard/pos/terminals',
+    'pos.devices': '/dashboard/pos/devices',
+    'sites': '/dashboard/sites',
+    'sites.list': '/dashboard/sites',
+    'sites.create': '/dashboard/sites/create',
+    'sites.active': '/dashboard/sites/active',
+    'sites.inactive': '/dashboard/sites/inactive',
     'logs': '/dashboard/logs',
     'logs.actions': '/dashboard/logs/actions',
     'logs.errors': '/dashboard/logs/errors',
