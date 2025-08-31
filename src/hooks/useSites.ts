@@ -115,14 +115,12 @@ export const useSites = () => {
       const response = await siteService.createSite(siteData);
       if (response.successful) {
         await loadSites(); // Recargar la lista
-        return true;
+        return { successful: true };
       } else {
-        setError('Error al crear sucursal');
-        return false;
+        return { successful: false, message: response.error };
       }
     } catch (err) {
-      setError('Error al crear sucursal');
-      return false;
+      return { successful: false, message: 'Error al crear sucursal' };
     }
   }, [loadSites]);
 
@@ -131,14 +129,12 @@ export const useSites = () => {
       const response = await siteService.updateSite(siteId, siteData);
       if (response.successful) {
         await loadSites(); // Recargar la lista
-        return true;
+        return { successful: true };
       } else {
-        setError('Error al actualizar sucursal');
-        return false;
+        return { successful: false, message: response.error };
       }
     } catch (err) {
-      setError('Error al actualizar sucursal');
-      return false;
+      return { successful: false, message: 'Error al actualizar sucursal' };
     }
   }, [loadSites]);
 
@@ -147,14 +143,12 @@ export const useSites = () => {
       const response = await siteService.deleteSite(siteId);
       if (response.successful) {
         await loadSites(); // Recargar la lista
-        return true;
+        return { successful: true };
       } else {
-        setError('Error al eliminar sucursal');
-        return false;
+        return { successful: false, message: response.error };
       }
     } catch (err) {
-      setError('Error al eliminar sucursal');
-      return false;
+      return { successful: false, message: 'Error al eliminar sucursal' };
     }
   }, [loadSites]);
 

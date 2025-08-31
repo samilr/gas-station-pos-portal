@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Search, Plus, Edit, Trash2, MoreHorizontal, RefreshCw, Filter, Eye, EyeIcon } from 'lucide-react';
 import { useUsers } from '../../../../hooks/useUsers';
+import { useAuth } from '../../../../context/AuthContext';
 import { IUser } from '../../../../services/userService';
 import DeleteUserDialog from './DeleteUserDialog';
 import UserModal from './UserModal';
@@ -23,6 +24,7 @@ const formatUserDate = (dateString: string | Date): { date: string; time: string
 
 const UsersSection: React.FC = () => {
   const navigate = useNavigate();
+  const { hasPermission } = useAuth();
   const { users, loading, error, refreshUsers } = useUsers();
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
@@ -240,13 +242,15 @@ const UsersSection: React.FC = () => {
                 <RefreshCw className="w-4 h-4" />
                 <span>Actualizar</span>
               </button>
-              <button 
-                onClick={handleCreateUser}
-                className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Nuevo Usuario</span>
-              </button>
+              {hasPermission('users.create') && (
+                <button 
+                  onClick={handleCreateUser}
+                  className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Nuevo Usuario</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -419,28 +423,31 @@ const UsersSection: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
-                    <button 
+                      <button 
                         onClick={() => handleViewDetails(user)}
                         className="p-1 text-gray-600 hover:text-gray-900" 
                         title="Ver detalles"
                       >
                         <EyeIcon className="w-4 h-4" />
                       </button>
-                      <button 
-                        onClick={() => handleEditUser(user)}
-                        className="p-1 text-blue-600 hover:text-blue-900" 
-                        title="Editar"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteUser(user)}
-                        className="p-1 text-red-600 hover:text-red-900" 
-                        title="Eliminar"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                     
+                      {hasPermission('users.edit') && (
+                        <button 
+                          onClick={() => handleEditUser(user)}
+                          className="p-1 text-blue-600 hover:text-blue-900" 
+                          title="Editar"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                      )}
+                      {hasPermission('users.delete') && (
+                        <button 
+                          onClick={() => handleDeleteUser(user)}
+                          className="p-1 text-red-600 hover:text-red-900" 
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

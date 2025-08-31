@@ -1,14 +1,8 @@
 import { ITransactionResume } from '../types/transaction';
-import { buildApiUrl, getAuthHeaders, handleApiError } from '../config/api';
+import { buildApiUrl } from '../config/api';
+import { apiGet, apiPost } from './apiInterceptor';
 
 class TransactionService {
-  private baseUrl: string;
-
-  constructor() {
-    // Usar la configuración global de la API
-    this.baseUrl = buildApiUrl('');
-  }
-
   /**
    * Obtiene transacciones desde la API con filtros opcionales
    */
@@ -25,13 +19,8 @@ class TransactionService {
     shift?: number;
   }): Promise<ITransactionResume[]> {
     try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        throw new Error('No hay token de autenticación');
-      }
-
       // Construir URL usando la configuración global
-      let url = buildApiUrl('/trans');
+      let url = buildApiUrl('trans');
       if (params) {
         const queryParams = new URLSearchParams();
         
@@ -51,27 +40,19 @@ class TransactionService {
         }
       }
         
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: getAuthHeaders(token),
-      });
+      const response = await apiGet<ITransactionResume[]>(url);
 
-      if (!response.ok) {
-        throw new Error(handleApiError({ response }));
+      if (!response.successful) {
+        throw new Error(response.error || 'Error al obtener transacciones');
       }
 
-      const data = await response.json();
-      console.log('Respuesta de la API:', data); // Para debugging
+      console.log('Respuesta de la API:', response.data); // Para debugging
       
       // Asegurar que siempre devolvemos un array
-      if (Array.isArray(data)) {
-        return data;
-      } else if (data && Array.isArray(data.transactions)) {
-        return data.transactions;
-      } else if (data && Array.isArray(data.data)) {
-        return data.data;
+      if (Array.isArray(response.data)) {
+        return response.data;
       } else {
-        console.warn('La API no devolvió un array de transacciones:', data);
+        console.warn('La API no devolvió un array de transacciones:', response.data);
         return [];
       }
     } catch (error) {
@@ -85,22 +66,13 @@ class TransactionService {
    */
   async getTransactionById(transNumber: string): Promise<ITransactionResume> {
     try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        throw new Error('No hay token de autenticación');
+      const response = await apiGet<ITransactionResume>(buildApiUrl(`transactions/${transNumber}`));
+
+      if (!response.successful) {
+        throw new Error(response.error|| 'Error al obtener transacción');
       }
 
-      const response = await fetch(buildApiUrl(`/transactions/${transNumber}`), {
-        method: 'GET',
-        headers: getAuthHeaders(token),
-      });
-
-      if (!response.ok) {
-        throw new Error(handleApiError({ response }));
-      }
-
-      const data = await response.json();
-      return data.transaction || data; // Maneja tanto {transaction: {}} como {}
+      return response.data;
     } catch (error) {
       console.error('Error al obtener transacción:', error);
       throw error;
@@ -108,7 +80,7 @@ class TransactionService {
   }
 
   /**
-   * Busca transacciones por criterios específicos
+   * Busca transacciones con filtros específicos
    */
   async searchTransactions(params: {
     startDate?: string;
@@ -123,11 +95,6 @@ class TransactionService {
     shift?: number;
   }): Promise<ITransactionResume[]> {
     try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        throw new Error('No hay token de autenticación');
-      }
-
       const queryParams = new URLSearchParams();
       
       if (params.startDate) queryParams.append('startDate', params.startDate);
@@ -141,17 +108,13 @@ class TransactionService {
       if (params.staftId !== undefined) queryParams.append('staftId', params.staftId.toString());
       if (params.shift !== undefined) queryParams.append('shift', params.shift.toString());
 
-      const response = await fetch(buildApiUrl(`/transactions/search?${queryParams}`), {
-        method: 'GET',
-        headers: getAuthHeaders(token),
-      });
+      const response = await apiGet<ITransactionResume[]>(buildApiUrl(`transactions/search?${queryParams}`));
 
-      if (!response.ok) {
-        throw new Error(handleApiError({ response }));
+      if (!response.successful) {
+        throw new Error(response.error || 'Error al buscar transacciones');
       }
 
-      const data = await response.json();
-      return data.transactions || data; // Maneja tanto {transactions: []} como []
+      return response.data || [];
     } catch (error) {
       console.error('Error al buscar transacciones:', error);
       throw error;
@@ -169,22 +132,13 @@ class TransactionService {
     totalTransactions: number;
   }> {
     try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        throw new Error('No hay token de autenticación');
+      const response = await apiGet(buildApiUrl('trans/stats'));
+
+      if (!response.successful) {
+        throw new Error(response.error || 'Error al obtener estadísticas');
       }
 
-      const response = await fetch(buildApiUrl('/trans/stats'), {
-        method: 'GET',
-        headers: getAuthHeaders(token),
-      });
-
-      if (!response.ok) {
-        throw new Error(handleApiError({ response }));
-      }
-
-      const data = await response.json();
-      return data.stats || data; // Maneja tanto {stats: {}} como {}
+      return response.data;
     } catch (error) {
       console.error('Error al obtener estadísticas:', error);
       throw error;
@@ -200,11 +154,6 @@ class TransactionService {
     status?: number;
   }): Promise<Blob> {
     try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        throw new Error('No hay token de autenticación');
-      }
-
       const queryParams = new URLSearchParams();
       queryParams.append('format', format);
       
@@ -212,13 +161,16 @@ class TransactionService {
       if (params?.endDate) queryParams.append('endDate', params.endDate);
       if (params?.status !== undefined) queryParams.append('status', params.status.toString());
 
-      const response = await fetch(buildApiUrl(`/transactions/export?${queryParams}`), {
+      const response = await fetch(buildApiUrl(`transactions/export?${queryParams}`), {
         method: 'GET',
-        headers: getAuthHeaders(token),
+        headers: {
+          'X-site-ID': 'PORTAL',
+          'Authorization': `Bearer ${localStorage.getItem('token') || localStorage.getItem('authToken')}`
+        }
       });
 
       if (!response.ok) {
-        throw new Error(handleApiError({ response }));
+        throw new Error(`Error al exportar: ${response.statusText}`);
       }
 
       return await response.blob();
@@ -233,25 +185,16 @@ class TransactionService {
    */
   async reverseTransaction(transNumber: string): Promise<{ successful: boolean; message?: string; data: {transNumber: string, encf: string} }> {
     try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        throw new Error('No hay token de autenticación');
+      const response = await apiPost(buildApiUrl(`trans/return/${transNumber}`));
+
+      if (!response.successful) {
+        throw new Error(response.error || 'Error al reversar transacción');
       }
 
-      const response = await fetch(buildApiUrl(`/trans/return/${transNumber}`), {
-        method: 'POST',
-        headers: getAuthHeaders(token),
-      });
-
-      if (!response.ok) {
-        throw new Error(handleApiError({ response }));
-      }
-
-      const data = await response.json();
       return {
-        successful: data.successful || false,
-        data: data.data,
-        message: data?.message || 'Respuesta del servidor'
+        successful: response.successful,
+        data: response.data,
+        message: response.error || 'Respuesta del servidor'
       };
     } catch (error) {
       console.error('Error al reversar transacción:', error);

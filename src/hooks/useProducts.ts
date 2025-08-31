@@ -142,14 +142,18 @@ export const useProducts = () => {
     await loadProducts();
   }, [loadProducts]);
 
-  const createNewProduct = useCallback(async (productData: ICreateProductDto): Promise<boolean> => {
+  const createNewProduct = useCallback(async (productData: ICreateProductDto): Promise<{ successful: boolean; message?: string }> => {
     try {
       // Intentar crear en la API
-      await createProduct(productData);
+      const response = await createProduct(productData);
       
-      // Si es exitoso, recargar los productos
-      await loadProducts();
-      return true;
+      if (response.successful) {
+        // Si es exitoso, recargar los productos
+        await loadProducts();
+        return { successful: true };
+      } else {
+        return { successful: false, message: response.error };
+      }
     } catch (err) {
       console.warn('Error creating product in API, using mock data:', err);
       
@@ -178,18 +182,22 @@ export const useProducts = () => {
       };
       
       setProducts(prev => [...prev, newProduct]);
-      return true;
+      return { successful: true };
     }
   }, [loadProducts]);
 
-  const updateExistingProduct = useCallback(async (productId: string, productData: IUpdateProductDto): Promise<boolean> => {
+  const updateExistingProduct = useCallback(async (productId: string, productData: IUpdateProductDto): Promise<{ successful: boolean; message?: string }> => {
     try {
       // Intentar actualizar en la API
-      await updateProduct(productId, productData);
+      const response = await updateProduct(productId, productData);
       
-      // Si es exitoso, recargar los productos
-      await loadProducts();
-      return true;
+      if (response.successful) {
+        // Si es exitoso, recargar los productos
+        await loadProducts();
+        return { successful: true };
+      } else {
+        return { successful: false, message: response.error };
+      }
     } catch (err) {
       console.warn('Error updating product in API, using mock data:', err);
       
@@ -220,24 +228,28 @@ export const useProducts = () => {
             }
           : product
       ));
-      return true;
+      return { successful: true };
     }
   }, [loadProducts]);
 
-  const deleteExistingProduct = useCallback(async (productId: string): Promise<boolean> => {
+  const deleteExistingProduct = useCallback(async (productId: string): Promise<{ successful: boolean; message?: string }> => {
     try {
       // Intentar eliminar en la API
-      await deleteProduct(productId);
+      const response = await deleteProduct(productId);
       
-      // Si es exitoso, recargar los productos
-      await loadProducts();
-      return true;
+      if (response.successful) {
+        // Si es exitoso, recargar los productos
+        await loadProducts();
+        return { successful: true };
+      } else {
+        return { successful: false, message: response.error };
+      }
     } catch (err) {
       console.warn('Error deleting product in API, using mock data:', err);
       
       // Eliminar producto mock para desarrollo
       setProducts(prev => prev.filter(product => product.product_id !== productId));
-      return true;
+      return { successful: true };
     }
   }, [loadProducts]);
 

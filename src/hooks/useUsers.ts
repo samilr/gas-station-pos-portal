@@ -5,6 +5,7 @@ import { userService, IUser } from '../services/userService';
 const mockUsers: IUser[] = [
   {
     user_id: '1',
+    created_at: new Date(),
     username: 'admin',
     name: 'Administrador del Sistema',
     staft_group_id: 1,
@@ -17,12 +18,13 @@ const mockUsers: IUser[] = [
     terminal_id: 1,
     shift: 1,
     active: 1,
-    portal_access: 1,
+    portal_access:true,
     email: 'admin@sistema.com'
   },
   {
     user_id: '2',
     username: 'editor1',
+    created_at: new Date(),
     name: 'Juan Pérez',
     staft_group_id: 2,
     staft_group: 'Ventas',
@@ -34,12 +36,13 @@ const mockUsers: IUser[] = [
     terminal_id: 2,
     shift: 1,
     active: 1,
-    portal_access: 1,
+    portal_access: true,
     email: 'juan.perez@empresa.com'
   },
   {
     user_id: '3',
     username: 'viewer1',
+    created_at: new Date(),
     name: 'María García',
     staft_group_id: 3,
     staft_group: 'Soporte',
@@ -51,12 +54,13 @@ const mockUsers: IUser[] = [
     terminal_id: 3,
     shift: 2,
     active: 1,
-    portal_access: 0,
+    portal_access: false,
     email: 'maria.garcia@empresa.com'
   },
   {
     user_id: '4',
     username: 'inactive_user',
+    created_at: new Date(),
     name: 'Carlos López',
     staft_group_id: 2,
     staft_group: 'Ventas',
@@ -68,7 +72,7 @@ const mockUsers: IUser[] = [
     terminal_id: 2,
     shift: 1,
     active: 0,
-    portal_access: 0,
+    portal_access: false,
     email: 'carlos.lopez@empresa.com'
   }
 ];

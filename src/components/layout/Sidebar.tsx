@@ -80,9 +80,10 @@ const menuItems: MenuItem[] = [
     id: 'pos', 
     label: 'Puntos de Venta', 
     icon: Monitor,
+    permission: 'terminals.view',
     subItems: [
-      { id: 'pos.terminals', label: 'Terminales', icon: Monitor },
-      { id: 'pos.devices', label: 'Dispositivos', icon: Smartphone },
+      { id: 'pos.terminals', label: 'Terminales', icon: Monitor, permission: 'terminals.view' },
+      { id: 'pos.devices', label: 'Dispositivos', icon: Smartphone, permission: 'devices.view' },
     ]
   },
   { 

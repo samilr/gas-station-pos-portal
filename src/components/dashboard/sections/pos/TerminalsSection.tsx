@@ -3,6 +3,7 @@ import { Monitor, Plus, Search, Filter, RefreshCw, Edit, Trash2, Eye, Phone, Sma
 import TerminalModal from './TerminalModal';
 import DeleteTerminalDialog from './DeleteTerminalDialog';
 import { useTerminals } from '../../../../hooks/useTerminals';
+import { useAuth } from '../../../../context/AuthContext';
 import { ITerminal } from '../../../../services/terminalService';
 
 // Función para formatear fecha de conexión de terminal
@@ -21,6 +22,7 @@ const formatTerminalDate = (dateString: string | Date): { date: string; time: st
 };
 
 const TerminalsSection: React.FC = () => {
+  const { hasPermission } = useAuth();
   const { terminals, loading, error, refreshTerminals } = useTerminals();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -236,13 +238,15 @@ const TerminalsSection: React.FC = () => {
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 <span>Actualizar</span>
               </button>
-              <button 
-                onClick={handleCreateTerminal}
-                className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Nueva Terminal</span>
-              </button>
+              {hasPermission('terminals.create') && (
+                <button 
+                  onClick={handleCreateTerminal}
+                  className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Nueva Terminal</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -381,20 +385,24 @@ const TerminalsSection: React.FC = () => {
                       >
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button 
-                        onClick={() => handleEditTerminal(terminal)}
-                        className="p-1 text-blue-600 hover:text-blue-900" 
-                        title="Editar"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteTerminal(terminal)}
-                        className="p-1 text-red-600 hover:text-red-900" 
-                        title="Eliminar"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {hasPermission('terminals.edit') && (
+                        <button 
+                          onClick={() => handleEditTerminal(terminal)}
+                          className="p-1 text-blue-600 hover:text-blue-900" 
+                          title="Editar"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                      )}
+                      {hasPermission('terminals.delete') && (
+                        <button 
+                          onClick={() => handleDeleteTerminal(terminal)}
+                          className="p-1 text-red-600 hover:text-red-900" 
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

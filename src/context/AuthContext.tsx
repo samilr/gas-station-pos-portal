@@ -13,29 +13,79 @@ const ROLE_MAPPING = {
 // Permisos por rol
 const ROLE_PERMISSIONS = {
   'ADMIN': [
+    // Usuarios
     'users.view', 'users.create', 'users.edit', 'users.delete',
+    // Analytics y Transacciones
     'analytics.view', 'transactions.view', 'transactions.edit',
+    // Base de datos y Seguridad
     'database.view', 'database.edit', 'security.view', 'security.edit',
+    // Reportes y Notificaciones
     'reports.view', 'reports.create', 'notifications.view', 'notifications.edit',
-    'settings.view', 'settings.edit',     'products.view', 'products.create',
-    'products.edit', 'products.delete', 'logs.view', 'sites.view'
+    // Configuración
+    'settings.view', 'settings.edit',
+    // Productos
+    'products.view', 'products.create', 'products.edit', 'products.delete',
+    // Sitios
+    'sites.view', 'sites.create', 'sites.edit', 'sites.delete',
+    // Terminales
+    'terminals.view', 'terminals.create', 'terminals.edit', 'terminals.delete',
+    // Dispositivos
+    'devices.view', 'devices.create', 'devices.edit', 'devices.delete',
+    // Logs
+    'logs.view', 'actionlogs.view', 'errorlogs.view'
   ],
   'SELLER': [
-    'analytics.view', 'transactions.view', 'reports.view', 'products.view'
+    'analytics.view', 'reports.view', 'products.view'
   ],
   'MANAGER': [
-    'users.view', 'analytics.view', 'transactions.view', 'reports.view',
-    'reports.create', 'notifications.view', 'products.view', 'products.edit',
-    'logs.view', 'sites.view'
+    // Usuarios
+    'users.view', 'users.create', 'users.edit',
+    // Analytics y Transacciones
+    'analytics.view', 'transactions.view', 'transactions.edit', 
+    // Reportes y Notificaciones
+    'reports.view', 'reports.create', 'notifications.view',
+    // Productos
+    'products.view', 'products.create', 'products.edit',
+    // Sitios
+    'sites.view', 'sites.create', 'sites.edit',
+    // Terminales
+    'terminals.view', 'terminals.create', 'terminals.edit',
+    // Dispositivos
+    'devices.view', 'devices.create', 'devices.edit',
+    // Logs
+    'logs.view', 'actionlogs.view', 'errorlogs.view'
   ],
   'SUPERVISOR': [
-    'users.view', 'analytics.view', 'transactions.view', 'transactions.edit',
-    'reports.view', 'reports.create', 'products.view', 'products.edit',
-    'logs.view', 'sites.view'
+    // Usuarios
+    'users.view', 'users.create', 'users.edit',
+    // Analytics y Transacciones
+    'analytics.view', 'transactions.view', 'transactions.edit',
+    // Reportes y Notificaciones
+    'reports.view', 'reports.create',
+    // Productos
+    'products.view', 'products.create', 'products.edit',
+    // Sitios
+    'sites.view', 'sites.create', 'sites.edit',
+    // Terminales
+    'terminals.view', 'terminals.create', 'terminals.edit',
+    // Dispositivos
+    'devices.view', 'devices.create', 'devices.edit',
+    // Logs
+    'logs.view', 'actionlogs.view', 'errorlogs.view'
   ],
   'CONFIGURATION': [
-    'settings.view', 'settings.edit', 'database.view', 'database.edit',
-    'security.view', 'security.edit', 'logs.view', 'sites.view'
+    // Configuración
+    'settings.view', 'settings.edit',
+    // Base de datos y Seguridad
+    'database.view', 'database.edit', 'security.view', 'security.edit',
+    // Sitios
+    'sites.view', 'sites.create', 'sites.edit', 'sites.delete',
+    // Terminales
+    'terminals.view', 'terminals.create', 'terminals.edit', 'terminals.delete',
+    // Dispositivos
+    'devices.view', 'devices.create', 'devices.edit', 'devices.delete',
+    // Logs
+    'logs.view', 'actionlogs.view', 'errorlogs.view'
   ]
 } as const;
 

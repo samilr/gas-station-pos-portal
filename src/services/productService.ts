@@ -1,93 +1,25 @@
 import { buildApiUrl } from '../config/api';
+import { apiGet, apiPost, apiPut, apiDelete, ApiResponse } from './apiInterceptor';
 import { IProduct, ICreateProductDto, IUpdateProductDto } from '../types/product';
 
 export const getAllProducts = async (): Promise<IProduct[]> => {
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch(buildApiUrl('products'), {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data.data || data;
-  } catch (error) {
-    console.error('Error fetching products:', error);
-    throw error;
+  const response = await apiGet<IProduct[]>(buildApiUrl('products'));
+  
+  if (!response.successful) {
+    throw new Error(response.error || 'Error fetching products');
   }
+
+  return response.data;
 };
 
-export const createProduct = async (productData: ICreateProductDto): Promise<boolean> => {
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch(buildApiUrl('products'), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(productData)
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
-    }
-
-    return true;
-  } catch (error) {
-    console.error('Error creating product:', error);
-    throw error;
-  }
+export const createProduct = async (productData: ICreateProductDto): Promise<ApiResponse<any>> => {
+  return await apiPost(buildApiUrl('products'), productData);
 };
 
-export const updateProduct = async (productId: string, productData: IUpdateProductDto): Promise<boolean> => {
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch(buildApiUrl(`products/${productId}`), {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(productData)
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
-    }
-
-    return true;
-  } catch (error) {
-    console.error('Error updating product:', error);
-    throw error;
-  }
+export const updateProduct = async (productId: string, productData: IUpdateProductDto): Promise<ApiResponse<any>> => {
+  return await apiPut(buildApiUrl(`products/${productId}`), productData);
 };
 
-export const deleteProduct = async (productId: string): Promise<boolean> => {
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch(buildApiUrl(`products/${productId}`), {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
-    }
-
-    return true;
-  } catch (error) {
-    console.error('Error deleting product:', error);
-    throw error;
-  }
+export const deleteProduct = async (productId: string): Promise<ApiResponse<any>> => {
+  return await apiDelete(buildApiUrl(`products/${productId}`));
 };

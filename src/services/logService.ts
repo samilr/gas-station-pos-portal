@@ -1,106 +1,29 @@
 import { buildApiUrl } from '../config/api';
+import { apiGet, apiPost, ApiResponse } from './apiInterceptor';
 import { IActionLog, IErrorLog } from '../types/logs';
-
-export interface ApiResponse<T> {
-  successful: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-}
 
 export interface LogsResponse {
   actionLogs: IActionLog[];
   errorLogs: IErrorLog[];
 }
 
-const API_BASE_URL = buildApiUrl('');
-
 export const logService = {
   // Obtener logs de acciones
   async getActionLogs(): Promise<ApiResponse<IActionLog[]>> {
-    try {
-      const response = await fetch(`${API_BASE_URL}action-log`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return {
-        successful: true,
-        data: data.data || []
-      };
-    } catch (error) {
-      console.error('Error fetching action logs:', error);
-      return {
-        successful: false,
-        error: error instanceof Error ? error.message : 'Error desconocido'
-      };
-    }
+    return await apiGet<IActionLog[]>(buildApiUrl('action-log'));
   },
 
   // Obtener logs de errores
   async getErrorLogs(): Promise<ApiResponse<IErrorLog[]>> {
-    try {
-      const response = await fetch(`${API_BASE_URL}error-log`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return {
-        successful: true,
-        data: data.data || []
-      };
-    } catch (error) {
-      console.error('Error fetching error logs:', error);
-      return {
-        successful: false,
-        error: error instanceof Error ? error.message : 'Error desconocido'
-      };
-    }
+    return await apiGet<IErrorLog[]>(buildApiUrl('error-log'));
   },
 
   // Marcar error como resuelto
   async resolveError(errorId: string, resolvedBy: string): Promise<ApiResponse<boolean>> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/logs/errors/${errorId}/resolve`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ resolvedBy })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return {
-        successful: true,
-        data: true
-      };
-    } catch (error) {
-      console.error('Error resolving error log:', error);
-      return {
-        successful: false,
-        error: error instanceof Error ? error.message : 'Error desconocido'
-      };
-    }
+    return await apiPost<boolean>(
+      buildApiUrl(`logs/errors/${errorId}/resolve`),
+      { resolvedBy }
+    );
   },
 
   // Exportar logs
@@ -115,10 +38,11 @@ export const logService = {
       if (params?.startDate) queryParams.append('startDate', params.startDate);
       if (params?.endDate) queryParams.append('endDate', params.endDate);
 
-      const response = await fetch(`${API_BASE_URL}/logs/${type}/export?${queryParams}`, {
+      const response = await fetch(`${buildApiUrl('logs')}/${type}/export?${queryParams}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'X-site-ID': 'PORTAL',
+          'Authorization': `Bearer ${localStorage.getItem('token') || localStorage.getItem('authToken')}`
         }
       });
 
@@ -137,6 +61,7 @@ export const logService = {
       console.error('Error exporting logs:', error);
       return {
         successful: false,
+        data: '',
         error: error instanceof Error ? error.message : 'Error desconocido'
       };
     }

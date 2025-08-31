@@ -1,4 +1,5 @@
 import { buildApiUrl } from "../config/api";
+import { apiPost, apiGet } from "./apiInterceptor";
 
 interface LoginResponse {
   successful: boolean;
@@ -20,25 +21,22 @@ interface LoginCredentials {
   password: string;
 }
 
-const API_BASE_URL = buildApiUrl(''); 
-
 export const authService = {
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(credentials),
-      });
+      const response = await apiPost<LoginResponse['data']>(
+        buildApiUrl('auth/login'),
+        credentials
+      );
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.successful) {
+        throw new Error(response.error || 'Error en login');
       }
 
-      const data: LoginResponse = await response.json();
-      return data;
+      return {
+        successful: true,
+        data: response.data
+      };
     } catch (error) {
       console.error('Error en login:', error);
       throw error;
@@ -47,38 +45,27 @@ export const authService = {
 
   async logout(): Promise<void> {
     try {
-      const token = localStorage.getItem('authToken');
-      if (token) {
-        await fetch(`${API_BASE_URL}/auth/logout`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
+      const response = await apiPost(buildApiUrl('auth/logout'));
+      
+      if (!response.successful) {
+        console.warn('Error en logout:', response.error);
       }
     } catch (error) {
       console.error('Error en logout:', error);
     } finally {
       localStorage.removeItem('authToken');
+      localStorage.removeItem('token');
       localStorage.removeItem('adminUser');
     }
   },
 
   async validateToken(): Promise<boolean> {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || localStorage.getItem('token');
       if (!token) return false;
 
-      const response = await fetch(`${API_BASE_URL}/auth/validate`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      return response.ok;
+      const response = await apiGet(buildApiUrl('auth/validate'));
+      return response.successful;
     } catch (error) {
       console.error('Error validando token:', error);
       return false;

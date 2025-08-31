@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Package, Search, Filter, RefreshCw, Plus, Edit, Trash2, Eye, CheckCircle, XCircle, DollarSign, Scale, Tag } from 'lucide-react';
 import { useProducts } from '../../../../hooks/useProducts';
+import { useAuth } from '../../../../context/AuthContext';
 import { IProduct } from '../../../../types/product';
 import ProductModal from './ProductModal';
 import DeleteProductDialog from './DeleteProductDialog';
 import toast from 'react-hot-toast';
 
 const ProductsSection: React.FC = () => {
+  const { hasPermission } = useAuth();
   const { products, loading, error, refreshProducts, createProduct, updateProduct, deleteProduct } = useProducts();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -89,25 +91,25 @@ const ProductsSection: React.FC = () => {
 
   const handleSaveProduct = async (data: any) => {
     try {
-      let success = false;
+      let result;
       
       if (modalMode === 'edit' && selectedProduct) {
-        success = await updateProduct(selectedProduct.product_id, data);
-        if (success) {
+        result = await updateProduct(selectedProduct.product_id, data);
+        if (result.successful) {
           toast.success('Producto actualizado correctamente');
         } else {
-          toast.error('Error al actualizar producto');
+          toast.error(result.message || 'Error al actualizar producto');
         }
       } else if (modalMode === 'create') {
-        success = await createProduct(data);
-        if (success) {
+        result = await createProduct(data);
+        if (result.successful) {
           toast.success('Producto creado correctamente');
         } else {
-          toast.error('Error al crear producto');
+          toast.error(result.message || 'Error al crear producto');
         }
       }
       
-      return success;
+      return result?.successful || false;
     } catch (error) {
       console.error('Error saving product:', error);
       toast.error('Error al guardar producto');
@@ -120,13 +122,13 @@ const ProductsSection: React.FC = () => {
     
     setDeleteLoading(true);
     try {
-      const success = await deleteProduct(selectedProduct.product_id);
-      if (success) {
+      const result = await deleteProduct(selectedProduct.product_id);
+      if (result.successful) {
         toast.success('Producto eliminado correctamente');
         setShowDeleteDialog(false);
         setSelectedProduct(null);
       } else {
-        toast.error('Error al eliminar producto');
+        toast.error(result.message || 'Error al eliminar producto');
       }
     } catch (error) {
       console.error('Error deleting product:', error);
@@ -239,13 +241,15 @@ const ProductsSection: React.FC = () => {
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 <span>Actualizar</span>
               </button>
-              <button 
-                onClick={handleCreateProduct}
-                className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Nuevo Producto</span>
-              </button>
+              {hasPermission('products.create') && (
+                <button 
+                  onClick={handleCreateProduct}
+                  className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Nuevo Producto</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -387,20 +391,24 @@ const ProductsSection: React.FC = () => {
                       >
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button 
-                        onClick={() => handleEditProduct(product)}
-                        className="p-1 text-blue-600 hover:text-blue-900" 
-                        title="Editar"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteProduct(product)}
-                        className="p-1 text-red-600 hover:text-red-900" 
-                        title="Eliminar"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {hasPermission('products.edit') && (
+                        <button 
+                          onClick={() => handleEditProduct(product)}
+                          className="p-1 text-blue-600 hover:text-blue-900" 
+                          title="Editar"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                      )}
+                      {hasPermission('products.delete') && (
+                        <button 
+                          onClick={() => handleDeleteProduct(product)}
+                          className="p-1 text-red-600 hover:text-red-900" 
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

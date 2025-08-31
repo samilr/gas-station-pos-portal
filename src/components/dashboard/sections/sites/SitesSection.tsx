@@ -102,25 +102,25 @@ const SitesSection: React.FC = () => {
 
   const handleSaveSite = async (data: any) => {
     try {
-      let success = false;
+      let result;
       
       if (modalMode === 'edit' && selectedSite) {
-        success = await updateSite(selectedSite.site_id, data);
-        if (success) {
+        result = await updateSite(selectedSite.site_id, data);
+        if (result.successful) {
           toast.success('Sucursal actualizada correctamente');
         } else {
-          toast.error('Error al actualizar sucursal');
+          toast.error(result.message || 'Error al actualizar sucursal');
         }
       } else if (modalMode === 'create') {
-        success = await createSite(data);
-        if (success) {
+        result = await createSite(data);
+        if (result.successful) {
           toast.success('Sucursal creada correctamente');
         } else {
-          toast.error('Error al crear sucursal');
+          toast.error(result.message || 'Error al crear sucursal');
         }
       }
       
-      return success;
+      return result?.successful || false;
     } catch (error) {
       console.error('Error saving site:', error);
       toast.error('Error al guardar sucursal');
@@ -133,13 +133,13 @@ const SitesSection: React.FC = () => {
     
     setDeleteLoading(true);
     try {
-      const success = await deleteSite(selectedSite.site_id);
-      if (success) {
+      const result = await deleteSite(selectedSite.site_id);
+      if (result.successful) {
         toast.success('Sucursal eliminada correctamente');
         setShowDeleteDialog(false);
         setSelectedSite(null);
       } else {
-        toast.error('Error al eliminar sucursal');
+        toast.error(result.message || 'Error al eliminar sucursal');
       }
     } catch (error) {
       console.error('Error deleting site:', error);

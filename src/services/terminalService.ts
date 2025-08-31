@@ -1,4 +1,5 @@
 import { buildApiUrl } from "../config/api";
+import { apiGet, apiPost, apiPut, apiDelete, ApiResponse } from "./apiInterceptor";
 
 interface TerminalResponse {
   successful: boolean;
@@ -46,101 +47,25 @@ export interface ITerminal {
   product_list_type: number;
 }
 
-const API_BASE_URL = buildApiUrl(''); 
-
 export const terminalService = {
   async getTerminals(): Promise<TerminalResponse> {
-    try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE_URL}terminals`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: TerminalResponse = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error obteniendo terminales:', error);
-      throw error;
-    }
+    const response = await apiGet<ITerminal[]>(buildApiUrl('terminals'));
+    return {
+      successful: response.successful,
+      data: response.data || []
+    };
   },
 
-  async createTerminal(terminalData: CreateTerminalRequest): Promise<TerminalResponse> {
-    try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE_URL}terminals`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-        body: JSON.stringify(terminalData)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: TerminalResponse = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error creando terminal:', error);
-      throw error;
-    }
+  async createTerminal(terminalData: CreateTerminalRequest): Promise<ApiResponse<ITerminal[]>> {
+    return await apiPost<ITerminal[]>(buildApiUrl('terminals'), terminalData);
   },
 
-  async updateTerminal(siteId: string, terminalId: number, terminalData: UpdateTerminalRequest): Promise<TerminalResponse> {
-    try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE_URL}terminals/${siteId}/${terminalId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-        body: JSON.stringify(terminalData)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: TerminalResponse = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error actualizando terminal:', error);
-      throw error;
-    }
+  async updateTerminal(siteId: string, terminalId: number, terminalData: UpdateTerminalRequest): Promise<ApiResponse<ITerminal[]>> {
+    return await apiPut<ITerminal[]>(buildApiUrl(`terminals/${siteId}/${terminalId}`), terminalData);
   },
 
-  async deleteTerminal(siteId: string, terminalId: number): Promise<TerminalResponse> {
-    try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE_URL}terminals/${siteId}/${terminalId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: TerminalResponse = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error eliminando terminal:', error);
-      throw error;
-    }
+  async deleteTerminal(siteId: string, terminalId: number): Promise<ApiResponse<ITerminal[]>> {
+    return await apiDelete<ITerminal[]>(buildApiUrl(`terminals/${siteId}/${terminalId}`));
   }
 };
 

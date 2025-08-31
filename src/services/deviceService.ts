@@ -1,4 +1,5 @@
 import { buildApiUrl } from "../config/api";
+import { apiGet, apiPost, apiPut, apiDelete, ApiResponse } from "./apiInterceptor";
 
 interface HostResponse {
   successful: boolean;
@@ -44,105 +45,28 @@ export interface IHost {
   active: boolean;
 }
 
-const API_BASE_URL = buildApiUrl(''); 
-
 export const hostService = {
   async getHosts(): Promise<HostResponse> {
-    try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE_URL}hosts`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: HostResponse = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error obteniendo hosts:', error);
-      throw error;
-    }
+    const response = await apiGet<IHost[]>(buildApiUrl('hosts'));
+    return {
+      successful: response.successful,
+      data: response.data || []
+    };
   },
 
-  async createHost(hostData: CreateHostRequest): Promise<HostResponse> {
-    try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE_URL}hosts`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-        body: JSON.stringify(hostData)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: HostResponse = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error creando host:', error);
-      throw error;
-    }
+  async createHost(hostData: CreateHostRequest): Promise<ApiResponse<IHost[]>> {
+    return await apiPost<IHost[]>(buildApiUrl('hosts'), hostData);
   },
 
-  async updateHost(hostId: number, hostData: UpdateHostRequest): Promise<HostResponse> {
-    try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE_URL}hosts/${hostId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-        body: JSON.stringify(hostData)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: HostResponse = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error actualizando host:', error);
-      throw error;
-    }
+  async updateHost(hostId: number, hostData: UpdateHostRequest): Promise<ApiResponse<IHost[]>> {
+    return await apiPut<IHost[]>(buildApiUrl(`hosts/${hostId}`), hostData);
   },
 
-  async deleteHost(hostId: number): Promise<HostResponse> {
-    try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE_URL}hosts/${hostId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: HostResponse = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error eliminando host:', error);
-      throw error;
-    }
+  async deleteHost(hostId: number): Promise<ApiResponse<IHost[]>> {
+    return await apiDelete<IHost[]>(buildApiUrl(`hosts/${hostId}`));
   }
 };
 
-// Mantener compatibilidad con el nombre anterior
-export const deviceService = hostService;
+// Alias para compatibilidad
 export interface IDevice extends IHost {}
 
