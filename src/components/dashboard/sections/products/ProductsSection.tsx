@@ -6,10 +6,13 @@ import { IProduct } from '../../../../types/product';
 import ProductModal from './ProductModal';
 import DeleteProductDialog from './DeleteProductDialog';
 import toast from 'react-hot-toast';
+import { usePermissions } from '../../../../hooks/usePermissions';
+import { PermissionGate } from '../../../common';
 
 const ProductsSection: React.FC = () => {
   const { hasPermission } = useAuth();
   const { products, loading, error, refreshProducts, createProduct, updateProduct, deleteProduct } = useProducts();
+  usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -241,7 +244,7 @@ const ProductsSection: React.FC = () => {
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 <span>Actualizar</span>
               </button>
-              {hasPermission('products.create') && (
+              <PermissionGate permissions={['products.create']}>
                 <button 
                   onClick={handleCreateProduct}
                   className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
@@ -249,7 +252,7 @@ const ProductsSection: React.FC = () => {
                   <Plus className="w-4 h-4" />
                   <span>Nuevo Producto</span>
                 </button>
-              )}
+              </PermissionGate>
             </div>
           </div>
         </div>
@@ -391,7 +394,7 @@ const ProductsSection: React.FC = () => {
                       >
                         <Eye className="w-4 h-4" />
                       </button>
-                      {hasPermission('products.edit') && (
+                      <PermissionGate permissions={['products.edit']}>
                         <button 
                           onClick={() => handleEditProduct(product)}
                           className="p-1 text-blue-600 hover:text-blue-900" 
@@ -399,8 +402,8 @@ const ProductsSection: React.FC = () => {
                         >
                           <Edit className="w-4 h-4" />
                         </button>
-                      )}
-                      {hasPermission('products.delete') && (
+                      </PermissionGate>
+                      <PermissionGate permissions={['products.delete']}>
                         <button 
                           onClick={() => handleDeleteProduct(product)}
                           className="p-1 text-red-600 hover:text-red-900" 
@@ -408,7 +411,7 @@ const ProductsSection: React.FC = () => {
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
-                      )}
+                      </PermissionGate>
                     </div>
                   </td>
                 </tr>

@@ -6,6 +6,8 @@ import { useAuth } from '../../../../context/AuthContext';
 import { IUser } from '../../../../services/userService';
 import DeleteUserDialog from './DeleteUserDialog';
 import UserModal from './UserModal';
+import { usePermissions } from '../../../../hooks/usePermissions';
+import { PermissionGate } from '../../../common';
 
 // Función para formatear fecha de creación de usuario
 const formatUserDate = (dateString: string | Date): { date: string; time: string } => {
@@ -26,6 +28,7 @@ const UsersSection: React.FC = () => {
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
   const { users, loading, error, refreshUsers } = useUsers();
+  const { canViewUsers } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -293,7 +296,7 @@ const UsersSection: React.FC = () => {
                 <RefreshCw className="w-4 h-4" />
                 <span>Actualizar</span>
               </button>
-              {hasPermission('users.create') && (
+              <PermissionGate permissions={['users.create']}>
                 <button 
                   onClick={handleCreateUser}
                   className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
@@ -301,7 +304,7 @@ const UsersSection: React.FC = () => {
                   <Plus className="w-4 h-4" />
                   <span>Nuevo Usuario</span>
                 </button>
-              )}
+              </PermissionGate>
             </div>
           </div>
         </div>
@@ -482,7 +485,7 @@ const UsersSection: React.FC = () => {
                       >
                         <EyeIcon className="w-4 h-4" />
                       </button>
-                      {hasPermission('users.edit') && (
+                      <PermissionGate permissions={['users.edit']}>
                         <button 
                           onClick={() => handleEditUser(user)}
                           className="p-1 text-blue-600 hover:text-blue-900" 
@@ -490,8 +493,8 @@ const UsersSection: React.FC = () => {
                         >
                           <Edit className="w-4 h-4" />
                         </button>
-                      )}
-                      {hasPermission('users.delete') && (
+                      </PermissionGate>
+                      <PermissionGate permissions={['users.delete']}>
                         <button 
                           onClick={() => handleDeleteUser(user)}
                           className="p-1 text-red-600 hover:text-red-900" 
@@ -499,7 +502,7 @@ const UsersSection: React.FC = () => {
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
-                      )}
+                      </PermissionGate>
                     </div>
                   </td>
                 </tr>

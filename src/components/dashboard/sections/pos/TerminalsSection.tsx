@@ -5,6 +5,8 @@ import DeleteTerminalDialog from './DeleteTerminalDialog';
 import { useTerminals } from '../../../../hooks/useTerminals';
 import { useAuth } from '../../../../context/AuthContext';
 import { ITerminal } from '../../../../services/terminalService';
+import { usePermissions } from '../../../../hooks/usePermissions';
+import { PermissionGate } from '../../../common';
 
 // Función para formatear fecha de conexión de terminal
 const formatTerminalDate = (dateString: string | Date): { date: string; time: string } => {
@@ -24,6 +26,7 @@ const formatTerminalDate = (dateString: string | Date): { date: string; time: st
 const TerminalsSection: React.FC = () => {
   const { hasPermission } = useAuth();
   const { terminals, loading, error, refreshTerminals } = useTerminals();
+  usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [siteFilter, setSiteFilter] = useState('');
@@ -238,7 +241,7 @@ const TerminalsSection: React.FC = () => {
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 <span>Actualizar</span>
               </button>
-              {hasPermission('terminals.create') && (
+              <PermissionGate permissions={['terminals.create']}>
                 <button 
                   onClick={handleCreateTerminal}
                   className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
@@ -246,7 +249,7 @@ const TerminalsSection: React.FC = () => {
                   <Plus className="w-4 h-4" />
                   <span>Nueva Terminal</span>
                 </button>
-              )}
+              </PermissionGate>
             </div>
           </div>
         </div>
@@ -385,7 +388,7 @@ const TerminalsSection: React.FC = () => {
                       >
                         <Eye className="w-4 h-4" />
                       </button>
-                      {hasPermission('terminals.edit') && (
+                      <PermissionGate permissions={['terminals.edit']}>
                         <button 
                           onClick={() => handleEditTerminal(terminal)}
                           className="p-1 text-blue-600 hover:text-blue-900" 
@@ -393,8 +396,8 @@ const TerminalsSection: React.FC = () => {
                         >
                           <Edit className="w-4 h-4" />
                         </button>
-                      )}
-                      {hasPermission('terminals.delete') && (
+                      </PermissionGate>
+                      <PermissionGate permissions={['terminals.delete']}>
                         <button 
                           onClick={() => handleDeleteTerminal(terminal)}
                           className="p-1 text-red-600 hover:text-red-900" 
@@ -402,7 +405,7 @@ const TerminalsSection: React.FC = () => {
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
-                      )}
+                      </PermissionGate>
                     </div>
                   </td>
                 </tr>

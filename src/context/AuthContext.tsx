@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authService } from '../services/authService';
+import { ROLE_PERMISSIONS, hasPermission, hasAnyPermission, hasAllPermissions } from '../config/permissions';
 
 // Mapeo de roles de la API a roles del proyecto
 const ROLE_MAPPING = {
@@ -7,90 +8,6 @@ const ROLE_MAPPING = {
   'MANAGER': 'MANAGER',
   'SUPERVISOR': 'SUPERVISOR',
   'AUDITOR': 'AUDITOR'
-} as const;
-
-// Permisos por rol
-const ROLE_PERMISSIONS = {
-  'ADMIN': [
-    // Usuarios
-    'users.view', 'users.create', 'users.edit', 'users.delete',
-    // Analytics y Transacciones
-    'analytics.view', 'transactions.view', 'transactions.edit',
-    // Base de datos y Seguridad
-    'database.view', 'database.edit', 'security.view', 'security.edit',
-    // Reportes y Notificaciones
-    'reports.view', 'reports.create', 'notifications.view', 'notifications.edit',
-    // Configuración
-    'settings.view', 'settings.edit',
-    // Productos
-    'products.view', 'products.create', 'products.edit', 'products.delete',
-    // Sitios
-    'sites.view', 'sites.create', 'sites.edit', 'sites.delete',
-    // Terminales
-    'terminals.view', 'terminals.create', 'terminals.edit', 'terminals.delete',
-    // Dispositivos
-    'devices.view', 'devices.create', 'devices.edit', 'devices.delete',
-    // Logs
-    'logs.view', 'actionlogs.view', 'errorlogs.view'
-  ],
-  'MANAGER': [
-    // Usuarios
-    'users.view', 'users.create', 'users.edit',
-    // Analytics y Transacciones
-    'analytics.view', 'transactions.view', 'transactions.edit', 
-    // Reportes y Notificaciones
-    'reports.view', 'reports.create', 'notifications.view',
-    // Productos
-    'products.view', 'products.create', 'products.edit',
-    // Sitios
-    'sites.view', 'sites.create', 'sites.edit',
-    // Terminales
-    'terminals.view', 'terminals.create', 'terminals.edit',
-    // Dispositivos
-    'devices.view', 'devices.create', 'devices.edit',
-    // Logs
-    'logs.view', 'actionlogs.view', 'errorlogs.view'
-  ],
-  'SUPERVISOR': [
-    // Usuarios
-    'users.view', 'users.create', 'users.edit',
-    // Analytics y Transacciones
-    'analytics.view', 'transactions.view', 'transactions.edit',
-    // Reportes y Notificaciones
-    'reports.view', 'reports.create',
-    // Productos
-    'products.view', 'products.create', 'products.edit',
-    // Sitios
-    'sites.view', 'sites.create', 'sites.edit',
-    // Terminales
-    'terminals.view', 'terminals.create', 'terminals.edit',
-    // Dispositivos
-    'devices.view', 'devices.create', 'devices.edit',
-    // Logs
-    'logs.view', 'actionlogs.view', 'errorlogs.view'
-  ],
-  'AUDITOR': [
-    // Usuarios
-    'users.view', 'users.create', 'users.edit', 'users.delete',
-    // Analytics y Transacciones
-    'analytics.view', 'transactions.view', 'transactions.edit',
-    // Base de datos y Seguridad
-    'database.view', 'database.edit', 'security.view', 'security.edit',
-    // Reportes y Notificaciones
-    'reports.view', 'reports.create', 'notifications.view', 'notifications.edit',
-    // Configuración
-    'settings.view', 'settings.edit',
-    // Productos
-    'products.view', 'products.create', 'products.edit', 'products.delete',
-    // Sitios
-    'sites.view', 'sites.create', 'sites.edit', 'sites.delete',
-    // Terminales
-    'terminals.view', 'terminals.create', 'terminals.edit', 'terminals.delete',
-    // Dispositivos
-    'devices.view', 'devices.create', 'devices.edit', 'devices.delete',
-    // Logs
-    'logs.view', 'actionlogs.view', 'errorlogs.view'
-  ]
 } as const;
 
 interface User {
@@ -234,8 +151,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const hasPermission = (permission: string): boolean => {
-    return user?.permissions.includes(permission) || false;
+  const checkPermission = (permission: string): boolean => {
+    if (!user) return false;
+    return hasPermission(user.role as any, permission as any);
   };
 
   const isTokenExpired = (): boolean => {
@@ -252,7 +170,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     isAuthenticated: !!user,
     isLoading,
-    hasPermission,
+    hasPermission: checkPermission,
     isTokenExpired
   };
 

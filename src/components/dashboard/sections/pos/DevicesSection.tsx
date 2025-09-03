@@ -5,6 +5,8 @@ import DeleteDeviceDialog from './DeleteDeviceDialog';
 import { useDevices } from '../../../../hooks/useDevices';
 import { useAuth } from '../../../../context/AuthContext';
 import { IHost } from '../../../../services/deviceService';
+import { usePermissions } from '../../../../hooks/usePermissions';
+import { PermissionGate } from '../../../common';
 
 // Función para formatear fecha de conexión
 const formatConnectionDate = (dateString: string | Date | undefined): { date: string; time: string } | null => {
@@ -25,6 +27,7 @@ const formatConnectionDate = (dateString: string | Date | undefined): { date: st
 const DevicesSection: React.FC = () => {
   const { hasPermission } = useAuth();
   const { devices, loading, error, refreshDevices } = useDevices();
+  usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [siteFilter, setSiteFilter] = useState('');
@@ -237,7 +240,7 @@ const DevicesSection: React.FC = () => {
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 <span>Actualizar</span>
               </button>
-              {hasPermission('devices.create') && (
+              <PermissionGate permissions={['devices.create']}>
                 <button 
                   onClick={handleCreateDevice}
                   className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
@@ -245,7 +248,7 @@ const DevicesSection: React.FC = () => {
                   <Plus className="w-4 h-4" />
                   <span>Nuevo Dispositivo</span>
                 </button>
-              )}
+              </PermissionGate>
             </div>
           </div>
         </div>
@@ -398,7 +401,7 @@ const DevicesSection: React.FC = () => {
                       >
                         <Eye className="w-4 h-4" />
                       </button>
-                      {hasPermission('devices.edit') && (
+                      <PermissionGate permissions={['devices.edit']}>
                         <button 
                           onClick={() => handleEditDevice(device)}
                           className="p-1 text-blue-600 hover:text-blue-900" 
@@ -406,8 +409,8 @@ const DevicesSection: React.FC = () => {
                         >
                           <Edit className="w-4 h-4" />
                         </button>
-                      )}
-                      {hasPermission('devices.delete') && (
+                      </PermissionGate>
+                      <PermissionGate permissions={['devices.delete']}>
                         <button 
                           onClick={() => handleDeleteDevice(device)}
                           className="p-1 text-red-600 hover:text-red-900" 
@@ -415,7 +418,7 @@ const DevicesSection: React.FC = () => {
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
-                      )}
+                      </PermissionGate>
                     </div>
                   </td>
                 </tr>

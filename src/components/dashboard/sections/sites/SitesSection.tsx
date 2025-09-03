@@ -21,6 +21,8 @@ import { ISite } from "../../../../types/site";
 import SiteModal from "./SiteModal";
 import DeleteSiteDialog from "./DeleteSiteDialog";
 import toast from "react-hot-toast";
+import { usePermissions } from "../../../../hooks/usePermissions";
+import { PermissionGate } from "../../../common";
 
 const SitesSection: React.FC = () => {
   const {
@@ -32,6 +34,7 @@ const SitesSection: React.FC = () => {
     updateSite,
     deleteSite,
   } = useSites();
+  usePermissions();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [posFilter, setPosFilter] = useState("");
@@ -292,13 +295,15 @@ const SitesSection: React.FC = () => {
                 />
                 <span>Actualizar</span>
               </button>
-              <button
-                onClick={handleCreateSite}
-                className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Nueva Sucursal</span>
-              </button>
+              <PermissionGate permissions={['sites.create']}>
+                <button
+                  onClick={handleCreateSite}
+                  className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Nueva Sucursal</span>
+                </button>
+              </PermissionGate>
             </div>
           </div>
         </div>
@@ -468,20 +473,24 @@ const SitesSection: React.FC = () => {
                       >
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button
-                        onClick={() => handleEditSite(site)}
-                        className="p-1 text-blue-600 hover:text-blue-900"
-                        title="Editar"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteSite(site)}
-                        className="p-1 text-red-600 hover:text-red-900"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <PermissionGate permissions={['sites.edit']}>
+                        <button
+                          onClick={() => handleEditSite(site)}
+                          className="p-1 text-blue-600 hover:text-blue-900"
+                          title="Editar"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                      </PermissionGate>
+                      <PermissionGate permissions={['sites.delete']}>
+                        <button
+                          onClick={() => handleDeleteSite(site)}
+                          className="p-1 text-red-600 hover:text-red-900"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </PermissionGate>
                     </div>
                   </td>
                 </tr>

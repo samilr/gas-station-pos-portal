@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { User, Mail, Shield, Building, Save, X, Eye, EyeOff, Edit, UserPlus } from 'lucide-react';
 import { userService, IUser } from '../../../../services/userService';
 import toast from 'react-hot-toast';
+import { usePermissions } from '../../../../hooks/usePermissions';
+import { PermissionGate } from '../../../common';
 
 interface UserFormData {
   username: string;
@@ -57,6 +59,7 @@ interface UserModalProps {
 }
 
 const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSuccess }) => {
+  const { canEditUsers, isAdmin } = usePermissions();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<UserFormData>({
@@ -469,9 +472,9 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
                     value={formData.role}
                     onChange={handleInputChange}
                     required
-                    disabled={isViewing}
+                    disabled={isViewing || !canEditUsers}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      isViewing ? 'bg-gray-100 cursor-not-allowed' : ''
+                      isViewing || !canEditUsers ? 'bg-gray-100 cursor-not-allowed' : ''
                     }`}
                   >
                     <option value="1">ADMIN</option>
@@ -480,6 +483,11 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
                     <option value="4">MANAGER</option>
                     <option value="5">SELLER</option>
                   </select>
+                  {!canEditUsers && !isViewing && (
+                    <p className="text-xs text-red-500 mt-1">
+                      Solo usuarios ADMIN o MANAGER pueden cambiar roles
+                    </p>
+                  )}
                 </div>
                 
                                  <div>

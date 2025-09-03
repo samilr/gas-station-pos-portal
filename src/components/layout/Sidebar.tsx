@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useNavigation } from '../../hooks/useNavigation';
 import { LayoutDashboard, Users, Settings, BarChart3, Database, Shield, FileText, Bell, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, UserPlus, UserCheck, UserX, TrendingUp, PieChart, Activity, Server, HardDrive, DatabaseBackup as Backup, Lock, Key, AlertTriangle, FileBarChart, Download, Upload, Mail, MessageSquare, Sliders, Globe, Palette, CreditCard, Receipt, DollarSign, TrendingDown, Package, Monitor, Smartphone, Building2, FuelIcon, Store } from 'lucide-react';
+import { usePermissions } from '../../hooks/usePermissions';
 
 interface SidebarProps {
   activeSection: string;
@@ -23,6 +24,7 @@ interface MenuItem {
   label: string;
   icon: any;
   permission?: string;
+  categoryPermission?: string; // Permiso para mostrar toda la categoría
   subItems?: SubMenuItem[];
 }
 
@@ -31,28 +33,6 @@ const menuItems: MenuItem[] = [
     id: 'dashboard', 
     label: 'Dashboard', 
     icon: LayoutDashboard 
-  },
-  { 
-    id: 'users', 
-    label: 'Usuarios', 
-    icon: Users,
-    permission: 'users.view',
-    subItems: [
-      { id: 'users.list', label: 'Lista de Usuarios', icon: Users, permission: 'users.view' },
-      { id: 'users.active', label: 'Usuarios Activos', icon: UserCheck, permission: 'users.view' },
-      { id: 'users.inactive', label: 'Usuarios Inactivos', icon: UserX, permission: 'users.view' },
-    ]
-  },
-  { 
-    id: 'analytics', 
-    label: 'Analytics', 
-    icon: BarChart3,
-    permission: 'analytics.view',
-    subItems: [
-      { id: 'analytics.overview', label: 'Vista General', icon: TrendingUp, permission: 'analytics.view' },
-      { id: 'analytics.charts', label: 'Gráficos', icon: PieChart, permission: 'analytics.view' },
-      { id: 'analytics.realtime', label: 'Tiempo Real', icon: Activity, permission: 'analytics.view' },
-    ]
   },
   { 
     id: 'transactions', 
@@ -66,6 +46,19 @@ const menuItems: MenuItem[] = [
       { id: 'transactions.refunds', label: 'Zataca', icon: Smartphone, permission: 'transactions.edit' },
     ]
   },
+  
+  { 
+    id: 'analytics', 
+    label: 'Analytics', 
+    icon: BarChart3,
+    permission: 'analytics.view',
+    subItems: [
+      { id: 'analytics.overview', label: 'Vista General', icon: TrendingUp, permission: 'analytics.view' },
+      { id: 'analytics.charts', label: 'Gráficos', icon: PieChart, permission: 'analytics.view' },
+      { id: 'analytics.realtime', label: 'Tiempo Real', icon: Activity, permission: 'analytics.view' },
+    ]
+  },
+ 
   { 
     id: 'products', 
     label: 'Productos', 
@@ -82,9 +75,21 @@ const menuItems: MenuItem[] = [
     label: 'Puntos de Venta', 
     icon: Monitor,
     permission: 'terminals.view',
+    categoryPermission: 'pos.view', // Solo ADMIN, MANAGER y SUPERVISOR pueden ver esta categoría
     subItems: [
       { id: 'pos.terminals', label: 'Terminales', icon: Monitor, permission: 'terminals.view' },
       { id: 'pos.devices', label: 'Dispositivos', icon: Smartphone, permission: 'devices.view' },
+    ]
+  },
+  { 
+    id: 'users', 
+    label: 'Usuarios', 
+    icon: Users,
+    permission: 'users.view',
+    subItems: [
+      { id: 'users.list', label: 'Lista de Usuarios', icon: Users, permission: 'users.view' },
+      { id: 'users.active', label: 'Usuarios Activos', icon: UserCheck, permission: 'users.view' },
+      { id: 'users.inactive', label: 'Usuarios Inactivos', icon: UserX, permission: 'users.view' },
     ]
   },
   { 
@@ -101,6 +106,7 @@ const menuItems: MenuItem[] = [
     label: 'Registros', 
     icon: FileText,
     permission: 'logs.view',
+    categoryPermission: 'logs.view', // Solo ADMIN y AUDITOR pueden ver esta categoría
     subItems: [
       { id: 'logs.actions', label: 'Actions Log', icon: Activity, permission: 'logs.view' },
       { id: 'logs.errors', label: 'Error Log', icon: AlertTriangle, permission: 'logs.view' },
@@ -111,6 +117,7 @@ const menuItems: MenuItem[] = [
     label: 'Base de Datos', 
     icon: Database,
     permission: 'database.view',
+    categoryPermission: 'database.view', // Solo ADMIN puede ver esta categoría
     subItems: [
       { id: 'database.connections', label: 'Conexiones', icon: Server, permission: 'database.view' },
       { id: 'database.tables', label: 'Tablas', icon: HardDrive, permission: 'database.view' },
@@ -122,6 +129,7 @@ const menuItems: MenuItem[] = [
     label: 'Seguridad', 
     icon: Shield,
     permission: 'security.view',
+    categoryPermission: 'security.view', // Solo ADMIN puede ver esta categoría
     subItems: [
       { id: 'security.permissions', label: 'Permisos', icon: Lock, permission: 'security.view' },
       { id: 'security.keys', label: 'API Keys', icon: Key, permission: 'security.edit' },
@@ -133,6 +141,7 @@ const menuItems: MenuItem[] = [
     label: 'Reportes', 
     icon: FileText,
     permission: 'reports.view',
+    categoryPermission: 'reports.view', // Solo ADMIN, MANAGER y SUPERVISOR pueden ver esta categoría
     subItems: [
       { id: 'reports.analytics', label: 'Reportes Analytics', icon: FileBarChart, permission: 'reports.view' },
       { id: 'reports.export', label: 'Exportar Datos', icon: Download, permission: 'reports.create' },
@@ -144,6 +153,7 @@ const menuItems: MenuItem[] = [
     label: 'Notificaciones', 
     icon: Bell,
     permission: 'notifications.view',
+    categoryPermission: 'notifications.view', // Solo ADMIN y MANAGER pueden ver esta categoría
     subItems: [
       { id: 'notifications.email', label: 'Email', icon: Mail, permission: 'notifications.view' },
       { id: 'notifications.push', label: 'Push', icon: MessageSquare, permission: 'notifications.edit' },
@@ -154,6 +164,7 @@ const menuItems: MenuItem[] = [
     label: 'Configuración', 
     icon: Settings,
     permission: 'settings.view',
+    categoryPermission: 'settings.view', // Solo ADMIN puede ver esta categoría
     subItems: [
       { id: 'settings.general', label: 'General', icon: Sliders, permission: 'settings.view' },
       { id: 'settings.api', label: 'API Config', icon: Globe, permission: 'settings.edit' },
@@ -186,9 +197,16 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  const filteredMenuItems = menuItems.filter(item => 
-    !item.permission || hasPermission(item.permission)
-  );
+  const { can } = usePermissions();
+  
+  const filteredMenuItems = menuItems.filter(item => {
+    // Verificar permiso de categoría primero
+    if (item.categoryPermission && !can(item.categoryPermission as any)) {
+      return false;
+    }
+    // Luego verificar permiso individual
+    return !item.permission || hasPermission(item.permission);
+  });
 
   const getFilteredSubItems = (subItems?: SubMenuItem[]) => {
     return subItems?.filter(subItem => 
