@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { LogOut, User, Bell } from 'lucide-react';
+import { LogOut, User, Bell, AlertCircle, Loader2, ChevronDown } from 'lucide-react';
 
 interface HeaderProps {
   activeSection: string;
@@ -8,6 +8,38 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ activeSection }) => {
   const { user, logout } = useAuth();
+  const [showLogoutMenu, setShowLogoutMenu] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const logoutMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (logoutMenuRef.current && !logoutMenuRef.current.contains(event.target as Node)) {
+        setShowLogoutMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleLogoutClick = () => {
+    setShowLogoutMenu(!showLogoutMenu);
+  };
+
+  const handleConfirmLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    } finally {
+      setIsLoggingOut(false);
+      setShowLogoutMenu(false);
+    }
+  };
 
   const getSectionTitle = (section: string) => {
     const titles: { [key: string]: string } = {
@@ -99,13 +131,63 @@ const Header: React.FC<HeaderProps> = ({ activeSection }) => {
               </div>
             </div>
 
-            <button
-              onClick={logout}
-              className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="text-sm">Salir</span>
-            </button>
+            <div className="relative">
+              <button
+                onClick={handleLogoutClick}
+                disabled={isLoggingOut}
+                className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoggingOut ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <LogOut className="w-4 h-4" />
+                )}
+                <span className="text-sm">
+                  {isLoggingOut ? 'Cerrando sesión...' : 'Salir'}
+                </span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${showLogoutMenu ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showLogoutMenu && (
+                <div
+                  ref={logoutMenuRef}
+                  className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-xl z-10"
+                >
+                  <div className="p-4">
+                    <div className="flex items-center mb-3">
+                      <AlertCircle className="w-5 h-5 text-amber-500 mr-2" />
+                      <span className="text-sm font-medium text-gray-900">Confirmar salida</span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-4">
+                      ¿Deseas cerrar tu sesión en el sistema?
+                    </p>
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={() => setShowLogoutMenu(false)}
+                        disabled={isLoggingOut}
+                        className="flex-1 px-3 py-2 text-sm text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={handleConfirmLogout}
+                        disabled={isLoggingOut}
+                        className="flex-1 px-3 py-2 text-sm text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {isLoggingOut ? (
+                          <>
+                            <Loader2 className="inline mr-2 h-4 w-4 animate-spin" />
+                            Cerrando...
+                          </>
+                        ) : (
+                          'Confirmar'
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

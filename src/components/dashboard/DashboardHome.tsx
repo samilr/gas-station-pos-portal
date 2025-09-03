@@ -22,9 +22,20 @@ import { formatCurrency, formatNumber, formatRelativeTime, getStatusColor, getAc
 import DashboardChart from './DashboardChart';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { formatDateTimeToSantoDomingo, formatDateToSantoDomingo } from '../../utils/dateUtils';
 
 const DashboardHome: React.FC = () => {
-  const navigate = useNavigate();
+  let navigate: any;
+  
+  try {
+    navigate = useNavigate();
+  } catch (error) {
+    // Fallback si useNavigate no está disponible
+    navigate = (path: string) => {
+      window.location.href = path;
+    };
+  }
+  
   const { user } = useAuth();
   const {
     totalUsers,
@@ -310,7 +321,7 @@ const DashboardHome: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Transacciones Recientes</h3>
-            <span className="text-sm text-gray-500">{recentTransactions.length} transacciones</span>
+            <span className="text-sm text-gray-500">Últimas {recentTransactions.length} transacciones</span>
           </div>
           <div className="space-y-3">
             {recentTransactions.length > 0 ? (
@@ -360,7 +371,7 @@ const DashboardHome: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Actividad Reciente</h3>
-            <span className="text-sm text-gray-500">{recentActions.length} acciones</span>
+            <span className="text-sm text-gray-500">Últimas {recentActions.length} acciones</span>
           </div>
           <div className="space-y-3">
             {recentActions.length > 0 ? (
@@ -379,7 +390,7 @@ const DashboardHome: React.FC = () => {
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-gray-500">
-                      {action.created_at ? formatRelativeTime(action.created_at) : 'Reciente'}
+                      {action.created_at ? formatRelativeTime(formatDateTimeToSantoDomingo(action.created_at)) : 'Reciente'}
                     </p>
                   </div>
                 </div>

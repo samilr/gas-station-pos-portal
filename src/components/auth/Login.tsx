@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
+import ForgotPassword from './ForgotPassword';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,6 +29,15 @@ const Login: React.FC = () => {
     }
   };
 
+  const handleBackToLogin = () => {
+    setShowForgotPassword(false);
+    setError('');
+  };
+
+  if (showForgotPassword) {
+    return <ForgotPassword onBackToLogin={handleBackToLogin} />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
       <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8">
@@ -34,7 +45,7 @@ const Login: React.FC = () => {
           <div className="mx-auto w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
             <LogIn className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Portal Administrativo</h1>
+          <h1 className="text-2xl font-bold text-gray-900">PORTAL MAGIC CLOUD</h1>
           <p className="text-gray-600 mt-2">Ingresa tus credenciales para continuar</p>
         </div>
 
@@ -75,6 +86,17 @@ const Login: React.FC = () => {
             </div>
           </div>
 
+          {/* Botón de olvidar contraseña */}
+          <div className="text-right">
+            <button
+              type="button"
+              onClick={() => setShowForgotPassword(true)}
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          </div>
+
           {error && (
             <div className="flex items-center space-x-2 text-red-600 bg-red-50 p-3 rounded-lg">
               <AlertCircle className="w-5 h-5" />
@@ -91,14 +113,18 @@ const Login: React.FC = () => {
           </button>
         </form>
 
+        {/*  
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
-            <strong>Credenciales Demo:</strong><br/>
+            <strong>ISLA DOMINICANA DE PETROLEO CORPORATION</strong><br/>
             Super Admin: admin@portal.com / admin123<br/>
-            Editor: editor@portal.com / editor123<br/>
-            Viewer: viewer@portal.com / viewer123
+                    ADMIN: admin@portal.com / admin123<br/>
+        MANAGER: manager@portal.com / manager123<br/>
+        SUPERVISOR: supervisor@portal.com / supervisor123<br/>
+        AUDITOR: auditor@portal.com / auditor123
           </p>
         </div>
+        */}
       </div>
     </div>
   );

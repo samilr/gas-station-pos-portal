@@ -3,11 +3,10 @@ import { authService } from '../services/authService';
 
 // Mapeo de roles de la API a roles del proyecto
 const ROLE_MAPPING = {
-  'ADMIN': 'Super Admin',
-  'SELLER': 'Viewer',
-  'MANAGER': 'Editor',
-  'SUPERVISOR': 'Supervisor',
-  'CONFIGURATION': 'Configuration'
+  'ADMIN': 'ADMIN',
+  'MANAGER': 'MANAGER',
+  'SUPERVISOR': 'SUPERVISOR',
+  'AUDITOR': 'AUDITOR'
 } as const;
 
 // Permisos por rol
@@ -33,9 +32,6 @@ const ROLE_PERMISSIONS = {
     'devices.view', 'devices.create', 'devices.edit', 'devices.delete',
     // Logs
     'logs.view', 'actionlogs.view', 'errorlogs.view'
-  ],
-  'SELLER': [
-    'analytics.view', 'reports.view', 'products.view'
   ],
   'MANAGER': [
     // Usuarios
@@ -73,11 +69,19 @@ const ROLE_PERMISSIONS = {
     // Logs
     'logs.view', 'actionlogs.view', 'errorlogs.view'
   ],
-  'CONFIGURATION': [
-    // Configuración
-    'settings.view', 'settings.edit',
+  'AUDITOR': [
+    // Usuarios
+    'users.view', 'users.create', 'users.edit', 'users.delete',
+    // Analytics y Transacciones
+    'analytics.view', 'transactions.view', 'transactions.edit',
     // Base de datos y Seguridad
     'database.view', 'database.edit', 'security.view', 'security.edit',
+    // Reportes y Notificaciones
+    'reports.view', 'reports.create', 'notifications.view', 'notifications.edit',
+    // Configuración
+    'settings.view', 'settings.edit',
+    // Productos
+    'products.view', 'products.create', 'products.edit', 'products.delete',
     // Sitios
     'sites.view', 'sites.create', 'sites.edit', 'sites.delete',
     // Terminales

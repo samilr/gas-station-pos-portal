@@ -27,6 +27,13 @@ export const formatDateToSantoDomingo = (dateString: string | Date): { date: str
   return { date: dateFormatted, time: timeFormatted };
 };
 
+export const formatDateTimeToSantoDomingo = (dateString: string | Date): Date => {
+  // Crear fecha UTC y convertir a hora local de Santo Domingo (UTC-4)
+  const utcDate = new Date(dateString);
+  const santoDomingoDate = new Date(utcDate.getTime() - (4 * 60 * 60 * 1000)); // Restar 4 horas
+  return santoDomingoDate;
+};
+
 /**
  * Convierte una fecha UTC a hora local de Santo Domingo y retorna solo la fecha
  * @param dateString - Fecha en formato string o Date

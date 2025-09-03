@@ -295,7 +295,8 @@ class PDFService {
     currentY += 4.5;
     doc.text(`Telefono: (809) 565-7756`, margin, currentY);
     currentY += 4.5;
-    doc.text(`Fecha Emisión: ${new Date(transactionData.transDate).toLocaleDateString('es-DO')}`, margin, currentY);
+    doc.text(`Fecha: ${new Date(transactionData.transDate).toLocaleDateString('es-DO')} ${new Date(transactionData.transDate).toLocaleTimeString('es-DO')}`, margin, currentY);
+
 
     // Información de la transacción (derecha)
     const rightColX = pageWidth - margin;

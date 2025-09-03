@@ -21,7 +21,8 @@ import {
   Building2,
   FileX,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Undo2
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import toast from 'react-hot-toast';
@@ -29,6 +30,7 @@ import { Dialog } from '@headlessui/react';
 import { useTransactions } from '../../../../hooks/useTransactions';
 import { transactionService } from '../../../../services/transactionService';
 import pdfService from '../../../../services/pdfService';
+import { useAuth } from '../../../../context/AuthContext';
 import { 
   getStatusText, 
   getStatusColor, 
@@ -122,6 +124,10 @@ const TransactionsSection: React.FC = () => {
   const [isReversing, setIsReversing] = useState(false);
   const [showReverseDialog, setShowReverseDialog] = useState(false);
   const [transactionToReverse, setTransactionToReverse] = useState<string | null>(null);
+  const { user } = useAuth();
+  
+  // Verificar si el usuario puede reversar transacciones (solo ADMIN o AUDITOR)
+  const canReverseTransaction = user?.role === 'ADMIN' || user?.role === 'AUDITOR';
   
   const {
     transactions,
@@ -980,22 +986,28 @@ const TransactionsSection: React.FC = () => {
 
             {/* Modal Footer */}
             <div className="flex justify-between items-center p-6 border-t border-gray-200">
-              <button
-                onClick={() => handleReverseTransaction(selectedTransaction.transNumber)}
-                disabled={isReversing}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg transition-colors flex items-center space-x-2"
-              >
-                {isReversing ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Reversando...</span>
-                  </>
-                ) : (
-                  <span>Reversar Transacción</span>
-                )}
-              </button>
+              {/* Botón de Reversar - Solo visible para ADMIN o AUDITOR */}
+              {canReverseTransaction && (
+                <button
+                  onClick={() => handleReverseTransaction(selectedTransaction.transNumber)}
+                  disabled={isReversing}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg transition-colors flex items-center space-x-2"
+                >
+                  {isReversing ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Reversando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Undo2 className="w-4 h-4" />
+                      <span>Reversar Transacción</span>
+                    </>
+                  )}
+                </button>
+              )}
               
-              <div className="flex space-x-3">
+              <div className={`flex space-x-3 ${!canReverseTransaction ? 'ml-auto' : ''}`}>
                 <button
                   onClick={() => setSelectedTransaction(null)}
                   className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"

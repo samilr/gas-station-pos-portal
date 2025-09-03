@@ -62,6 +62,8 @@ export const getActionIcon = (action: string): string => {
     return '🗑️';
   } else if (actionLower.includes('export') || actionLower.includes('exportar')) {
     return '📤';
+  } else if (actionLower.includes('Consulta') || actionLower.includes('Consulta')) {
+    return '🔍';
   } else if (actionLower.includes('import') || actionLower.includes('importar')) {
     return '📥';
   } else {

@@ -66,8 +66,9 @@ const UsersSection: React.FC = () => {
   const getRoleColor = (role: string) => {
     switch (role.toLowerCase()) {
       case 'admin': return 'bg-purple-100 text-purple-800';
-      case 'editor': return 'bg-blue-100 text-blue-800';
-      case 'viewer': return 'bg-gray-100 text-gray-800';
+          case 'MANAGER': return 'bg-blue-100 text-blue-800';
+    case 'SUPERVISOR': return 'bg-green-100 text-green-800';
+    case 'AUDITOR': return 'bg-purple-100 text-purple-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -318,9 +319,10 @@ const UsersSection: React.FC = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">Todos los roles</option>
-                  <option value="admin">Admin</option>
-                  <option value="editor">Editor</option>
-                  <option value="viewer">Viewer</option>
+                                  <option value="ADMIN">ADMIN</option>
+                <option value="MANAGER">MANAGER</option>
+                <option value="SUPERVISOR">SUPERVISOR</option>
+                <option value="AUDITOR">AUDITOR</option>
                 </select>
               </div>
 

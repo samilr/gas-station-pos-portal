@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useNavigation } from '../../hooks/useNavigation';
-import { LayoutDashboard, Users, Settings, BarChart3, Database, Shield, FileText, Bell, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, UserPlus, UserCheck, UserX, TrendingUp, PieChart, Activity, Server, HardDrive, DatabaseBackup as Backup, Lock, Key, AlertTriangle, FileBarChart, Download, Upload, Mail, MessageSquare, Sliders, Globe, Palette, CreditCard, Receipt, DollarSign, TrendingDown, Package, Monitor, Smartphone, Building2 } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, BarChart3, Database, Shield, FileText, Bell, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, UserPlus, UserCheck, UserX, TrendingUp, PieChart, Activity, Server, HardDrive, DatabaseBackup as Backup, Lock, Key, AlertTriangle, FileBarChart, Download, Upload, Mail, MessageSquare, Sliders, Globe, Palette, CreditCard, Receipt, DollarSign, TrendingDown, Package, Monitor, Smartphone, Building2, FuelIcon, Store } from 'lucide-react';
 
 interface SidebarProps {
   activeSection: string;
@@ -60,9 +60,10 @@ const menuItems: MenuItem[] = [
     icon: CreditCard,
     permission: 'transactions.view',
     subItems: [
-      { id: 'transactions.list', label: 'Lista de Ventas', icon: Receipt, permission: 'transactions.view' },
-      { id: 'transactions.revenue', label: 'Ingresos', icon: DollarSign, permission: 'transactions.view' },
-      { id: 'transactions.refunds', label: 'Reembolsos', icon: TrendingDown, permission: 'transactions.edit' },
+      { id: 'transactions.list', label: 'Ventas en general', icon: Receipt, permission: 'transactions.view' },
+      { id: 'transactions.list', label: 'Productos de Pista', icon: Store, permission: 'transactions.view' },
+      { id: 'transactions.revenue', label: 'Comprobantes NCF', icon: FuelIcon, permission: 'transactions.view' },
+      { id: 'transactions.refunds', label: 'Zataca', icon: Smartphone, permission: 'transactions.edit' },
     ]
   },
   { 
@@ -170,7 +171,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const { hasPermission, user } = useAuth();
   const navigate = useNavigate();
   const { routeMap } = useNavigation();
-  const [expandedItem, setExpandedItem] = useState<string | null>('users');
+  const [expandedItem, setExpandedItem] = useState<string | null>(null);
 
   const toggleExpanded = (itemId: string) => {
     setExpandedItem(prev => 
