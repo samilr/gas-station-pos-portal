@@ -121,10 +121,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (response.data.accessToken) {
           localStorage.setItem('authToken', response.data.accessToken);
         }
-        
-        // Guardar información de expiración si está disponible
+
         if (response.data.expiresIn) {
-          localStorage.setItem('tokenExpiresIn', response.data.expiresIn.toISOString());
+          localStorage.setItem('tokenExpiresIn', response.data.expiresIn.toString());
         }
         
         localStorage.setItem('adminUser', JSON.stringify(userData));

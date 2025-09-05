@@ -205,12 +205,6 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
   // Cargar datos del usuario cuando se abre el modal para editar o ver
   useEffect(() => {
     if (user && isOpen && (isEditing || isViewing)) {
-      console.log('Usuario cargado:', user);
-      console.log('Role ID:', user.role_id);
-      console.log('Role:', user.role);
-      console.log('Staft Group:', user.staft_group);
-      console.log('Active:', user.active);
-      console.log('Portal Access:', user.portal_access);
       
               const mappedFormData = {
           username: user.username || '',
@@ -226,13 +220,6 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
           active: user.active,
           portal_access: user.portal_access ? 1 : 0
         };
-        
-        console.log('FormData mapeado:', mappedFormData);
-        console.log('Role mapeado:', getRoleIdFromString(user.role || ''));
-        console.log('Grupo mapeado:', getGroupId(user.staft_group || ''));
-        console.log('Active original:', user.active, 'tipo:', typeof user.active);
-        console.log('Active mapeado:', user.active);
-        console.log('Portal Access mapeado:', user.portal_access ? 1 : 0);
         setFormData(mappedFormData);
     } else if (isCreating && isOpen) {
              // Resetear formulario para crear nuevo usuario
@@ -276,8 +263,6 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
     try {
              if (isEditing) {
          const updateData = mapToUpdateUserDto(formData);
-         console.log('Datos enviados al API:', updateData);
-         console.log('Estado enviado:', updateData.active);
          const response = await userService.updateUser(user!.user_id, updateData);
         if (response.successful) {
           toast.success(`Usuario actualizado exitosamente \n ${formData.name}`, {

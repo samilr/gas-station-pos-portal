@@ -52,6 +52,7 @@ export const useNavigation = () => {
     'analytics.realtime': '/dashboard/analytics/realtime',
     'transactions': '/dashboard/transactions',
     'transactions.list': '/dashboard/transactions/list',
+    'transactions.tienda': '/dashboard/transactions/tienda',
     'transactions.revenue': '/dashboard/transactions/revenue',
     'transactions.refunds': '/dashboard/transactions/refunds',
     'products': '/dashboard/products',

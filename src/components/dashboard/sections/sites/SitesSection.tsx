@@ -99,8 +99,6 @@ const SitesSection: React.FC = () => {
 
   const handleExport = async () => {
     try {
-      // Aquí implementarías la lógica de exportación
-      console.log("Exportando sucursales...");
       toast.success("Exportación iniciada");
     } catch (error) {
       console.error("Error al exportar:", error);

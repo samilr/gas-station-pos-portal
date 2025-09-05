@@ -28,6 +28,7 @@ export interface ITransactionResume {
 
 export interface IProductResume {
   productId: string;
+  categoryId: string;
   isReturn: boolean;
   productName: string;
   quantity: number;

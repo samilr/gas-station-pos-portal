@@ -119,7 +119,12 @@ const QRCodeComponent: React.FC<{ url: string; size?: number }> = ({ url, size =
   );
 };
 
-const TransactionsSection: React.FC = () => {
+interface TransactionsSectionProps {
+  isNCFView?: boolean;
+  isTiendaView?: boolean;
+}
+
+const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = false, isTiendaView = false }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [isReversing, setIsReversing] = useState(false);
   const [showReverseDialog, setShowReverseDialog] = useState(false);
@@ -163,7 +168,7 @@ const TransactionsSection: React.FC = () => {
     exportTransactions,
     refreshTransactions,
     searchTransactions
-  } = useTransactions();
+  } = useTransactions(isNCFView, isTiendaView);
 
   // Función para renderizar el icono de ordenamiento
   const renderSortIcon = (field: SortField) => {
@@ -739,7 +744,13 @@ const TransactionsSection: React.FC = () => {
                           {transaction.isReturn ? `-${formatCurrency(transaction.total)}` : formatCurrency(transaction.total)}
                         </div>
                         <div className={`text-xs ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`}>
-                          {transaction.prods.length} productos
+                          {isNCFView ? (
+                            // Para vista NCF, mostrar el nombre del primer producto
+                            transaction.prods.length > 0 ? transaction.prods[0].productName : 'Sin producto'
+                          ) : (
+                            // Para vista normal, mostrar cantidad de productos
+                            `${transaction.prods.length} productos`
+                          )}
                         </div>
                       </div>
                     </td>

@@ -277,14 +277,18 @@ export const router = createBrowserRouter([
             element: <PermissionRoute permission="transactions.view"><TransactionsSection /></PermissionRoute>
           },
           {
+            path: 'tienda',
+            element: (
+              <PermissionRoute permission="transactions.view">
+                <TransactionsSection isTiendaView={true} />
+              </PermissionRoute>
+            )
+          },
+          {
             path: 'revenue',
             element: (
               <PermissionRoute permission="transactions.view">
-                <GenericSection
-                  title="Ingresos y Ganancias"
-                  description="Análisis detallado de ingresos y ganancias"
-                  icon={CreditCard}
-                />
+                <TransactionsSection isNCFView={true} />
               </PermissionRoute>
             )
           },

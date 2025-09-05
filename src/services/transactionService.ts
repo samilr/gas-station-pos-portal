@@ -45,8 +45,6 @@ class TransactionService {
       if (!response.successful) {
         throw new Error(response.error || 'Error al obtener transacciones');
       }
-
-      console.log('Respuesta de la API:', response.data); // Para debugging
       
       // Asegurar que siempre devolvemos un array
       if (Array.isArray(response.data)) {

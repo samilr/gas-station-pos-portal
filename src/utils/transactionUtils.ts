@@ -38,7 +38,6 @@ export const getStatusColor = (cfStatus: number): string => {
  * Obtiene el texto del tipo de pago
  */
 export const getPaymentTypeText = (type: number): string => {
-  console.log(type)
   switch (type) {
     case PaymentType.CASH:
       return 'Efectivo';

@@ -65,7 +65,7 @@ interface UseTransactionsReturn {
   exportTransactions: (format: 'pdf' | 'excel' | 'csv') => Promise<void>;
 }
 
-export const useTransactions = (): UseTransactionsReturn => {
+export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolean = false): UseTransactionsReturn => {
   const [transactions, setTransactions] = useState<ITransactionResume[]>([]);
   const [stats, setStats] = useState<TransactionStats>({
     totalSales: 0,
@@ -180,6 +180,56 @@ export const useTransactions = (): UseTransactionsReturn => {
     setCurrentPage(1); // Resetear a la primera página
   }, [sortField]);
 
+  // Función para filtrar transacciones de combustible
+  const filterCombustibleTransactions = useCallback((transactions: ITransactionResume[]) => {
+    if (!isNCFView) return transactions;
+    
+    return transactions.filter(transaction => {
+      // Verificar si tiene productos y si el primer producto es combustible
+      if (transaction.prods && transaction.prods.length > 0) {
+        const firstProduct = transaction.prods[0];
+        return firstProduct.categoryId === 'COMB';
+      }
+      return false;
+    });
+  }, [isNCFView]);
+
+  // Función para filtrar transacciones de productos de tienda (excluye zataca y combustibles)
+  const filterTiendaTransactions = useCallback((transactions: ITransactionResume[]) => {
+    if (!isTiendaView) return transactions;
+    
+    return transactions.filter(transaction => {
+      // Excluir transacciones con zataca (verificar si existe)
+      if (transaction.zataca) {
+        return false;
+      }
+      
+      // Excluir transacciones de combustible
+      if (transaction.prods && transaction.prods.length > 0) {
+        const firstProduct = transaction.prods[0];
+        if (firstProduct.categoryId === 'COMB') {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [isTiendaView]);
+
+  // Función combinada para filtrar transacciones
+  const filterTransactions = useCallback((transactions: ITransactionResume[]) => {
+    if (isNCFView) {
+      return filterCombustibleTransactions(transactions);
+    }
+    
+    if (isTiendaView) {
+      return filterTiendaTransactions(transactions);
+    }
+    
+    return transactions;
+  }, [isNCFView, isTiendaView, filterCombustibleTransactions, filterTiendaTransactions]);
+
+
   // Función para cargar transacciones
   const loadTransactions = useCallback(async () => {
     setLoading(true);
@@ -193,20 +243,25 @@ export const useTransactions = (): UseTransactionsReturn => {
       };
       
       const data = await transactionService.getTransactions(params);
-      const sortedData = sortTransactions(data, sortField, sortDirection);
+      
+      // Filtrar transacciones según la vista activa
+      const filteredData = filterTransactions(data);
+      
+      const sortedData = sortTransactions(filteredData, sortField, sortDirection);
       setTransactions(sortedData);
       setStats(calculateStats(sortedData));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar transacciones');
       // En caso de error, usamos datos mock como fallback
       console.warn('Usando datos mock como fallback:', err);
-      const sortedData = sortTransactions(mockTransactions, sortField, sortDirection);
+      const mockFiltered = filterTransactions(mockTransactions);
+      const sortedData = sortTransactions(mockFiltered, sortField, sortDirection);
       setTransactions(sortedData);
       setStats(calculateStats(sortedData));
     } finally {
       setLoading(false);
     }
-  }, [calculateStats, startDateFilter, endDateFilter, sortField, sortDirection, sortTransactions]);
+  }, [calculateStats, startDateFilter, endDateFilter, sortField, sortDirection, sortTransactions, filterTransactions]);
 
   // Calcular total de páginas
   const totalPages = Math.ceil(transactions.length / itemsPerPage);
@@ -276,7 +331,11 @@ export const useTransactions = (): UseTransactionsReturn => {
     try {
       // Usar el endpoint /trans con filtros
       const data = await transactionService.getTransactions(params);
-      const sortedData = sortTransactions(data, sortField, sortDirection);
+      
+      // Filtrar transacciones según la vista activa
+      const filteredData = filterTransactions(data);
+      
+      const sortedData = sortTransactions(filteredData, sortField, sortDirection);
       setTransactions(sortedData);
       setStats(calculateStats(sortedData));
     } catch (err) {
@@ -285,7 +344,7 @@ export const useTransactions = (): UseTransactionsReturn => {
     } finally {
       setLoading(false);
     }
-  }, [calculateStats, sortField, sortDirection, sortTransactions]);
+  }, [calculateStats, sortField, sortDirection, sortTransactions, filterTransactions]);
 
   // Función para exportar transacciones
   const exportTransactions = useCallback(async (format: 'pdf' | 'excel' | 'csv') => {
@@ -302,14 +361,10 @@ export const useTransactions = (): UseTransactionsReturn => {
         };
         
         ExcelService.exportTransactionsToExcel(transactions, options);
-        console.log('Exportación a Excel completada exitosamente');
       } else if (format === 'csv') {
-        // Exportar a CSV (implementación futura)
-        console.log('Exportación a CSV no implementada aún');
-        alert('La exportación a CSV no está disponible por el momento.');
+
       } else if (format === 'pdf') {
-        // Exportar a PDF (implementación futura)
-        console.log('Exportación a PDF no implementada aún');
+
         alert('La exportación a PDF no está disponible por el momento.');
       }
     } catch (err) {

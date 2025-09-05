@@ -49,16 +49,6 @@ export const getCurrentEnvConfig = () => {
 // Función para obtener la URL base de la API según el ambiente
 export const getApiBaseUrl = (): string => {
   const envConfig = getCurrentEnvConfig();
-  
-  // Debug: mostrar información del ambiente
-  console.log('🔍 Debug Environment:');
-  console.log('  - import.meta.env.VITE_MODE:', import.meta.env.VITE_MODE);
-  console.log('  - import.meta.env.MODE:', import.meta.env.MODE);
-  console.log('  - import.meta.env.PROD:', import.meta.env.PROD);
-  console.log('  - ENV_CONFIG.NODE_ENV:', ENV_CONFIG.NODE_ENV);
-  console.log('  - Ambiente detectado:', envConfig === ENV_CONFIG.DEVELOPMENT ? 'DEVELOPMENT' : 'PRODUCTION');
-  console.log('  - API URL:', envConfig.API_BASE_URL);
-  
   return envConfig.API_BASE_URL;
 };
 

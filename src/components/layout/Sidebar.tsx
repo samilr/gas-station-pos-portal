@@ -40,10 +40,10 @@ const menuItems: MenuItem[] = [
     icon: CreditCard,
     permission: 'transactions.view',
     subItems: [
-      { id: 'transactions.list', label: 'Ventas en general', icon: Receipt, permission: 'transactions.view' },
-      { id: 'transactions.list', label: 'Productos de Pista', icon: Store, permission: 'transactions.view' },
+      { id: 'transactions.list', label: 'Todas las ventas', icon: Receipt, permission: 'transactions.view' },
+      { id: 'transactions.tienda', label: 'Tienda', icon: Store, permission: 'transactions.view' },
       { id: 'transactions.revenue', label: 'Comprobantes NCF', icon: FuelIcon, permission: 'transactions.view' },
-      { id: 'transactions.refunds', label: 'Zataca', icon: Smartphone, permission: 'transactions.edit' },
+      //{ id: 'transactions.refunds', label: 'Zataca', icon: Smartphone, permission: 'transactions.edit' },
     ]
   },
   
@@ -184,6 +184,22 @@ const Sidebar: React.FC<SidebarProps> = ({
   const { routeMap } = useNavigation();
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
 
+  // Minimizar todas las categorías cuando se está en el dashboard
+  // Expandir automáticamente la categoría del item activo
+  React.useEffect(() => {
+    if (activeSection === 'dashboard') {
+      setExpandedItem(null);
+    } else {
+      // Encontrar la categoría padre del item activo
+      const activeItem = menuItems.find(item => 
+        item.subItems?.some(subItem => subItem.id === activeSection)
+      );
+      if (activeItem) {
+        setExpandedItem(activeItem.id);
+      }
+    }
+  }, [activeSection]);
+
   const toggleExpanded = (itemId: string) => {
     setExpandedItem(prev => 
       prev === itemId ? null : itemId
@@ -253,7 +269,17 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     onClick={() => {
                       if (hasSubItems && !isCollapsed) {
-                        toggleExpanded(item.id);
+                        // Si la categoría no está expandida, expandirla
+                        if (!isExpanded) {
+                          setExpandedItem(item.id);
+                        }
+                        // Si ya está expandida, navegar al primer subitem
+                        else {
+                          const firstSubItem = getFilteredSubItems(item.subItems)[0];
+                          if (firstSubItem) {
+                            handleNavigation(firstSubItem.id);
+                          }
+                        }
                       } else {
                         handleNavigation(item.id);
                       }
@@ -264,8 +290,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                         : 'px-3 py-3 rounded-lg'
                     } ${
                       isActive
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                        ? 'bg-blue-600 text-white shadow-lg'
+                        : 'text-gray-300 hover:bg-gray-800 hover:text-white hover:shadow-md'
                     }`}
                     title={isCollapsed ? item.label : ''}
                   >
@@ -299,8 +325,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                               onClick={() => handleNavigation(subItem.id)}
                               className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm ${
                                 isSubActive
-                                  ? 'bg-blue-500 text-white'
-                                  : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                                  ? 'bg-blue-500 text-white shadow-md'
+                                  : 'text-gray-400 hover:bg-gray-800 hover:text-white hover:shadow-sm'
                               }`}
                             >
                               <SubIcon className="w-4 h-4 flex-shrink-0" />
