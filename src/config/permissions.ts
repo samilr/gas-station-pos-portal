@@ -71,7 +71,9 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'database.view', 'database.edit', 'database.backup',
     'security.view', 'security.edit', 'security.keys',
     'notifications.view', 'notifications.edit',
-    'settings.view', 'settings.edit'
+    'settings.view', 'settings.edit',
+    // Categorías
+    'pos.view'
   ],
   
   MANAGER: [
@@ -175,6 +177,8 @@ export const COMPONENT_PERMISSIONS: Record<string, Permission[]> = {
   // Logs
   'LogsSection': ['logs.view'],
   'LogsExport': ['logs.export'],
+  'ActionsLogSection': ['logs.view'],
+  'ErrorLogSection': ['logs.view'],
   
   // Base de datos
   'DatabaseSection': ['database.view'],

@@ -123,6 +123,7 @@ const TransactionsSection: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [isReversing, setIsReversing] = useState(false);
   const [showReverseDialog, setShowReverseDialog] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [transactionToReverse, setTransactionToReverse] = useState<string | null>(null);
   const { user } = useAuth();
   
@@ -210,10 +211,29 @@ const TransactionsSection: React.FC = () => {
   const paginatedTransactions = filteredTransactions.slice(startIndex, endIndex);
 
   const handleExport = async (format: 'pdf' | 'excel' | 'csv') => {
-    try {
-      await exportTransactions(format);
-    } catch (error) {
-      console.error('Error al exportar:', error);
+    if (format === 'excel') {
+      setIsExporting(true);
+      try {
+        await exportTransactions(format);
+        toast.success('Exportación a Excel completada exitosamente', {
+          duration: 4000,
+          icon: '✅',
+        });
+      } catch (error) {
+        console.error('Error al exportar:', error);
+        toast.error('Error al exportar a Excel', {
+          duration: 4000,
+          icon: '❌',
+        });
+      } finally {
+        setIsExporting(false);
+      }
+    } else {
+      try {
+        await exportTransactions(format);
+      } catch (error) {
+        console.error('Error al exportar:', error);
+      }
     }
   };
 
@@ -512,10 +532,21 @@ const TransactionsSection: React.FC = () => {
           </button>
           <button 
             onClick={() => handleExport('excel')}
-            className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+            disabled={isExporting}
+            className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-4 py-2 rounded-lg transition-colors"
+            title="Exportar a Excel con 3 hojas: Transacciones, Productos y Pagos"
           >
-            <Download className="w-4 h-4" />
-            <span>Exportar</span>
+            {isExporting ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Exportando...</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4" />
+                <span>Exportar Excel</span>
+              </>
+            )}
           </button>
             </div>
           </div>

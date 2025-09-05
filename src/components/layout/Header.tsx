@@ -159,7 +159,7 @@ const Header: React.FC<HeaderProps> = ({ activeSection }) => {
                       <span className="text-sm font-medium text-gray-900">Confirmar salida</span>
                     </div>
                     <p className="text-sm text-gray-600 mb-4">
-                      ¿Deseas cerrar tu sesión en el sistema?
+                      ¿Deseas cerrar tu sesión?
                     </p>
                     <div className="flex space-x-3">
                       <button
@@ -177,10 +177,9 @@ const Header: React.FC<HeaderProps> = ({ activeSection }) => {
                         {isLoggingOut ? (
                           <>
                             <Loader2 className="inline mr-2 h-4 w-4 animate-spin" />
-                            Cerrando...
                           </>
                         ) : (
-                          'Confirmar'
+                          'Cerrar'
                         )}
                       </button>
                     </div>

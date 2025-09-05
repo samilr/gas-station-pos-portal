@@ -384,11 +384,11 @@ export const router = createBrowserRouter([
           },
           {
             path: 'actions',
-            element: <PermissionRoute permission="actionlogs.view"><ActionsLogSection /></PermissionRoute>
+            element: <PermissionRoute permission="logs.view"><ActionsLogSection /></PermissionRoute>
           },
           {
             path: 'errors',
-            element: <PermissionRoute permission="errorlogs.view"><ErrorLogSection /></PermissionRoute>
+            element: <PermissionRoute permission="logs.view"><ErrorLogSection /></PermissionRoute>
           }
         ]
       },

@@ -3,6 +3,7 @@ import { ITransactionResume, TransactionStatus, CFStatus } from '../types/transa
 import { getCurrentSantoDomingoDate } from '../utils/transactionUtils';
 import { transactionService } from '../services/transactionService';
 import { mockTransactions } from '../data/mockTransactions';
+import ExcelService from '../services/excelService';
 
 interface TransactionStats {
   totalSales: number;
@@ -286,16 +287,38 @@ export const useTransactions = (): UseTransactionsReturn => {
     }
   }, [calculateStats, sortField, sortDirection, sortTransactions]);
 
-  // Función para exportar transacciones (por ahora solo simula la exportación)
+  // Función para exportar transacciones
   const exportTransactions = useCallback(async (format: 'pdf' | 'excel' | 'csv') => {
     try {
-      // Por ahora solo mostramos un mensaje de que la funcionalidad no está disponible
-      console.log(`Exportación a ${format} no implementada aún`);
-      alert(`La exportación a ${format.toUpperCase()} no está disponible por el momento.`);
+      if (format === 'excel') {
+        // Exportar a Excel con 3 hojas
+        const options = {
+          filename: `transacciones_${startDateFilter}_${endDateFilter}.xlsx`,
+          includeFilters: true,
+          dateRange: {
+            startDate: startDateFilter,
+            endDate: endDateFilter
+          }
+        };
+        
+        ExcelService.exportTransactionsToExcel(transactions, options);
+        console.log('Exportación a Excel completada exitosamente');
+      } else if (format === 'csv') {
+        // Exportar a CSV (implementación futura)
+        console.log('Exportación a CSV no implementada aún');
+        alert('La exportación a CSV no está disponible por el momento.');
+      } else if (format === 'pdf') {
+        // Exportar a PDF (implementación futura)
+        console.log('Exportación a PDF no implementada aún');
+        alert('La exportación a PDF no está disponible por el momento.');
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al exportar transacciones');
+      const errorMessage = err instanceof Error ? err.message : 'Error al exportar transacciones';
+      setError(errorMessage);
+      console.error('Error en exportación:', err);
+      alert(`Error al exportar: ${errorMessage}`);
     }
-  }, []);
+  }, [transactions, startDateFilter, endDateFilter]);
 
   // Cargar transacciones al montar el componente
   useEffect(() => {
