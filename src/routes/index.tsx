@@ -5,6 +5,7 @@ import Login from '../components/auth/Login';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import DashboardHome from '../components/dashboard/DashboardHome';
 import UsersSection from '../components/dashboard/sections/users/UsersSection';
+import UserProfile from '../components/dashboard/sections/users/UserProfile';
 import TransactionsSection from '../components/dashboard/sections/transactions/TransactionsSection';
 import TerminalsSection from '../components/dashboard/sections/pos/TerminalsSection';
 import DevicesSection from '../components/dashboard/sections/pos/DevicesSection';
@@ -187,6 +188,10 @@ export const router = createBrowserRouter([
           {
             path: 'list',
             element: <PermissionRoute permission="users.view"><UsersSection /></PermissionRoute>
+          },
+          {
+            path: 'profile',
+            element: <UserProfile />
           },
           {
             path: 'active',

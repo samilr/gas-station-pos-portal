@@ -43,6 +43,7 @@ export const useNavigation = () => {
     'dashboard': '/dashboard',
     'users': '/dashboard/users',
     'users.list': '/dashboard/users/list',
+    'users.profile': '/dashboard/users/profile',
     'users.create': '/dashboard/users/create',
     'users.active': '/dashboard/users/active',
     'users.inactive': '/dashboard/users/inactive',

@@ -183,6 +183,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   const navigate = useNavigate();
   const { routeMap } = useNavigation();
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Minimizar todas las categorías cuando se está en el dashboard
   // Expandir automáticamente la categoría del item activo
@@ -200,6 +202,15 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   }, [activeSection]);
 
+  // Limpiar timeout al desmontar el componente
+  React.useEffect(() => {
+    return () => {
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout);
+      }
+    };
+  }, [hoverTimeout]);
+
   const toggleExpanded = (itemId: string) => {
     setExpandedItem(prev => 
       prev === itemId ? null : itemId
@@ -211,6 +222,21 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (route) {
       navigate(route);
     }
+  };
+
+  const handleMouseEnter = (itemId: string) => {
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+      setHoverTimeout(null);
+    }
+    setHoveredItem(itemId);
+  };
+
+  const handleMouseLeave = () => {
+    const timeout = setTimeout(() => {
+      setHoveredItem(null);
+    }, 150); // 150ms de delay antes de ocultar
+    setHoverTimeout(timeout);
   };
 
   const { can } = usePermissions();
@@ -231,26 +257,25 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-gray-900 text-white h-full transition-all duration-300 ease-in-out flex flex-col`}>
+    <div className="relative">
+      {/* Sidebar principal */}
+      <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-gray-900 text-white h-full transition-all duration-300 ease-in-out flex flex-col transform origin-left`}>
       {/* Header */}
       <div className="p-4 border-b border-gray-700">
         <div className="flex items-center justify-between">
-          {!isCollapsed && (
-            <div>
-              <h2 className="text-xl font-bold">MAGIC CLOUD</h2>
-              <p className="text-xs text-gray-400 mt-1">{user?.role}</p>
+          <div className="flex items-center">
+            {/* Logo siempre visible */}
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <span className="text-white font-bold text-sm">MC</span>
             </div>
-          )}
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-2 rounded-lg hover:bg-gray-800 transition-colors"
-          >
-            {isCollapsed ? (
-              <ChevronRight className="w-5 h-5" />
-            ) : (
-              <ChevronLeft className="w-5 h-5" />
-            )}
-          </button>
+            
+            {/* Texto que aparece/desaparece */}
+            <div className={`transition-all duration-200 ${
+              isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto ml-3'
+            }`}>
+              <h2 className="text-xl font-bold whitespace-nowrap">MAGIC CLOUD</h2>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -267,6 +292,16 @@ const Sidebar: React.FC<SidebarProps> = ({
               <li key={item.id}>
                 <div className="space-y-1">
                   <button
+                    onMouseEnter={() => {
+                      if (isCollapsed && hasSubItems) {
+                        handleMouseEnter(item.id);
+                      }
+                    }}
+                    onMouseLeave={() => {
+                      if (isCollapsed) {
+                        handleMouseLeave();
+                      }
+                    }}
                     onClick={() => {
                       if (hasSubItems && !isCollapsed) {
                         // Si la categoría no está expandida, expandirla
@@ -284,9 +319,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                         handleNavigation(item.id);
                       }
                     }}
-                    className={`w-full flex items-center justify-between transition-all duration-200 ${
+                    className={`w-full flex items-center justify-between transition-all duration-200 min-h-[44px] ${
                       isCollapsed 
-                        ? 'px-2 py-4 rounded-lg hover:bg-gray-700' 
+                        ? 'px-2 py-3 rounded-lg hover:bg-gray-700' 
                         : 'px-3 py-3 rounded-lg'
                     } ${
                       isActive
@@ -344,13 +379,63 @@ const Sidebar: React.FC<SidebarProps> = ({
         </ul>
       </nav>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-gray-700">
-        <div className="text-xs text-gray-400 text-center">
-          {!isCollapsed && 'ISLA DOMINICANA DE PETROLEO CORP'}&copy;
-
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-700">
+          <div className="text-xs text-gray-400 text-center">
+            {!isCollapsed && ''}&copy;
+          </div>
         </div>
       </div>
+
+      {/* Menú desplegable en hover cuando está colapsado */}
+      {isCollapsed && hoveredItem && (
+        <div 
+          className="absolute left-16 z-50 bg-gray-800 text-white rounded-lg shadow-xl border border-gray-700 min-w-48"
+          style={{ 
+            top: `${(() => {
+              const itemIndex = filteredMenuItems.findIndex(item => item.id === hoveredItem);
+              return 80 + (itemIndex * 60); // 80px para el header + 60px por cada item
+            })()}px` 
+          }}
+          onMouseEnter={() => handleMouseEnter(hoveredItem)}
+          onMouseLeave={() => handleMouseLeave()}
+        >
+          {(() => {
+            const item = menuItems.find(menuItem => menuItem.id === hoveredItem);
+            if (!item || !item.subItems) return null;
+            
+            const filteredSubItems = getFilteredSubItems(item.subItems);
+            if (filteredSubItems.length === 0) return null;
+            
+            return (
+              <div className="py-2">
+                <div className="px-4 py-2 text-sm font-semibold text-gray-300 border-b border-gray-700">
+                  {item.label}
+                </div>
+                {filteredSubItems.map((subItem) => {
+                  const SubIcon = subItem.icon;
+                  const isSubActive = activeSection === subItem.id;
+                  
+                  return (
+                    <button
+                      key={subItem.id}
+                      onClick={() => handleNavigation(subItem.id)}
+                      className={`w-full flex items-center space-x-3 px-4 py-2 text-sm transition-colors duration-200 rounded-md ${
+                        isSubActive
+                          ? 'bg-blue-600 text-white'
+                          : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                      }`}
+                    >
+                      <SubIcon className="w-4 h-4 flex-shrink-0" />
+                      <span>{subItem.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </div>
+      )}
     </div>
   );
 };

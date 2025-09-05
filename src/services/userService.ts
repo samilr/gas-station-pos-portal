@@ -35,29 +35,27 @@ interface UpdateUserRequest {
   staftGroupId?: number;
 }
 
-interface LoginCredentials {
-  username: string;
-  password: string;
-}
 
 export interface IUser{
-  user_id: string,
-  username: string,
-  name: string,
-  staft_group_id: number,
-  staft_group: string,
-  created_by: string,
-  password?: string,
-  created_at: Date,
-  role_id: string,
-  role: string,
-  staft_id: string,
-  site_id: string,
-  terminal_id: number,
-  shift: number,
-  active: number,  
-  portal_access: boolean,
-  email: string,
+  user_id: string;
+  username: string;
+  name: string;
+  staft_group_id: number;
+  staft_group: string;
+  created_by: string;
+  password?: string;
+  role_id: string;
+  role: string;
+  staft_id: string;
+  site_id: string;
+  terminal_id: number;
+  created_at: Date;
+  shift: number;
+  active: number;
+  portal_access: number;
+  email: string;
+  updated_password_at?: Date;
+  last_time_logged?: Date;
 }
 
 export const userService = {
@@ -67,6 +65,10 @@ export const userService = {
       successful: response.successful,
       data: response.data || []
     };
+  },
+
+  async getUserByStaftId(staftId: string): Promise<ApiResponse<IUser>> {
+    return await apiGet<IUser>(buildApiUrl(`users/staft/${staftId}`));
   },
 
   async logout(): Promise<void> {
