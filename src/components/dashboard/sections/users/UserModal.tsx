@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Shield, Building, Save, X, Eye, EyeOff, Edit, UserPlus } from 'lucide-react';
+import { User, Shield, Building, Save, X, Eye, EyeOff, Edit, UserPlus } from 'lucide-react';
 import { userService, IUser } from '../../../../services/userService';
 import toast from 'react-hot-toast';
 import { usePermissions } from '../../../../hooks/usePermissions';
-import { PermissionGate } from '../../../common';
 
 interface UserFormData {
   username: string;
@@ -17,6 +16,7 @@ interface UserFormData {
   terminal_id: number;
   shift: number;
   active: number;
+  connected: number;
   portal_access: number;
 }
 
@@ -42,6 +42,7 @@ interface UpdateUserDto {
   password?: string;
   roleId?: number;
   portalAccess?: boolean;
+  connected?: boolean;
   active?: boolean;
   staftId?: number;
   siteId?: string;
@@ -59,7 +60,7 @@ interface UserModalProps {
 }
 
 const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSuccess }) => {
-  const { canEditUsers, isAdmin } = usePermissions();
+  const { canEditUsers } = usePermissions();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<UserFormData>({
@@ -74,6 +75,7 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
     terminal_id: 1,
     shift: 1,
     active: 1,
+    connected: 0,
     portal_access: 0
   });
 
@@ -100,17 +102,6 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
     }
   };
 
-  // Función para mapear roleId number a role string
-  const getRoleString = (roleId: number): string => {
-    switch (roleId) {
-      case 1: return 'ADMIN';
-      case 2: return 'CONFIGURATION';
-      case 3: return 'SUPERVISOR';
-      case 4: return 'MANAGER';
-      case 5: return 'SELLER';
-      default: return 'SELLER';
-    }
-  };
 
   // Función para mapear role string a roleId number (corregido según tu mapeo)
   const getRoleIdFromString = (roleName: string): string => {
@@ -149,17 +140,6 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
     }
   };
 
-  // Función para mapear grupo de personal number a string
-  const getGroupName = (groupId: string | number): string => {
-    const id = String(groupId);
-    switch (id) {
-      case '1': return 'Vendedor Pista';
-      case '2': return 'Vendedor Tienda';
-      case '3': return 'Administrador Estacion';
-      case '4': return 'Administracion ISLA';
-      default: return 'Vendedor Pista';
-    }
-  };
 
   // Función para mapear formulario a CreateUserDto
   const mapToCreateUserDto = (formData: UserFormData): CreateUserDto => {
@@ -186,6 +166,7 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
       email: formData.email || undefined,
       roleId: getRoleId(formData.role),
       portalAccess: formData.portal_access === 1,
+      connected: formData.connected === 1, // Convertir number (1/0) a boolean (true/false)
       active: formData.active === 1, // Convertir number (1/0) a boolean (true/false)
       staftId: parseInt(formData.staft_id) || 0,
       siteId: formData.site_id,
@@ -217,6 +198,7 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
           site_id: user.site_id || '',
           terminal_id: user.terminal_id || 1,
           shift: user.shift || 1,
+          connected: user.connected ? 1 : 0,
           active: user.active,
           portal_access: user.portal_access ? 1 : 0
         };
@@ -235,16 +217,18 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
           terminal_id: 1,
           shift: 1,
           active: 1,
-          portal_access: 0
+          portal_access: 0,
+          connected: 0
         });
     }
   }, [user, isOpen, isEditing, isViewing, isCreating]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'terminal_id' || name === 'shift' || name === 'active' || name === 'portal_access' 
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked ? 1 : 0 :
+               name === 'terminal_id' || name === 'shift' || name === 'active' || name === 'portal_access' || name === 'connected'
         ? parseInt(value) 
         : value
     }));
@@ -447,7 +431,7 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
                 <span>Rol y Permisos</span>
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Rol *
@@ -474,29 +458,6 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
                     </p>
                   )}
                 </div>
-                
-                                 <div>
-                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                     Estado
-                   </label>
-                   <select
-                     name="active"
-                     value={formData.active}
-                     onChange={handleInputChange}
-                     disabled={isViewing || isCreating}
-                     className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                       isViewing || isCreating ? 'bg-gray-100 cursor-not-allowed' : ''
-                     }`}
-                   >
-                     <option value={1}>Activo</option>
-                     <option value={0}>Inactivo</option>
-                   </select>
-                   {isCreating && (
-                     <p className="text-xs text-gray-500 mt-1">
-                       Los nuevos usuarios se crean activos por defecto
-                     </p>
-                   )}
-                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -602,6 +563,79 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
                     <option value={3}>Turno 3 (10:00 PM - 6:00 AM)</option>
                     <option value={4}>Turno 4 (8:00 AM - 5:00 PM)</option>
                   </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Status Switches */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900 flex items-center space-x-2">
+                <Shield className="w-5 h-5 text-gray-600" />
+                <span>Estado del Usuario</span>
+              </h3>
+              
+              {/* Switches */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Conectado</label>
+                    <p className="text-xs text-gray-500">Indica si el usuario está conectado</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="connected"
+                      checked={formData.connected === 1}
+                      onChange={handleInputChange}
+                      disabled={isViewing}
+                      className="sr-only peer"
+                    />
+                    <div className={`relative w-12 h-7 rounded-full transition-all duration-300 ease-in-out ${
+                      formData.connected === 1 
+                        ? 'bg-blue-600' 
+                        : 'bg-gray-200 border-2 border-gray-300'
+                    } ${isViewing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg'}`}>
+                      <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-all duration-300 ease-in-out transform shadow-sm ${
+                        formData.connected === 1 ? 'translate-x-5' : 'translate-x-0'
+                      }`}></div>
+                      {formData.connected === 1 && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-2 h-2 bg-white rounded-full"></div>
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Activo</label>
+                    <p className="text-xs text-gray-500">Indica si el usuario está activo</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="active"
+                      checked={formData.active === 1}
+                      onChange={handleInputChange}
+                      disabled={isViewing}
+                      className="sr-only peer"
+                    />
+                    <div className={`relative w-12 h-7 rounded-full transition-all duration-300 ease-in-out ${
+                      formData.active === 1 
+                        ? 'bg-blue-600' 
+                        : 'bg-gray-200 border-2 border-gray-300'
+                    } ${isViewing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg'}`}>
+                      <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-all duration-300 ease-in-out transform shadow-sm ${
+                        formData.active === 1 ? 'translate-x-5' : 'translate-x-0'
+                      }`}></div>
+                      {formData.active === 1 && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-2 h-2 bg-white rounded-full"></div>
+                        </div>
+                      )}
+                    </div>
+                  </label>
                 </div>
               </div>
             </div>

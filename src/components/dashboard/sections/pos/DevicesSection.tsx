@@ -340,7 +340,11 @@ const DevicesSection: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {paginatedDevices.map((device) => (
-                <tr key={device.host_id} className="hover:bg-gray-50">
+                <tr 
+                  key={device.host_id} 
+                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => handleViewDetails(device)}
+                >
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       <div className="w-10 h-10 bg-blue-100 rounded flex items-center justify-center">
@@ -394,13 +398,6 @@ const DevicesSection: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
-                      <button 
-                        onClick={() => handleViewDetails(device)}
-                        className="p-1 text-gray-600 hover:text-gray-900" 
-                        title="Ver detalles"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
                       <PermissionGate permissions={['devices.edit']}>
                         <button 
                           onClick={() => handleEditDevice(device)}

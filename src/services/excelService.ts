@@ -55,14 +55,14 @@ export class ExcelService {
     // Definir los encabezados de las columnas
     const headers = [
       'Número de Transacción',
-      'Número CF',
-      'Tipo CF',
+      'e-NCF',
+      'Tipo e-NCF',
       'Fecha',
       'Sucursal',
       'Terminal',
       'Turno',
       'Estado',
-      'Estado CF',
+      'Estado e-NCF',
       'Es Devolución',
       'Cliente',
       'RNC/Cédula',
@@ -70,7 +70,7 @@ export class ExcelService {
       'Subtotal',
       'Impuestos',
       'Total',
-      'Código QR',
+      'URL DGII',
       'Código de Seguridad',
       'Fecha Firma Digital'
     ];
@@ -90,9 +90,9 @@ export class ExcelService {
       transaction.taxpayerName || '',
       transaction.taxpayerId,
       transaction.staftName,
-      transaction.subtotal,
-      transaction.tax,
-      transaction.total,
+      transaction.isReturn ? -transaction.subtotal : transaction.subtotal,
+      transaction.isReturn ? -transaction.tax : transaction.tax,
+      transaction.isReturn ? -transaction.total : transaction.total,
       transaction.cfQr || '',
       transaction.cfSecurityCode || '',
       transaction.digitalSignatureDate ? formatDate(transaction.digitalSignatureDate) : ''
@@ -157,7 +157,7 @@ export class ExcelService {
     // Definir los encabezados de las columnas
     const headers = [
       'Número de Transacción',
-      'Número CF',
+      'e-NCF',
       'Fecha',
       'Sucursal',
       'ID del Producto',
@@ -184,10 +184,10 @@ export class ExcelService {
           product.productId,
           product.productName,
           product.isReturn ? 'Sí' : 'No',
-          product.quantity,
-          product.price,
-          product.tax,
-          product.total,
+          transaction.isReturn ? -product.quantity : product.quantity,
+          transaction.isReturn ? -product.price : product.price,
+          transaction.isReturn ? -product.tax : product.tax,
+          transaction.isReturn ? -product.total : product.total,
           transaction.taxpayerName || '',
           transaction.staftName
         ]);
@@ -247,7 +247,7 @@ export class ExcelService {
     // Definir los encabezados de las columnas
     const headers = [
       'Número de Transacción',
-      'Número CF',
+      'e-NCF',
       'Fecha',
       'Sucursal',
       'ID del Pago',
@@ -273,11 +273,11 @@ export class ExcelService {
           payment.paymentId,
           getPaymentTypeText(payment.type),
           payment.isReturn ? 'Sí' : 'No',
-          payment.total,
+          transaction.isReturn ? -payment.total : payment.total,
           transaction.taxpayerName || '',
           transaction.staftName,
           transaction.terminalId,
-          transaction.staftId
+          transaction.staftId  
         ]);
       });
     });

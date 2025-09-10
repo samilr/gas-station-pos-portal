@@ -23,6 +23,12 @@ export interface DashboardStats {
   recentTransactions: any[];
   recentActions: any[];
   recentErrors: any[];
+  salesByVendor: Array<{
+    staftId: string;
+    staftName: string;
+    totalSales: number;
+    transactionCount: number;
+  }>;
   loading: boolean;
   error: string | null;
 }
@@ -44,6 +50,7 @@ export const useDashboard = () => {
     recentTransactions: [],
     recentActions: [],
     recentErrors: [],
+    salesByVendor: [],
     loading: true,
     error: null
   });
@@ -89,14 +96,54 @@ export const useDashboard = () => {
       let totalTransactions = 0;
       let totalSales = 0;
       let recentTransactions: any[] = [];
+      let salesByVendor: Array<{
+        staftId: string;
+        staftName: string;
+        totalSales: number;
+        transactionCount: number;
+      }> = [];
+      
       if (transactionsResponse.status === 'fulfilled') {
         const transactions = transactionsResponse.value || [];
         totalTransactions = transactions.length;
         totalSales = transactions.reduce((sum, trans) => sum + (trans.total || 0), 0);
+        
         // Ordenar por fecha más reciente y tomar las últimas 5
         recentTransactions = transactions
           .sort((a, b) => new Date(b.transDate || 0).getTime() - new Date(a.transDate || 0).getTime())
           .slice(0, 5);
+        
+        // Calcular ventas por vendedor
+        const vendorSalesMap = new Map<string, { staftName: string; totalSales: number; transactionCount: number }>();
+        
+        transactions.forEach(transaction => {
+          const staftId = transaction.staftId?.toString() || 'N/A';
+          const staftName = transaction.staftName || 'Vendedor Desconocido';
+          const total = transaction.total || 0;
+          
+          if (vendorSalesMap.has(staftId)) {
+            const existing = vendorSalesMap.get(staftId)!;
+            existing.totalSales += total;
+            existing.transactionCount += 1;
+          } else {
+            vendorSalesMap.set(staftId, {
+              staftName,
+              totalSales: total,
+              transactionCount: 1
+            });
+          }
+        });
+        
+        // Convertir a array y ordenar por ventas totales
+        salesByVendor = Array.from(vendorSalesMap.entries())
+          .map(([staftId, data]) => ({
+            staftId,
+            staftName: data.staftName,
+            totalSales: data.totalSales,
+            transactionCount: data.transactionCount
+          }))
+          .sort((a, b) => b.totalSales - a.totalSales)
+          .slice(0, 10); // Top 10 vendedores
       }
 
       // Procesar logs de acciones
@@ -166,6 +213,7 @@ export const useDashboard = () => {
         recentTransactions,
         recentActions,
         recentErrors,
+        salesByVendor,
         loading: false,
         error: null
       });

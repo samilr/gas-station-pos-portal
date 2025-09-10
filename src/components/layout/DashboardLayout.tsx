@@ -57,7 +57,7 @@ const DashboardLayout: React.FC = () => {
         <button
           id="side-nav-trigger"
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="absolute -left-3 top-20 z-50 bg-gray-800 hover:bg-gray-700 text-white p-2 rounded-full shadow-lg transition-all duration-300 group"
+          className="absolute -left-3 top-12 z-50 bg-white hover:bg-gray-800 hover:text-white text-black p-1 rounded-full shadow-lg transition-all duration-300 group"
           type="button"
           aria-haspopup="menu"
           aria-label="menu"

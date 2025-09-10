@@ -430,7 +430,11 @@ const UsersSection: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {paginatedUsers.map((user) => (
-                <tr key={user.user_id} className="hover:bg-gray-50">
+                <tr 
+                  key={user.user_id} 
+                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => handleViewDetails(user)}
+                >
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       <div className="w-10 h-10 bg-blue-100 rounded flex items-center justify-center">
@@ -478,13 +482,6 @@ const UsersSection: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
-                      <button 
-                        onClick={() => handleViewDetails(user)}
-                        className="p-1 text-gray-600 hover:text-gray-900" 
-                        title="Ver detalles"
-                      >
-                        <EyeIcon className="w-4 h-4" />
-                      </button>
                       <PermissionGate permissions={['users.edit']}>
                         <button 
                           onClick={() => handleEditUser(user)}

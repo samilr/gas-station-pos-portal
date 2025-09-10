@@ -28,6 +28,7 @@ interface UpdateUserRequest {
   roleId?: number;
   portalAccess?: boolean;
   active?: boolean;
+  connected?: boolean;
   staftId?: number;
   siteId?: string;
   terminalId?: number;
@@ -37,6 +38,7 @@ interface UpdateUserRequest {
 
 
 export interface IUser{
+  connected: number;
   user_id: string;
   username: string;
   name: string;

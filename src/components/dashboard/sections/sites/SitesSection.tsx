@@ -395,7 +395,11 @@ const SitesSection: React.FC = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {currentSites.map((site) => (
-                <tr key={site.site_id} className="hover:bg-gray-50">
+                <tr 
+                  key={site.site_id} 
+                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => handleViewDetails(site)}
+                >
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       <div className="w-10 h-10 bg-blue-100 rounded flex items-center justify-center">
@@ -464,13 +468,6 @@ const SitesSection: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleViewDetails(site)}
-                        className="p-1 text-gray-600 hover:text-gray-900"
-                        title="Ver detalles"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
                       <PermissionGate permissions={['sites.edit']}>
                         <button
                           onClick={() => handleEditSite(site)}

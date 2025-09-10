@@ -688,7 +688,11 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {paginatedTransactions.map((transaction) => (
-                  <tr key={transaction.transNumber} className={`hover:bg-gray-50 ${transaction.isReturn ? 'text-red-600' : ''} ${transaction.status === 0 ? 'opacity-50' : ''}`}>
+                  <tr 
+                    key={transaction.transNumber} 
+                    className={`hover:bg-gray-50 cursor-pointer transition-colors ${transaction.isReturn ? 'text-red-600' : ''} ${transaction.status === 0 ? 'opacity-50' : ''}`}
+                    onClick={() => setSelectedTransaction(transaction)}
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-2">
                         <span className="text-lg">{getStatusIcon(transaction.cfStatus)}</span>
@@ -756,18 +760,20 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                     </td>
                     <td className="px-6 py-4">
                       <button
-                        onClick={() => setSelectedTransaction(transaction)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedTransaction(transaction);
+                        }}
                         className="flex items-center space-x-1 text-blue-600 hover:text-blue-900 transition-colors"
                       >
-                        <Eye className="w-4 h-4" />
-                        <span className="text-sm">Ver detalles</span>
+
                       </button>
                       <div className='text-sm text-gray-500'>Terminal {transaction.terminalId}</div>
 
                     </td>
                   </tr>
                 ))}
-              </tbody>
+              </tbody>                                                                                        
             </table>
           </div>
         ) : (

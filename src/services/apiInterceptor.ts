@@ -11,6 +11,17 @@ export interface ApiResponse<T = any> {
   error?: string;
 }
 
+// Función para limpiar el almacenamiento local y redirigir al login
+const handleUnauthorized = (): void => {
+  // Limpiar tokens y datos de usuario
+  localStorage.removeItem('token');
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('adminUser');
+  
+  // Redirigir al login
+  window.location.href = '/login';
+};
+
 // Función para verificar si es un endpoint de login
 const isLoginEndpoint = (url: string): boolean => {
   const loginPatterns = [
@@ -63,7 +74,27 @@ export const apiRequest = async <T = any>(
       body: config.body
     });
 
-    const data = await response.json();
+    // Si es un error 401 (Unauthorized), redirigir al login inmediatamente
+    if (response.status === 401) {
+      handleUnauthorized();
+      return {
+        successful: false,
+        data: null as T,
+        error: 'Sesión expirada. Redirigiendo al login...'
+      };
+    }
+
+    let data;
+    try {
+      data = await response.json();
+    } catch (jsonError) {
+      // Si no se puede parsear el JSON, devolver error genérico
+      return {
+        successful: false,
+        data: null as T,
+        error: `Error al procesar respuesta del servidor. Status: ${response.status}`
+      };
+    }
 
     // Si la respuesta no es exitosa, devolver el error de la API
     if (!response.ok) {

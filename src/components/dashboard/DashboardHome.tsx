@@ -4,25 +4,19 @@ import {
   CreditCard,
   Building2,
   Monitor,
-  Smartphone,
   Activity,
-  AlertTriangle,
-  TrendingUp,
-  TrendingDown,
   RefreshCw,
-  DollarSign,
   BarChart3,
-  Clock,
-  CheckCircle,
   XCircle,
-  User
+  User,
+  DollarSign
 } from 'lucide-react';
 import { useDashboard } from '../../hooks/useDashboard';
-import { formatCurrency, formatNumber, formatRelativeTime, getStatusColor, getActionIcon } from '../../utils/dashboardUtils';
+import { formatCurrency, formatNumber, formatRelativeTime, getActionIcon } from '../../utils/dashboardUtils';
 import DashboardChart from './DashboardChart';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { formatDateTimeToSantoDomingo, formatDateToSantoDomingo } from '../../utils/dateUtils';
+import { formatDateTimeToSantoDomingo } from '../../utils/dateUtils';
 
 const DashboardHome: React.FC = () => {
   let navigate: any;
@@ -46,13 +40,10 @@ const DashboardHome: React.FC = () => {
     activeSites,
     totalTerminals,
     activeTerminals,
-    totalDevices,
-    activeDevices,
-    totalActions,
     totalErrors,
     recentTransactions,
     recentActions,
-    recentErrors,
+    salesByVendor,
     loading,
     error,
     refresh
@@ -151,80 +142,6 @@ const DashboardHome: React.FC = () => {
     );
   }
 
-  const stats = [
-    {
-      name: 'Ventas Totales',
-      value: formatCurrency(totalSales),
-      total: formatNumber(totalTransactions),
-      change: '+8.1%',
-      icon: DollarSign,
-      color: 'bg-green-500',
-      description: 'Transacciones completadas'
-    },
-    {
-      name: 'Usuarios Activos',
-      value: activeUsers,
-      total: totalUsers,
-      change: '+12%',
-      icon: Users,
-      color: 'bg-blue-500',
-      description: 'Usuarios con sesión activa'
-    },
-    {
-      name: 'Sucursales Activas',
-      value: activeSites,
-      total: totalSites,
-      change: '+2',
-      icon: Building2,
-      color: 'bg-purple-500',
-      description: 'Sucursales operativas'
-    },
-    {
-      name: 'Terminales Activas',
-      value: activeTerminals,
-      total: totalTerminals,
-      change: '+5',
-      icon: Monitor,
-      color: 'bg-orange-500',
-      description: 'Terminales en línea'
-    },
-    {
-      name: 'Dispositivos Activos',
-      value: activeDevices,
-      total: totalDevices,
-      change: '+3',
-      icon: Smartphone,
-      color: 'bg-indigo-500',
-      description: 'Dispositivos conectados'
-    },
-    {
-      name: 'Acciones del Sistema',
-      value: formatNumber(totalActions),
-      total: '',
-      change: '+15%',
-      icon: Activity,
-      color: 'bg-teal-500',
-      description: 'Actividades registradas'
-    },
-    {
-      name: 'Errores del Sistema',
-      value: totalErrors,
-      total: '',
-      change: '-2',
-      icon: AlertTriangle,
-      color: 'bg-red-500',
-      description: 'Errores pendientes'
-    },
-    {
-      name: 'Tasa de Éxito',
-      value: totalTransactions > 0 ? `${Math.round((totalTransactions / (totalTransactions + totalErrors)) * 100)}%` : '0%',
-      total: '',
-      change: '+2.5%',
-      icon: CheckCircle,
-      color: 'bg-emerald-500',
-      description: 'Transacciones exitosas'
-    }
-  ];
 
   return (
     <div className="space-y-6">
@@ -247,72 +164,116 @@ const DashboardHome: React.FC = () => {
         </button>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <div 
-              key={stat.name} 
-              className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer hover:bg-gray-50"
-              onClick={() => {
-                switch(stat.name) {
-                  case 'Ventas Totales':
-                    navigate('/dashboard/transactions');
-                    break;
-                  case 'Usuarios Activos':
-                    navigate('/dashboard/users');
-                    break;
-                  case 'Sucursales Activas':
-                    navigate('/dashboard/sites');
-                    break;
-                  case 'Terminales Activas':
-                    navigate('/dashboard/pos/terminals');
-                    break;
-                  case 'Dispositivos Activos':
-                    navigate('/dashboard/pos/devices');
-                    break;
-                  case 'Acciones del Sistema':
-                    navigate('/dashboard/logs/actions');
-                    break;
-                  case 'Errores del Sistema':
-                    navigate('/dashboard/logs/errors');
-                    break;
-                  case 'Tasa de Éxito':
-                    navigate('/dashboard/transactions');
-                    break;
-                  default:
-                    break;
-                }
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-600">{stat.name}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                  {stat.total && (
-                    <p className="text-sm text-gray-500">de {stat.total} total</p>
-                  )}
-                  <div className="flex items-center space-x-1">
-                    {stat.change.startsWith('+') ? (
-                      <TrendingUp className="w-4 h-4 text-green-500" />
-                    ) : (
-                      <TrendingDown className="w-4 h-4 text-red-500" />
-                    )}
-                    <span className={`text-sm font-medium ${
-                      stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {stat.change}
-                    </span>
-                  </div>
-                </div>
-                <div className={`${stat.color} p-3 rounded-full`}>
-                  <Icon className="w-6 h-6 text-white" />
-                </div>
+      {/* Main Content Grid - Stats and Sales by Vendor */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Stats Grid - 2x2 */}
+        <div className="grid grid-cols-2 gap-4">
+          <div 
+            className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer hover:bg-gray-50"
+            onClick={() => navigate('/dashboard/transactions')}
+          >
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-600">Ventas Totales</p>
+                <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalSales)}</p>
+                <p className="text-sm text-gray-500">de {formatNumber(totalTransactions)} transacciones</p>
+              </div>
+              <div className="bg-green-500 p-3 rounded-full">
+                <DollarSign className="w-6 h-6 text-white" />
               </div>
             </div>
-          );
-        })}
+          </div>
+
+          <div 
+            className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer hover:bg-gray-50"
+            onClick={() => navigate('/dashboard/users')}
+          >
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-600">Usuarios Activos</p>
+                <p className="text-2xl font-bold text-gray-900">{activeUsers}</p>
+                <p className="text-sm text-gray-500">de {totalUsers} total</p>
+              </div>
+              <div className="bg-blue-500 p-3 rounded-full">
+                <Users className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </div>
+
+          <div 
+            className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer hover:bg-gray-50"
+            onClick={() => navigate('/dashboard/pos/terminals')}
+          >
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-600">Terminales Activas</p>
+                <p className="text-2xl font-bold text-gray-900">{activeTerminals}</p>
+                <p className="text-sm text-gray-500">de {totalTerminals} total</p>
+              </div>
+              <div className="bg-orange-500 p-3 rounded-full">
+                <Monitor className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </div>
+
+          <div 
+            className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer hover:bg-gray-50"
+            onClick={() => navigate('/dashboard/sites')}
+          >
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-600">Sucursales Activas</p>
+                <p className="text-2xl font-bold text-gray-900">{activeSites}</p>
+                <p className="text-sm text-gray-500">de {totalSites} total</p>
+              </div>
+              <div className="bg-purple-500 p-3 rounded-full">
+                <Building2 className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sales by Vendor */}
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Ventas por Vendedor</h3>
+            <span className="text-sm text-gray-500">Top {salesByVendor.length} vendedores</span>
+          </div>
+          <div className="space-y-3">
+            {salesByVendor.length > 0 ? (
+              salesByVendor.map((vendor, index) => (
+                <div key={vendor.staftId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium text-blue-600">#{index + 1}</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {vendor.staftName}
+                      </p>
+                      <p className="text-xs text-gray-600">
+                        ID: {vendor.staftId} • {vendor.transactionCount} transacciones
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-gray-900">
+                      {formatCurrency(vendor.totalSales)}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {totalSales > 0 ? `${Math.round((vendor.totalSales / totalSales) * 100)}%` : '0%'} del total
+                    </p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <User className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                <p>No hay datos de ventas por vendedor</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Main Content Grid */}
@@ -405,68 +366,6 @@ const DashboardHome: React.FC = () => {
         </div>
       </div>
 
-      {/* System Status */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Estado del Sistema</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
-            <div className="flex items-center space-x-3">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span className="text-sm font-medium text-gray-900">API Gateway</span>
-            </div>
-            <span className="text-sm text-green-600 font-medium">99.9%</span>
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
-            <div className="flex items-center space-x-3">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span className="text-sm font-medium text-gray-900">Base de Datos</span>
-            </div>
-            <span className="text-sm text-green-600 font-medium">100%</span>
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-            <div className="flex items-center space-x-3">
-              <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-              <span className="text-sm font-medium text-gray-900">Cache Server</span>
-            </div>
-            <span className="text-sm text-yellow-600 font-medium">98.7%</span>
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-200">
-            <div className="flex items-center space-x-3">
-              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-              <span className="text-sm font-medium text-gray-900">Errores</span>
-            </div>
-            <span className="text-sm text-red-600 font-medium">{totalErrors}</span>
-          </div>
-        </div>
-      </div>
-
-            {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <DashboardChart
-          title="Distribución de Usuarios"
-          data={[
-            { label: 'Activos', value: activeUsers, color: 'bg-green-500' },
-            { label: 'Inactivos', value: totalUsers - activeUsers, color: 'bg-red-500' }
-          ]}
-          total={totalUsers}
-          change="+12%"
-          isPositive={true}
-        />
-        
-        <DashboardChart
-          title="Estado de Sucursales"
-          data={[
-            { label: 'Activas', value: activeSites, color: 'bg-green-500' },
-            { label: 'Inactivas', value: totalSites - activeSites, color: 'bg-red-500' }
-          ]}
-          total={totalSites}
-          change="+2"
-          isPositive={true}
-        />
-      </div>
 
       {/* Quick Actions */}
       <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">

@@ -19,6 +19,7 @@ const mockUsers: IUser[] = [
     shift: 1,
     active: 1,
     portal_access: 1,
+    connected: 1,
     email: 'admin@sistema.com'
   },
   {
@@ -37,6 +38,7 @@ const mockUsers: IUser[] = [
     shift: 1,
     active: 1,
     portal_access: 1,
+    connected: 1,
     email: 'juan.perez@empresa.com'
   },
   {
@@ -54,6 +56,7 @@ const mockUsers: IUser[] = [
     terminal_id: 3,
     shift: 2,
     active: 1,
+    connected: 1,
     portal_access: 1,
     email: 'maria.garcia@empresa.com'
   },
@@ -72,6 +75,7 @@ const mockUsers: IUser[] = [
     terminal_id: 2,
     shift: 1,
     active: 0,
+    connected: 1,
     portal_access: 1,
     email: 'carlos.lopez@empresa.com'
   }

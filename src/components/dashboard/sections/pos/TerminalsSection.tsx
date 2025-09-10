@@ -340,7 +340,11 @@ const TerminalsSection: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {paginatedTerminals.map((terminal) => (
-                <tr key={`${terminal.site_id}-${terminal.terminal_id}`} className="hover:bg-gray-50">
+                <tr 
+                  key={`${terminal.site_id}-${terminal.terminal_id}`} 
+                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => handleViewDetails(terminal)}
+                >
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       <div className="w-10 h-10 bg-blue-100 rounded flex items-center justify-center">
@@ -381,13 +385,6 @@ const TerminalsSection: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
-                      <button 
-                        onClick={() => handleViewDetails(terminal)}
-                        className="p-1 text-gray-600 hover:text-gray-900" 
-                        title="Ver detalles"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
                       <PermissionGate permissions={['terminals.edit']}>
                         <button 
                           onClick={() => handleEditTerminal(terminal)}
