@@ -12,8 +12,8 @@ import DevicesSection from '../components/dashboard/sections/pos/DevicesSection'
 import SitesSection from '../components/dashboard/sections/sites/SitesSection';
 import GenericSection from '../components/dashboard/sections/GenericSection';
 import ProductsSection from '../components/dashboard/sections/products/ProductsSection';
-import ActionsLogSection from '../components/dashboard/sections/logs/ActionsLogSection';
-import ErrorLogSection from '../components/dashboard/sections/logs/ErrorLogSection';
+import ActionsLogSection from '../components/dashboard/sections/audit/ActionsLogSection';
+import ErrorLogSection from '../components/dashboard/sections/audit/ErrorLogSection';
 import AnalyticsSection from '../components/dashboard/sections/analytics/AnalyticsSection';
 import { 
   Database, 
