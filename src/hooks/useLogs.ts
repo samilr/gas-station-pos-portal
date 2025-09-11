@@ -154,12 +154,17 @@ export const useActionLogs = () => {
   const [actionLogs, setActionLogs] = useState<IActionLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [startDateFilter, setStartDateFilter] = useState<string>('');
+  const [endDateFilter, setEndDateFilter] = useState<string>('');
 
   const loadActionLogs = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await logService.getActionLogs();
+      const response = await logService.getActionLogs({
+        startDate: startDateFilter,
+        endDate: endDateFilter
+      });
       if (response.successful) {
         setActionLogs(response.data || []);
       } else {
@@ -173,11 +178,16 @@ export const useActionLogs = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [startDateFilter, endDateFilter]);
 
   const refreshActionLogs = useCallback(async () => {
     await loadActionLogs();
   }, [loadActionLogs]);
+
+  const loadActionLogsWithDates = useCallback(async (startDate: string, endDate: string) => {
+    setStartDateFilter(startDate);
+    setEndDateFilter(endDate);
+  }, []);
 
   useEffect(() => {
     loadActionLogs();
@@ -187,7 +197,12 @@ export const useActionLogs = () => {
     actionLogs,
     loading,
     error,
-    refreshActionLogs
+    startDateFilter,
+    endDateFilter,
+    setStartDateFilter,
+    setEndDateFilter,
+    refreshActionLogs,
+    loadActionLogsWithDates
   };
 };
 
@@ -195,12 +210,17 @@ export const useErrorLogs = () => {
   const [errorLogs, setErrorLogs] = useState<IErrorLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [startDateFilter, setStartDateFilter] = useState<string>('');
+  const [endDateFilter, setEndDateFilter] = useState<string>('');
 
   const loadErrorLogs = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await logService.getErrorLogs();
+      const response = await logService.getErrorLogs({
+        startDate: startDateFilter,
+        endDate: endDateFilter
+      });
       if (response.successful) {
         setErrorLogs(response.data || []);
       } else {
@@ -214,11 +234,16 @@ export const useErrorLogs = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [startDateFilter, endDateFilter]);
 
   const refreshErrorLogs = useCallback(async () => {
     await loadErrorLogs();
   }, [loadErrorLogs]);
+
+  const loadErrorLogsWithDates = useCallback(async (startDate: string, endDate: string) => {
+    setStartDateFilter(startDate);
+    setEndDateFilter(endDate);
+  }, []);
 
   const resolveError = useCallback(async (errorId: string, resolvedBy: string) => {
     try {
@@ -249,7 +274,12 @@ export const useErrorLogs = () => {
     errorLogs,
     loading,
     error,
+    startDateFilter,
+    endDateFilter,
+    setStartDateFilter,
+    setEndDateFilter,
     refreshErrorLogs,
+    loadErrorLogsWithDates,
     resolveError
   };
 };

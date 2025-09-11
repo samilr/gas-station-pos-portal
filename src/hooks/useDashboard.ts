@@ -1,28 +1,13 @@
-import { useState, useEffect } from 'react';
-import { userService } from '../services/userService';
+import { useState, useEffect, useCallback } from 'react';
 import { transactionService } from '../services/transactionService';
-import { logService } from '../services/logService';
-import { siteService } from '../services/siteService';
-import { terminalService } from '../services/terminalService';
-import { hostService } from '../services/deviceService';
 import { getCurrentSantoDomingoDate } from '../utils/transactionUtils';
 
 export interface DashboardStats {
-  totalUsers: number;
-  activeUsers: number;
   totalTransactions: number;
   totalSales: number;
-  totalSites: number;
-  activeSites: number;
-  totalTerminals: number;
-  activeTerminals: number;
-  totalDevices: number;
-  activeDevices: number;
-  totalActions: number;
-  totalErrors: number;
-  recentTransactions: any[];
-  recentActions: any[];
-  recentErrors: any[];
+  totalReturns: number;
+  totalFuelSales: number;
+  totalStoreSales: number;
   salesByVendor: Array<{
     staftId: string;
     staftName: string;
@@ -33,27 +18,114 @@ export interface DashboardStats {
   error: string | null;
 }
 
+export interface DailySalesData {
+  date: string;
+  sales: number;
+  transactions: number;
+}
+
+export interface ChartData {
+  dailySales: DailySalesData[];
+  loading: boolean;
+  error: string | null;
+}
+
+export interface ChartFilters {
+  startDate: string;
+  endDate: string;
+  period: 'currentMonth' | 'lastMonth' | 'custom';
+}
+
+export interface SiteChartFilters {
+  startDate: string;
+  endDate: string;
+  period: 'today' | 'yesterday' | 'thisWeek' | 'lastWeek' | 'thisMonth' | 'lastMonth' | 'custom';
+}
+
+export interface SiteSalesData {
+  siteId: string;
+  siteName: string;
+  totalSales: number;
+  transactionCount: number;
+  averageTicket: number;
+}
+
+export interface SiteChartData {
+  siteSales: SiteSalesData[];
+  loading: boolean;
+  error: string | null;
+}
+
+export interface CfTypeData {
+  cfType: string;
+  cfTypeName: string;
+  sales: number;
+  count: number;
+  percentage: number;
+}
+
 export const useDashboard = () => {
+  // Función helper para formatear fechas sin conversión UTC
+  const formatDateLocal = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Función helper para obtener fecha actual en Santo Domingo
+  const getSantoDomingoDate = () => {
+    const now = new Date();
+    // Usar Intl.DateTimeFormat para obtener fecha en Santo Domingo
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Santo_Domingo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    const parts = formatter.formatToParts(now);
+    const year = parts.find(part => part.type === 'year')?.value;
+    const month = parts.find(part => part.type === 'month')?.value;
+    const day = parts.find(part => part.type === 'day')?.value;
+    
+    return new Date(parseInt(year!), parseInt(month!) - 1, parseInt(day!));
+  };
   const [stats, setStats] = useState<DashboardStats>({
-    totalUsers: 0,
-    activeUsers: 0,
     totalTransactions: 0,
     totalSales: 0,
-    totalSites: 0,
-    activeSites: 0,
-    totalTerminals: 0,
-    activeTerminals: 0,
-    totalDevices: 0,
-    activeDevices: 0,
-    totalActions: 0,
-    totalErrors: 0,
-    recentTransactions: [],
-    recentActions: [],
-    recentErrors: [],
+    totalReturns: 0,
+    totalFuelSales: 0,
+    totalStoreSales: 0,
     salesByVendor: [],
     loading: true,
     error: null
   });
+
+  const [chartData, setChartData] = useState<ChartData>({
+    dailySales: [],
+    loading: false,
+    error: null
+  });
+
+  const [chartFilters, setChartFilters] = useState<ChartFilters>({
+    startDate: '',
+    endDate: '',
+    period: 'currentMonth'
+  });
+
+  const [siteChartFilters, setSiteChartFilters] = useState<SiteChartFilters>({
+    startDate: '',
+    endDate: '',
+    period: 'today'
+  });
+
+  const [siteChartData, setSiteChartData] = useState<SiteChartData>({
+    siteSales: [],
+    loading: false,
+    error: null
+  });
+
+  const [cfTypeData, setCfTypeData] = useState<CfTypeData[]>([]);
 
   const loadDashboardData = async () => {
     setStats(prev => ({ ...prev, loading: true, error: null }));
@@ -61,41 +133,19 @@ export const useDashboard = () => {
     try {
       // Obtener fecha de hoy en zona horaria de Santo Domingo
       const todayDate = getCurrentSantoDomingoDate();
-      // Cargar datos en paralelo
-      const [
-        usersResponse,
-        transactionsResponse,
-        actionLogsResponse,
-        errorLogsResponse,
-        sitesResponse,
-        terminalsResponse,
-        devicesResponse
-      ] = await Promise.allSettled([
-        userService.getUsers(),
-        transactionService.getTransactions({
-          startDate: todayDate,
-          endDate: todayDate
-        }),
-        logService.getActionLogs(),
-        logService.getErrorLogs(),
-        siteService.getAllSites(),
-        terminalService.getTerminals(),
-        hostService.getHosts()
-      ]);
-
-      // Procesar usuarios
-      let totalUsers = 0;
-      let activeUsers = 0;
-      if (usersResponse.status === 'fulfilled' && usersResponse.value.successful) {
-        const users = usersResponse.value.data || [];
-        totalUsers = users.length;
-        activeUsers = users.filter(user => user.active === 1).length;
-      }
+      
+      // Solo cargar transacciones
+      const transactionsResponse = await transactionService.getTransactions({
+        startDate: todayDate,
+        endDate: todayDate
+      });
 
       // Procesar transacciones
       let totalTransactions = 0;
       let totalSales = 0;
-      let recentTransactions: any[] = [];
+      let totalReturns = 0;
+      let totalFuelSales = 0;
+      let totalStoreSales = 0;
       let salesByVendor: Array<{
         staftId: string;
         staftName: string;
@@ -103,20 +153,51 @@ export const useDashboard = () => {
         transactionCount: number;
       }> = [];
       
-      if (transactionsResponse.status === 'fulfilled') {
-        const transactions = transactionsResponse.value || [];
+      if (transactionsResponse && transactionsResponse.length > 0) {
+        const transactions = transactionsResponse;
         totalTransactions = transactions.length;
-        totalSales = transactions.reduce((sum, trans) => sum + (trans.total || 0), 0);
         
-        // Ordenar por fecha más reciente y tomar las últimas 5
-        recentTransactions = transactions
-          .sort((a, b) => new Date(b.transDate || 0).getTime() - new Date(a.transDate || 0).getTime())
-          .slice(0, 5);
+        // Separar ventas y retornos
+        const sales = transactions.filter(trans => (trans.total || 0) > 0);
+        const returns = transactions.filter(trans => (trans.total || 0) < 0);
         
-        // Calcular ventas por vendedor
+        totalSales = sales.reduce((sum, trans) => sum + (trans.total || 0), 0);
+        totalReturns = Math.abs(returns.reduce((sum, trans) => sum + (trans.total || 0), 0));
+        
+        // Separar ventas de combustible y tienda
+        const fuelSales = sales.filter(transaction => {
+          // Verificar si tiene productos y si el primer producto es combustible
+          if (transaction.prods && transaction.prods.length > 0) {
+            const firstProduct = transaction.prods[0];
+            // Los productos de combustible tienen categoryId "COMB"
+            return firstProduct.categoryId === 'COMB';
+          }
+          return false;
+        });
+        
+        const storeSales = sales.filter(transaction => {
+          // Excluir transacciones de combustible y zataca
+          if (transaction.prods && transaction.prods.length > 0) {
+            const firstProduct = transaction.prods[0];
+            // Excluir combustibles (categoryId "COMB")
+            if (firstProduct.categoryId === 'COMB') {
+              return false;
+            }
+            // Excluir zataca (si tiene zataca data)
+            if (transaction.zataca) {
+              return false;
+            }
+          }
+          return true;
+        });
+        
+        totalFuelSales = fuelSales.reduce((sum, trans) => sum + (trans.total || 0), 0);
+        totalStoreSales = storeSales.reduce((sum, trans) => sum + (trans.total || 0), 0);
+        
+        // Calcular ventas por vendedor (solo ventas, no retornos)
         const vendorSalesMap = new Map<string, { staftName: string; totalSales: number; transactionCount: number }>();
         
-        transactions.forEach(transaction => {
+        sales.forEach(transaction => {
           const staftId = transaction.staftId?.toString() || 'N/A';
           const staftName = transaction.staftName || 'Vendedor Desconocido';
           const total = transaction.total || 0;
@@ -143,76 +224,19 @@ export const useDashboard = () => {
             transactionCount: data.transactionCount
           }))
           .sort((a, b) => b.totalSales - a.totalSales)
-          .slice(0, 10); // Top 10 vendedores
+          .slice(0, 5); // Top 5 vendedores
       }
 
-      // Procesar logs de acciones
-      let totalActions = 0;
-      let recentActions: any[] = [];
-      if (actionLogsResponse.status === 'fulfilled' && actionLogsResponse.value.successful) {
-        const actions = actionLogsResponse.value.data || [];
-        totalActions = actions.length;
-        // Ordenar por fecha más reciente y tomar las últimas 5
-        recentActions = actions
-          .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
-          .slice(0, 5);
-      }
-
-      // Procesar logs de errores
-      let totalErrors = 0;
-      let recentErrors: any[] = [];
-      if (errorLogsResponse.status === 'fulfilled' && errorLogsResponse.value.successful) {
-        const errors = errorLogsResponse.value.data || [];
-        totalErrors = errors.length;
-        // Ordenar por fecha más reciente y tomar los últimos 5
-        recentErrors = errors
-          .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
-          .slice(0, 5);
-      }
-
-      // Procesar sitios
-      let totalSites = 0;
-      let activeSites = 0;
-      if (sitesResponse.status === 'fulfilled' && sitesResponse.value.successful) {
-        const sites = sitesResponse.value.data || [];
-        totalSites = sites.length;
-        activeSites = sites.filter(site => site.active).length;
-      }
-
-      // Procesar terminales
-      let totalTerminals = 0;
-      let activeTerminals = 0;
-      if (terminalsResponse.status === 'fulfilled' && terminalsResponse.value.successful) {
-        const terminals = terminalsResponse.value.data || [];
-        totalTerminals = terminals.length;
-        activeTerminals = terminals.filter(terminal => terminal.active).length;
-      }
-
-      // Procesar dispositivos
-      let totalDevices = 0;
-      let activeDevices = 0;
-      if (devicesResponse.status === 'fulfilled' && devicesResponse.value.successful) {
-        const devices = devicesResponse.value.data || [];
-        totalDevices = devices.length;
-        activeDevices = devices.filter(device => device.active).length;
-      }
+      // Procesar datos por tipo de CF
+      const cfData = getCfTypeData(transactionsResponse);
+      setCfTypeData(cfData);
 
       setStats({
-        totalUsers,
-        activeUsers,
         totalTransactions,
         totalSales,
-        totalSites,
-        activeSites,
-        totalTerminals,
-        activeTerminals,
-        totalDevices,
-        activeDevices,
-        totalActions,
-        totalErrors,
-        recentTransactions,
-        recentActions,
-        recentErrors,
+        totalReturns,
+        totalFuelSales,
+        totalStoreSales,
         salesByVendor,
         loading: false,
         error: null
@@ -228,12 +252,430 @@ export const useDashboard = () => {
     }
   };
 
+  const loadChartData = useCallback(async (filters?: Partial<ChartFilters>) => {
+    setChartData(prev => ({ ...prev, loading: true, error: null }));
+    
+    try {
+      let startDate: string;
+      let endDate: string;
+      
+      if (filters) {
+        // Usar filtros proporcionados
+        startDate = filters.startDate || '';
+        endDate = filters.endDate || '';
+      } else {
+        // Usar filtros del estado
+        const currentFilters = chartFilters;
+        
+        if (currentFilters.period === 'currentMonth') {
+          const santoDomingoDate = getSantoDomingoDate();
+          const firstDay = new Date(santoDomingoDate.getFullYear(), santoDomingoDate.getMonth(), 1);
+          const lastDay = new Date(santoDomingoDate.getFullYear(), santoDomingoDate.getMonth() + 1, 0);
+          startDate = formatDateLocal(firstDay);
+          endDate = formatDateLocal(lastDay);
+        } else if (currentFilters.period === 'lastMonth') {
+          const santoDomingoDate = getSantoDomingoDate();
+          const firstDay = new Date(santoDomingoDate.getFullYear(), santoDomingoDate.getMonth() - 1, 1);
+          const lastDay = new Date(santoDomingoDate.getFullYear(), santoDomingoDate.getMonth(), 0);
+          startDate = formatDateLocal(firstDay);
+          endDate = formatDateLocal(lastDay);
+        } else {
+          // custom
+          startDate = currentFilters.startDate;
+          endDate = currentFilters.endDate;
+        }
+      }
+      
+      console.log('📊 Cargando datos del gráfico para el mes:', { startDate, endDate });
+      
+      // Debug: mostrar cálculo de fechas
+      if (!filters) {
+        const santoDomingoDate = getSantoDomingoDate();
+        console.log('📅 Debug de fechas:');
+        console.log('  - Fecha actual en Santo Domingo:', santoDomingoDate);
+        console.log('  - Año:', santoDomingoDate.getFullYear());
+        console.log('  - Mes:', santoDomingoDate.getMonth() + 1);
+        console.log('  - Día:', santoDomingoDate.getDate());
+      }
+      
+      // Cargar todas las transacciones del mes
+      console.log('📡 Enviando a API:', { startDate, endDate });
+      const transactionsResponse = await transactionService.getTransactions({
+        startDate,
+        endDate
+      });
+
+      console.log('📊 Transacciones recibidas:', transactionsResponse?.length || 0);
+
+      if (transactionsResponse && transactionsResponse.length > 0) {
+        // Agrupar transacciones por día
+        const dailySalesMap = new Map<string, { sales: number; transactions: number }>();
+        
+        transactionsResponse.forEach((transaction, index) => {
+          if (transaction.transDate) {
+            // La fecha ya viene en hora local de Santo Domingo, no convertir a UTC
+            const date = new Date(transaction.transDate);
+            // Usar métodos locales para obtener la fecha sin conversión UTC
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const dateKey = `${year}-${month}-${day}`;
+            const total = transaction.total || 0;
+            
+            // Debug: mostrar las primeras 5 transacciones
+            if (index < 5) {
+              console.log(`📅 Transacción ${index + 1}:`, {
+                originalDate: transaction.transDate,
+                parsedDate: date,
+                dateKey,
+                total
+              });
+            }
+            
+            if (dailySalesMap.has(dateKey)) {
+              const existing = dailySalesMap.get(dateKey)!;
+              existing.sales += total;
+              existing.transactions += 1;
+            } else {
+              dailySalesMap.set(dateKey, {
+                sales: total,
+                transactions: 1
+              });
+            }
+          }
+        });
+        
+        // Convertir a array y ordenar por fecha
+        const dailySales = Array.from(dailySalesMap.entries())
+          .map(([date, data]) => ({
+            date,
+            sales: data.sales,
+            transactions: data.transactions
+          }))
+          .sort((a, b) => a.date.localeCompare(b.date));
+        
+        console.log('📈 Datos del gráfico procesados:', dailySales);
+        console.log('📊 Total de días con transacciones:', dailySales.length);
+        console.log('📊 Total de transacciones procesadas:', dailySales.reduce((sum, day) => sum + day.transactions, 0));
+        
+        setChartData({
+          dailySales,
+          loading: false,
+          error: null
+        });
+      } else {
+        setChartData({
+          dailySales: [],
+          loading: false,
+          error: null
+        });
+      }
+      
+    } catch (error) {
+      console.error('Error loading chart data:', error);
+      setChartData(prev => ({
+        ...prev,
+        loading: false,
+        error: 'Error al cargar los datos del gráfico'
+      }));
+    }
+  }, [chartFilters]); // Depende de chartFilters
+
+  const updateChartFilters = useCallback((newFilters: Partial<ChartFilters>) => {
+    setChartFilters(prev => ({ ...prev, ...newFilters }));
+  }, []);
+
+  const refreshChartData = useCallback(() => {
+    loadChartData();
+  }, [loadChartData]);
+
+  const loadSiteSalesData = useCallback(async (filters?: Partial<SiteChartFilters>) => {
+    setSiteChartData(prev => ({ ...prev, loading: true, error: null }));
+    
+    try {
+      let startDate: string;
+      let endDate: string;
+      
+      if (filters) {
+        startDate = filters.startDate || '';
+        endDate = filters.endDate || '';
+      } else {
+        const currentFilters = siteChartFilters;
+        const santoDomingoDate = getSantoDomingoDate();
+        
+        switch (currentFilters.period) {
+          case 'today':
+            startDate = formatDateLocal(santoDomingoDate);
+            endDate = formatDateLocal(santoDomingoDate);
+            break;
+            
+          case 'yesterday':
+            const yesterday = new Date(santoDomingoDate);
+            yesterday.setDate(yesterday.getDate() - 1);
+            startDate = formatDateLocal(yesterday);
+            endDate = formatDateLocal(yesterday);
+            break;
+            
+          case 'thisWeek':
+            const startOfWeek = new Date(santoDomingoDate);
+            startOfWeek.setDate(santoDomingoDate.getDate() - santoDomingoDate.getDay());
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            startDate = formatDateLocal(startOfWeek);
+            endDate = formatDateLocal(endOfWeek);
+            break;
+            
+          case 'lastWeek':
+            const lastWeekStart = new Date(santoDomingoDate);
+            lastWeekStart.setDate(santoDomingoDate.getDate() - santoDomingoDate.getDay() - 7);
+            const lastWeekEnd = new Date(lastWeekStart);
+            lastWeekEnd.setDate(lastWeekStart.getDate() + 6);
+            startDate = formatDateLocal(lastWeekStart);
+            endDate = formatDateLocal(lastWeekEnd);
+            break;
+            
+          case 'thisMonth':
+            const firstDay = new Date(santoDomingoDate.getFullYear(), santoDomingoDate.getMonth(), 1);
+            const lastDay = new Date(santoDomingoDate.getFullYear(), santoDomingoDate.getMonth() + 1, 0);
+            startDate = formatDateLocal(firstDay);
+            endDate = formatDateLocal(lastDay);
+            break;
+            
+          case 'lastMonth':
+            const firstDayLastMonth = new Date(santoDomingoDate.getFullYear(), santoDomingoDate.getMonth() - 1, 1);
+            const lastDayLastMonth = new Date(santoDomingoDate.getFullYear(), santoDomingoDate.getMonth(), 0);
+            startDate = formatDateLocal(firstDayLastMonth);
+            endDate = formatDateLocal(lastDayLastMonth);
+            break;
+            
+          case 'custom':
+            startDate = currentFilters.startDate;
+            endDate = currentFilters.endDate;
+            break;
+            
+          default:
+            startDate = formatDateLocal(santoDomingoDate);
+            endDate = formatDateLocal(santoDomingoDate);
+        }
+      }
+      
+      console.log('🏢 Cargando datos de ventas por sucursal:', { startDate, endDate });
+      
+      const transactionsResponse = await transactionService.getTransactions({
+        startDate,
+        endDate
+      });
+
+      if (transactionsResponse && transactionsResponse.length > 0) {
+        // Agrupar transacciones por sucursal
+        const siteSalesMap = new Map<string, { 
+          siteName: string; 
+          totalSales: number; 
+          transactionCount: number; 
+        }>();
+        
+        transactionsResponse.forEach(transaction => {
+          const siteId = transaction.siteId?.toString() || 'N/A';
+          const siteName = transaction.siteName || `Sucursal ${siteId}`;
+          const total = transaction.total || 0;
+          
+          if (siteSalesMap.has(siteId)) {
+            const existing = siteSalesMap.get(siteId)!;
+            existing.totalSales += total;
+            existing.transactionCount += 1;
+          } else {
+            siteSalesMap.set(siteId, {
+              siteName,
+              totalSales: total,
+              transactionCount: 1
+            });
+          }
+        });
+        
+        // Convertir a array y calcular promedio por ticket
+        const siteSales = Array.from(siteSalesMap.entries())
+          .map(([siteId, data]) => ({
+            siteId,
+            siteName: data.siteName,
+            totalSales: data.totalSales,
+            transactionCount: data.transactionCount,
+            averageTicket: data.transactionCount > 0 ? data.totalSales / data.transactionCount : 0
+          }))
+          .sort((a, b) => b.totalSales - a.totalSales); // Ordenar por ventas descendente
+        
+        console.log('🏢 Datos de sucursales procesados:', siteSales);
+        
+        setSiteChartData({
+          siteSales,
+          loading: false,
+          error: null
+        });
+      } else {
+        setSiteChartData({
+          siteSales: [],
+          loading: false,
+          error: null
+        });
+      }
+      
+    } catch (error) {
+      console.error('Error loading site sales data:', error);
+      setSiteChartData(prev => ({
+        ...prev,
+        loading: false,
+        error: 'Error al cargar los datos de ventas por sucursal'
+      }));
+    }
+  }, [siteChartFilters]);
+
+  // Calcular estadísticas adicionales del gráfico
+  const getChartStats = useCallback(() => {
+    if (chartData.dailySales.length === 0) {
+    return {
+      bestDay: null,
+      worstDay: null,
+      averageDaily: 0,
+      totalPeriod: 0,
+      trend: 'neutral' as const
+    };
+    }
+
+    const sales = chartData.dailySales.map(item => item.sales);
+    const bestDay = chartData.dailySales.reduce((max, item) => 
+      item.sales > max.sales ? item : max
+    );
+    const worstDay = chartData.dailySales.reduce((min, item) => 
+      item.sales < min.sales ? item : min
+    );
+    const totalPeriod = sales.reduce((sum, sale) => sum + sale, 0);
+    const averageDaily = totalPeriod / sales.length;
+
+    // Calcular tendencia (comparar primera mitad vs segunda mitad)
+    const midPoint = Math.floor(sales.length / 2);
+    const firstHalf = sales.slice(0, midPoint).reduce((sum, sale) => sum + sale, 0) / midPoint;
+    const secondHalf = sales.slice(midPoint).reduce((sum, sale) => sum + sale, 0) / (sales.length - midPoint);
+    
+    let trend: 'up' | 'down' | 'neutral' = 'neutral';
+    if (secondHalf > firstHalf * 1.1) trend = 'up';
+    else if (secondHalf < firstHalf * 0.9) trend = 'down';
+
+    return {
+      bestDay,
+      worstDay,
+      averageDaily,
+      totalPeriod,
+      trend
+    };
+  }, [chartData.dailySales]);
+
+  // Calcular estadísticas de sucursales
+  const getSiteStats = useCallback(() => {
+    if (siteChartData.siteSales.length === 0) {
+      return {
+        topSite: null,
+        bottomSite: null,
+        totalSites: 0,
+        totalSales: 0,
+        averageSiteSales: 0
+      };
+    }
+
+    const topSite = siteChartData.siteSales[0]; // Ya está ordenado por ventas descendente
+    const bottomSite = siteChartData.siteSales[siteChartData.siteSales.length - 1];
+    const totalSales = siteChartData.siteSales.reduce((sum, site) => sum + site.totalSales, 0);
+    const averageSiteSales = totalSales / siteChartData.siteSales.length;
+
+    return {
+      topSite,
+      bottomSite,
+      totalSites: siteChartData.siteSales.length,
+      totalSales,
+      averageSiteSales
+    };
+  }, [siteChartData.siteSales]);
+
+  const refreshSiteData = useCallback(() => {
+    loadSiteSalesData();
+  }, [loadSiteSalesData]);
+
+  const updateSiteChartFilters = useCallback((newFilters: Partial<SiteChartFilters>) => {
+    setSiteChartFilters(prev => ({ ...prev, ...newFilters }));
+  }, []);
+
+  // Función para procesar datos por tipo de CF
+  const getCfTypeData = useCallback((transactions: any[]): CfTypeData[] => {
+    if (!transactions || transactions.length === 0) {
+      return [];
+    }
+
+    // Mapeo de tipos de CF a nombres
+    const cfTypeNames: { [key: string]: string } = {
+      '31': 'Factura de Crédito Fiscal',
+      '32': 'Factura de Consumo',
+      '34': 'Factura de Exportación',
+      '44': 'Factura de Régimen Especial',
+      '45': 'Factura Gubernamental'
+    };
+
+    // Agrupar transacciones por tipo de CF
+    const cfTypeMap = new Map<string, { sales: number; count: number }>();
+    
+    transactions.forEach(transaction => {
+      const cfType = transaction.cfType || '31'; // Default a tipo 31 si no tiene cfType
+      const total = transaction.total || 0;
+      
+      if (cfTypeMap.has(cfType)) {
+        const existing = cfTypeMap.get(cfType)!;
+        existing.sales += total;
+        existing.count += 1;
+      } else {
+        cfTypeMap.set(cfType, {
+          sales: total,
+          count: 1
+        });
+      }
+    });
+
+    // Calcular total de ventas
+    const totalSales = Array.from(cfTypeMap.values()).reduce((sum, data) => sum + data.sales, 0);
+
+    // Convertir a array y calcular porcentajes
+    const cfTypeData = Array.from(cfTypeMap.entries())
+      .map(([cfType, data]) => ({
+        cfType,
+        cfTypeName: cfTypeNames[cfType] || `Tipo ${cfType}`,
+        sales: data.sales,
+        count: data.count,
+        percentage: totalSales > 0 ? (data.sales / totalSales) * 100 : 0
+      }))
+      .sort((a, b) => b.sales - a.sales); // Ordenar por ventas descendente
+
+    return cfTypeData;
+  }, []);
+
   useEffect(() => {
     loadDashboardData();
   }, []);
 
   return {
     ...stats,
-    refresh: loadDashboardData
+    dailySales: chartData.dailySales,
+    chartLoading: chartData.loading,
+    chartError: chartData.error,
+    chartFilters,
+    siteSales: siteChartData.siteSales,
+    siteLoading: siteChartData.loading,
+    siteError: siteChartData.error,
+    siteChartFilters,
+    cfTypeData,
+    refresh: loadDashboardData,
+    loadChartData,
+    updateChartFilters,
+    refreshChartData,
+    getChartStats: getChartStats(),
+    loadSiteSalesData,
+    refreshSiteData,
+    updateSiteChartFilters,
+    getSiteStats: getSiteStats()
   };
 };

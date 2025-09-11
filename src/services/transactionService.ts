@@ -7,16 +7,16 @@ class TransactionService {
    * Obtiene transacciones desde la API con filtros opcionales
    */
   async getTransactions(params?: {
-    startDate?: string;
-    endDate?: string;
-    status?: number;
-    taxpayerId?: string;
+    transNumber?: string;
     cfNumber?: string;
-    cfType?: string;
     siteId?: string;
     terminal?: number;
+    cfType?: string;
     staftId?: number;
+    taxpayerId?: string;
     shift?: number;
+    startDate?: string;
+    endDate?: string;
   }): Promise<ITransactionResume[]> {
     try {
       // Construir URL usando la configuración global
@@ -24,16 +24,16 @@ class TransactionService {
       if (params) {
         const queryParams = new URLSearchParams();
         
-        if (params.startDate) queryParams.append('startDate', params.startDate);
-        if (params.endDate) queryParams.append('endDate', params.endDate);
-        if (params.status !== undefined) queryParams.append('status', params.status.toString());
-        if (params.taxpayerId) queryParams.append('taxpayerId', params.taxpayerId);
+        if (params.transNumber) queryParams.append('transNumber', params.transNumber);
         if (params.cfNumber) queryParams.append('cfNumber', params.cfNumber);
-        if (params.cfType) queryParams.append('cfType', params.cfType);
         if (params.siteId) queryParams.append('siteId', params.siteId);
         if (params.terminal !== undefined) queryParams.append('terminal', params.terminal.toString());
+        if (params.cfType) queryParams.append('cfType', params.cfType);
         if (params.staftId !== undefined) queryParams.append('staftId', params.staftId.toString());
+        if (params.taxpayerId) queryParams.append('taxpayerId', params.taxpayerId);
         if (params.shift !== undefined) queryParams.append('shift', params.shift.toString());
+        if (params.startDate) queryParams.append('startDate', params.startDate);
+        if (params.endDate) queryParams.append('endDate', params.endDate);
         
         if (queryParams.toString()) {
           url += `?${queryParams.toString()}`;
@@ -81,30 +81,30 @@ class TransactionService {
    * Busca transacciones con filtros específicos
    */
   async searchTransactions(params: {
-    startDate?: string;
-    endDate?: string;
-    status?: number;
-    taxpayerId?: string;
+    transNumber?: string;
     cfNumber?: string;
-    cfType?: string;
     siteId?: string;
     terminal?: number;
+    cfType?: string;
     staftId?: number;
+    taxpayerId?: string;
     shift?: number;
+    startDate?: string;
+    endDate?: string;
   }): Promise<ITransactionResume[]> {
     try {
       const queryParams = new URLSearchParams();
       
-      if (params.startDate) queryParams.append('startDate', params.startDate);
-      if (params.endDate) queryParams.append('endDate', params.endDate);
-      if (params.status !== undefined) queryParams.append('status', params.status.toString());
-      if (params.taxpayerId) queryParams.append('taxpayerId', params.taxpayerId);
+      if (params.transNumber) queryParams.append('transNumber', params.transNumber);
       if (params.cfNumber) queryParams.append('cfNumber', params.cfNumber);
-      if (params.cfType) queryParams.append('cfType', params.cfType);
       if (params.siteId) queryParams.append('siteId', params.siteId);
       if (params.terminal !== undefined) queryParams.append('terminal', params.terminal.toString());
+      if (params.cfType) queryParams.append('cfType', params.cfType);
       if (params.staftId !== undefined) queryParams.append('staftId', params.staftId.toString());
+      if (params.taxpayerId) queryParams.append('taxpayerId', params.taxpayerId);
       if (params.shift !== undefined) queryParams.append('shift', params.shift.toString());
+      if (params.startDate) queryParams.append('startDate', params.startDate);
+      if (params.endDate) queryParams.append('endDate', params.endDate);
 
       const response = await apiGet<ITransactionResume[]>(buildApiUrl(`transactions/search?${queryParams}`));
 

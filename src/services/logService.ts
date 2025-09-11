@@ -9,13 +9,39 @@ export interface LogsResponse {
 
 export const logService = {
   // Obtener logs de acciones
-  async getActionLogs(): Promise<ApiResponse<IActionLog[]>> {
-    return await apiGet<IActionLog[]>(buildApiUrl('action-log'));
+  async getActionLogs(params?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<ApiResponse<IActionLog[]>> {
+    let url = buildApiUrl('action-log');
+    if (params) {
+      const queryParams = new URLSearchParams();
+      if (params.startDate) queryParams.append('startDate', params.startDate);
+      if (params.endDate) queryParams.append('endDate', params.endDate);
+      
+      if (queryParams.toString()) {
+        url += `?${queryParams.toString()}`;
+      }
+    }
+    return await apiGet<IActionLog[]>(url);
   },
 
   // Obtener logs de errores
-  async getErrorLogs(): Promise<ApiResponse<IErrorLog[]>> {
-    return await apiGet<IErrorLog[]>(buildApiUrl('error-log'));
+  async getErrorLogs(params?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<ApiResponse<IErrorLog[]>> {
+    let url = buildApiUrl('error-log');
+    if (params) {
+      const queryParams = new URLSearchParams();
+      if (params.startDate) queryParams.append('startDate', params.startDate);
+      if (params.endDate) queryParams.append('endDate', params.endDate);
+      
+      if (queryParams.toString()) {
+        url += `?${queryParams.toString()}`;
+      }
+    }
+    return await apiGet<IErrorLog[]>(url);
   },
 
   // Marcar error como resuelto

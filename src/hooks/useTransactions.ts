@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ITransactionResume, TransactionStatus, CFStatus } from '../types/transaction';
+import { ITransactionResume, CFStatus } from '../types/transaction';
 import { getCurrentSantoDomingoDate } from '../utils/transactionUtils';
 import { transactionService } from '../services/transactionService';
 import { mockTransactions } from '../data/mockTransactions';
@@ -23,9 +23,12 @@ interface UseTransactionsReturn {
   error: string | null;
   selectedTransaction: ITransactionResume | null;
   searchTerm: string;
+  transNumberFilter: string;
+  cfNumberFilter: string;
   statusFilter: number | '';
   cfTypeFilter: string;
   siteIdFilter: string;
+  terminalFilter: number | '';
   staftIdFilter: number | '';
   shiftFilter: number | '';
   startDateFilter: string;
@@ -36,9 +39,12 @@ interface UseTransactionsReturn {
   sortField: SortField;
   sortDirection: SortDirection;
   setSearchTerm: (term: string) => void;
+  setTransNumberFilter: (transNumber: string) => void;
+  setCfNumberFilter: (cfNumber: string) => void;
   setStatusFilter: (status: number | '') => void;
   setCfTypeFilter: (cfType: string) => void;
   setSiteIdFilter: (siteId: string) => void;
+  setTerminalFilter: (terminal: number | '') => void;
   setStaftIdFilter: (staftId: number | '') => void;
   setShiftFilter: (shift: number | '') => void;
   setStartDateFilter: (date: string) => void;
@@ -49,18 +55,19 @@ interface UseTransactionsReturn {
   setSortDirection: (direction: SortDirection) => void;
   handleSort: (field: SortField) => void;
   loadTransactions: () => Promise<void>;
+  loadTransactionsWithDates: (startDate: string, endDate: string) => Promise<void>;
   refreshTransactions: () => Promise<void>;
   searchTransactions: (params: {
-    startDate?: string;
-    endDate?: string;
-    status?: number;
-    taxpayerId?: string;
+    transNumber?: string;
     cfNumber?: string;
-    cfType?: string;
     siteId?: string;
     terminal?: number;
+    cfType?: string;
     staftId?: number;
+    taxpayerId?: string;
     shift?: number;
+    startDate?: string;
+    endDate?: string;
   }) => Promise<void>;
   exportTransactions: (format: 'pdf' | 'excel' | 'csv') => Promise<void>;
 }
@@ -78,9 +85,12 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
   const [error, setError] = useState<string | null>(null);
   const [selectedTransaction, setSelectedTransaction] = useState<ITransactionResume | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [transNumberFilter, setTransNumberFilter] = useState<string>('');
+  const [cfNumberFilter, setCfNumberFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<number | ''>('');
   const [cfTypeFilter, setCfTypeFilter] = useState<string>('');
   const [siteIdFilter, setSiteIdFilter] = useState<string>('');
+  const [terminalFilter, setTerminalFilter] = useState<number | ''>('');
   const [staftIdFilter, setStaftIdFilter] = useState<number | ''>('');
   const [shiftFilter, setShiftFilter] = useState<number | ''>('');
   // Obtener fecha de hoy en formato YYYY-MM-DD en zona horaria de Santo Domingo
@@ -94,6 +104,15 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
   const [itemsPerPage] = useState(10);
   const [sortField, setSortField] = useState<SortField>('transDate');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  
+  // Rango de fechas de los datos actuales cargados
+  const [currentDataDateRange, setCurrentDataDateRange] = useState<{
+    startDate: string;
+    endDate: string;
+  }>({
+    startDate: getTodayDate(),
+    endDate: getTodayDate()
+  });
 
   // Función para calcular estadísticas
   const calculateStats = useCallback((transactions: ITransactionResume[]) => {
@@ -229,8 +248,80 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
     return transactions;
   }, [isNCFView, isTiendaView, filterCombustibleTransactions, filterTiendaTransactions]);
 
+  // Función para buscar localmente por transNumber
+  const findTransactionByNumber = useCallback((transNumber: string): boolean => {
+    const found = transactions.some(t => t.transNumber === transNumber);
+    console.log(`🔍 Buscando transNumber "${transNumber}":`, found);
+    if (found) {
+      console.log('📋 Transacciones disponibles:', transactions.map(t => t.transNumber));
+    }
+    return found;
+  }, [transactions]);
 
-  // Función para cargar transacciones
+  // Función para buscar localmente por cfNumber
+  const findTransactionByCfNumber = useCallback((cfNumber: string): boolean => {
+    const found = transactions.some(t => t.cfNumber === cfNumber);
+    console.log(`🔍 Buscando cfNumber "${cfNumber}":`, found);
+    if (found) {
+      console.log('📋 CfNumbers disponibles:', transactions.map(t => t.cfNumber));
+    }
+    return found;
+  }, [transactions]);
+
+  // Función para buscar localmente por siteId
+  const findTransactionBySiteId = useCallback((siteId: string): boolean => {
+    const found = transactions.some(t => t.siteId?.toLowerCase().includes(siteId.toLowerCase()));
+    console.log(`🔍 Buscando siteId "${siteId}":`, found);
+    return found;
+  }, [transactions]);
+
+  // Función para buscar localmente por terminal
+  const findTransactionByTerminal = useCallback((terminal: number): boolean => {
+    const found = transactions.some(t => t.terminalId === terminal);
+    console.log(`🔍 Buscando terminal "${terminal}":`, found);
+    return found;
+  }, [transactions]);
+
+  // Función para buscar localmente por cfType
+  const findTransactionByCfType = useCallback((cfType: string): boolean => {
+    const found = transactions.some(t => t.cfType === cfType);
+    console.log(`🔍 Buscando cfType "${cfType}":`, found);
+    return found;
+  }, [transactions]);
+
+  // Función para buscar localmente por staftId
+  const findTransactionByStaftId = useCallback((staftId: number): boolean => {
+    const found = transactions.some(t => t.staftId === staftId);
+    console.log(`🔍 Buscando staftId "${staftId}":`, found);
+    return found;
+  }, [transactions]);
+
+  // Función para buscar localmente por taxpayerId
+  const findTransactionByTaxpayerId = useCallback((taxpayerId: string): boolean => {
+    const found = transactions.some(t => t.taxpayerId?.toLowerCase().includes(taxpayerId.toLowerCase()));
+    console.log(`🔍 Buscando taxpayerId "${taxpayerId}":`, found);
+    return found;
+  }, [transactions]);
+
+  // Función para buscar localmente por shift
+  const findTransactionByShift = useCallback((shift: number): boolean => {
+    const found = transactions.some(t => t.shift === shift);
+    console.log(`🔍 Buscando shift "${shift}":`, found);
+    return found;
+  }, [transactions]);
+
+  // Función para verificar si el rango de fechas solicitado está dentro del rango de datos actuales
+  const isDateRangeWithinCurrentData = useCallback((startDate: string, endDate: string): boolean => {
+    const requestedStart = new Date(startDate);
+    const requestedEnd = new Date(endDate);
+    const currentStart = new Date(currentDataDateRange.startDate);
+    const currentEnd = new Date(currentDataDateRange.endDate);
+    
+    return requestedStart >= currentStart && requestedEnd <= currentEnd;
+  }, [currentDataDateRange]);
+
+
+  // Función para cargar transacciones (solo en la carga inicial)
   const loadTransactions = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -250,6 +341,12 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
       const sortedData = sortTransactions(filteredData, sortField, sortDirection);
       setTransactions(sortedData);
       setStats(calculateStats(sortedData));
+      
+      // Actualizar el rango de fechas de los datos actuales
+      setCurrentDataDateRange({
+        startDate: startDateFilter,
+        endDate: endDateFilter
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar transacciones');
       // En caso de error, usamos datos mock como fallback
@@ -261,7 +358,45 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
     } finally {
       setLoading(false);
     }
-  }, [calculateStats, startDateFilter, endDateFilter, sortField, sortDirection, sortTransactions, filterTransactions]);
+  }, [calculateStats, sortField, sortDirection, sortTransactions, filterTransactions, startDateFilter, endDateFilter]);
+
+  // Función para cargar transacciones con fechas específicas (usada por los filtros)
+  const loadTransactionsWithDates = useCallback(async (startDate: string, endDate: string) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const params = {
+        startDate,
+        endDate
+      };
+      
+      const data = await transactionService.getTransactions(params);
+      
+      // Filtrar transacciones según la vista activa
+      const filteredData = filterTransactions(data);
+      
+      const sortedData = sortTransactions(filteredData, sortField, sortDirection);
+      setTransactions(sortedData);
+      setStats(calculateStats(sortedData));
+      
+      // Actualizar el rango de fechas de los datos actuales
+      setCurrentDataDateRange({
+        startDate,
+        endDate
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al cargar transacciones');
+      // En caso de error, usamos datos mock como fallback
+      console.warn('Usando datos mock como fallback:', err);
+      const mockFiltered = filterTransactions(mockTransactions);
+      const sortedData = sortTransactions(mockFiltered, sortField, sortDirection);
+      setTransactions(sortedData);
+      setStats(calculateStats(sortedData));
+    } finally {
+      setLoading(false);
+    }
+  }, [calculateStats, sortField, sortDirection, sortTransactions, filterTransactions]);
 
   // Calcular total de páginas
   const totalPages = Math.ceil(transactions.length / itemsPerPage);
@@ -269,6 +404,16 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
   // Funciones wrapper para resetear página
   const handleSetSearchTerm = (term: string) => {
     setSearchTerm(term);
+    setCurrentPage(1);
+  };
+
+  const handleSetTransNumberFilter = (transNumber: string) => {
+    setTransNumberFilter(transNumber);
+    setCurrentPage(1);
+  };
+
+  const handleSetCfNumberFilter = (cfNumber: string) => {
+    setCfNumberFilter(cfNumber);
     setCurrentPage(1);
   };
 
@@ -284,6 +429,11 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
 
   const handleSetSiteIdFilter = (siteId: string) => {
     setSiteIdFilter(siteId);
+    setCurrentPage(1);
+  };
+
+  const handleSetTerminalFilter = (terminal: number | '') => {
+    setTerminalFilter(terminal);
     setCurrentPage(1);
   };
 
@@ -312,39 +462,211 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
     await loadTransactions();
   }, [loadTransactions]);
 
-  // Función para buscar transacciones con filtros avanzados
-  const searchTransactions = useCallback(async (params: {
-    startDate?: string;
-    endDate?: string;
-    status?: number;
-    taxpayerId?: string;
+  // Función para filtrar transacciones localmente
+  const filterTransactionsLocally = useCallback((params: {
+    transNumber?: string;
     cfNumber?: string;
-    cfType?: string;
     siteId?: string;
     terminal?: number;
+    cfType?: string;
     staftId?: number;
+    taxpayerId?: string;
     shift?: number;
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    let filteredData = [...transactions];
+    console.log('🏠 Iniciando filtrado local con', transactions.length, 'transacciones');
+    
+    // Filtrar por transNumber
+    if (params.transNumber) {
+      const beforeCount = filteredData.length;
+      filteredData = filteredData.filter(t => 
+        t.transNumber?.toLowerCase().includes(params.transNumber!.toLowerCase())
+      );
+      console.log(`🔍 Filtro transNumber "${params.transNumber}": ${beforeCount} -> ${filteredData.length}`);
+    }
+    
+    // Filtrar por cfNumber
+    if (params.cfNumber) {
+      const beforeCount = filteredData.length;
+      filteredData = filteredData.filter(t => 
+        t.cfNumber?.toLowerCase().includes(params.cfNumber!.toLowerCase())
+      );
+      console.log(`🔍 Filtro cfNumber "${params.cfNumber}": ${beforeCount} -> ${filteredData.length}`);
+    }
+    
+    // Filtrar por siteId
+    if (params.siteId) {
+      filteredData = filteredData.filter(t => 
+        t.siteId?.toLowerCase().includes(params.siteId!.toLowerCase())
+      );
+    }
+    
+    // Filtrar por terminal
+    if (params.terminal !== undefined) {
+      filteredData = filteredData.filter(t => t.terminalId === params.terminal);
+    }
+    
+    // Filtrar por cfType
+    if (params.cfType) {
+      filteredData = filteredData.filter(t => t.cfType === params.cfType);
+    }
+    
+    // Filtrar por staftId
+    if (params.staftId !== undefined) {
+      filteredData = filteredData.filter(t => t.staftId === params.staftId);
+    }
+    
+    // Filtrar por taxpayerId
+    if (params.taxpayerId) {
+      filteredData = filteredData.filter(t => 
+        t.taxpayerId?.toLowerCase().includes(params.taxpayerId!.toLowerCase())
+      );
+    }
+    
+    // Filtrar por shift
+    if (params.shift !== undefined) {
+      filteredData = filteredData.filter(t => t.shift === params.shift);
+    }
+    
+    // Filtrar por rango de fechas (solo si no estamos buscando solo por campos específicos)
+    const isOnlySearchingBySpecificFields = (params.cfNumber || params.transNumber || 
+      params.siteId || params.terminal || params.cfType || 
+      params.staftId || params.taxpayerId || params.shift) && 
+      // Verificar que no hay múltiples filtros activos
+      [params.cfNumber, params.transNumber, params.siteId, params.terminal, 
+       params.cfType, params.staftId, params.taxpayerId, params.shift]
+      .filter(Boolean).length === 1;
+    
+    if (params.startDate && params.endDate && !isOnlySearchingBySpecificFields) {
+      const beforeCount = filteredData.length;
+      const startDate = new Date(params.startDate);
+      const endDate = new Date(params.endDate);
+      endDate.setHours(23, 59, 59, 999); // Incluir todo el día final
+      
+      console.log(`📅 Filtro de fechas: ${params.startDate} a ${params.endDate}`);
+      console.log(`📅 Rango de búsqueda: ${startDate.toISOString()} a ${endDate.toISOString()}`);
+      
+      filteredData = filteredData.filter(t => {
+        const transDate = new Date(t.transDate);
+        const isInRange = transDate >= startDate && transDate <= endDate;
+        if (!isInRange) {
+          console.log(`❌ Transacción ${t.transNumber} (${t.cfNumber}) fuera de rango: ${transDate.toISOString()}`);
+        }
+        return isInRange;
+      });
+      
+      console.log(`🔍 Filtro de fechas: ${beforeCount} -> ${filteredData.length}`);
+    } else if (isOnlySearchingBySpecificFields) {
+      console.log('⏭️ Saltando filtro de fechas porque solo se busca por campos específicos');
+    }
+    
+    console.log('🏠 Filtrado local completado:', filteredData.length, 'resultados');
+    return filteredData;
+  }, [transactions]);
+
+  // Función para buscar transacciones con filtros avanzados
+  const searchTransactions = useCallback(async (params: {
+    transNumber?: string;
+    cfNumber?: string;
+    siteId?: string;
+    terminal?: number;
+    cfType?: string;
+    staftId?: number;
+    taxpayerId?: string;
+    shift?: number;
+    startDate?: string;
+    endDate?: string;
   }) => {
     setLoading(true);
     setError(null);
     
     try {
-      // Usar el endpoint /trans con filtros
-      const data = await transactionService.getTransactions(params);
+      console.log('🔍 Parámetros de búsqueda:', params);
+      console.log('📊 Transacciones actuales:', transactions.length);
+      console.log('📅 Rango de datos actuales:', currentDataDateRange);
       
-      // Filtrar transacciones según la vista activa
-      const filteredData = filterTransactions(data);
+      // Determinar si necesitamos buscar en la API o filtrar localmente
+      const dateRangeExceeds = params.startDate && params.endDate && !isDateRangeWithinCurrentData(params.startDate, params.endDate);
+      const transNumberNotFound = params.transNumber && !findTransactionByNumber(params.transNumber);
+      const cfNumberNotFound = params.cfNumber && !findTransactionByCfNumber(params.cfNumber);
+      const siteIdNotFound = params.siteId && !findTransactionBySiteId(params.siteId);
+      const terminalNotFound = params.terminal !== undefined && !findTransactionByTerminal(params.terminal);
+      const cfTypeNotFound = params.cfType && !findTransactionByCfType(params.cfType);
+      const staftIdNotFound = params.staftId !== undefined && !findTransactionByStaftId(params.staftId);
+      const taxpayerIdNotFound = params.taxpayerId && !findTransactionByTaxpayerId(params.taxpayerId);
+      const shiftNotFound = params.shift !== undefined && !findTransactionByShift(params.shift);
       
-      const sortedData = sortTransactions(filteredData, sortField, sortDirection);
-      setTransactions(sortedData);
-      setStats(calculateStats(sortedData));
+      // Si solo estamos buscando por campos específicos y los encontramos localmente,
+      // no necesitamos buscar en la API, incluso si el rango de fechas es diferente
+      const isOnlySearchingBySpecificFields = (params.cfNumber || params.transNumber || 
+        params.siteId || params.terminal || params.cfType || 
+        params.staftId || params.taxpayerId || params.shift) && 
+        // Verificar que no hay múltiples filtros activos
+        [params.cfNumber, params.transNumber, params.siteId, params.terminal, 
+         params.cfType, params.staftId, params.taxpayerId, params.shift]
+        .filter(Boolean).length === 1;
+      
+      const needsApiSearch = (dateRangeExceeds && !isOnlySearchingBySpecificFields) || 
+        (transNumberNotFound && !isOnlySearchingBySpecificFields) || 
+        (cfNumberNotFound && !isOnlySearchingBySpecificFields) ||
+        (siteIdNotFound && !isOnlySearchingBySpecificFields) ||
+        (terminalNotFound && !isOnlySearchingBySpecificFields) ||
+        (cfTypeNotFound && !isOnlySearchingBySpecificFields) ||
+        (staftIdNotFound && !isOnlySearchingBySpecificFields) ||
+        (taxpayerIdNotFound && !isOnlySearchingBySpecificFields) ||
+        (shiftNotFound && !isOnlySearchingBySpecificFields);
+      
+      console.log('📈 Análisis de búsqueda:');
+      console.log('  - Rango de fechas excede datos actuales:', dateRangeExceeds);
+      console.log('  - TransNumber no encontrado:', transNumberNotFound);
+      console.log('  - CfNumber no encontrado:', cfNumberNotFound);
+      console.log('  - SiteId no encontrado:', siteIdNotFound);
+      console.log('  - Terminal no encontrado:', terminalNotFound);
+      console.log('  - CfType no encontrado:', cfTypeNotFound);
+      console.log('  - StaftId no encontrado:', staftIdNotFound);
+      console.log('  - TaxpayerId no encontrado:', taxpayerIdNotFound);
+      console.log('  - Shift no encontrado:', shiftNotFound);
+      console.log('  - Solo buscando por campos específicos:', isOnlySearchingBySpecificFields);
+      console.log('  - Necesita búsqueda en API:', needsApiSearch);
+      
+      if (needsApiSearch) {
+        console.log('🌐 Buscando en la API...');
+        // Buscar en la API
+        const data = await transactionService.getTransactions(params);
+        
+        // Filtrar transacciones según la vista activa
+        const filteredData = filterTransactions(data);
+        
+        const sortedData = sortTransactions(filteredData, sortField, sortDirection);
+        setTransactions(sortedData);
+        setStats(calculateStats(sortedData));
+        
+        // Actualizar el rango de fechas de los datos actuales
+        if (params.startDate && params.endDate) {
+          setCurrentDataDateRange({
+            startDate: params.startDate,
+            endDate: params.endDate
+          });
+        }
+        console.log('✅ Datos cargados desde API:', sortedData.length);
+      } else {
+        console.log('🏠 Filtrando localmente...');
+        // Filtrar localmente
+        const filteredData = filterTransactionsLocally(params);
+        const sortedData = sortTransactions(filteredData, sortField, sortDirection);
+        setTransactions(sortedData);
+        setStats(calculateStats(sortedData));
+        console.log('✅ Datos filtrados localmente:', sortedData.length);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al buscar transacciones');
       console.warn('Error en búsqueda de transacciones:', err);
     } finally {
       setLoading(false);
     }
-  }, [calculateStats, sortField, sortDirection, sortTransactions, filterTransactions]);
+  }, [calculateStats, sortField, sortDirection, sortTransactions, filterTransactions, isDateRangeWithinCurrentData, findTransactionByNumber, findTransactionByCfNumber, findTransactionBySiteId, findTransactionByTerminal, findTransactionByCfType, findTransactionByStaftId, findTransactionByTaxpayerId, findTransactionByShift, filterTransactionsLocally, transactions, currentDataDateRange]);
 
   // Función para exportar transacciones
   const exportTransactions = useCallback(async (format: 'pdf' | 'excel' | 'csv') => {
@@ -395,9 +717,12 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
     error,
     selectedTransaction,
     searchTerm,
+    transNumberFilter,
+    cfNumberFilter,
     statusFilter,
     cfTypeFilter,
     siteIdFilter,
+    terminalFilter,
     staftIdFilter,
     shiftFilter,
     startDateFilter,
@@ -408,9 +733,12 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
     sortField,
     sortDirection,
     setSearchTerm: handleSetSearchTerm,
+    setTransNumberFilter: handleSetTransNumberFilter,
+    setCfNumberFilter: handleSetCfNumberFilter,
     setStatusFilter: handleSetStatusFilter,
     setCfTypeFilter: handleSetCfTypeFilter,
     setSiteIdFilter: handleSetSiteIdFilter,
+    setTerminalFilter: handleSetTerminalFilter,
     setStaftIdFilter: handleSetStaftIdFilter,
     setShiftFilter: handleSetShiftFilter,
     setStartDateFilter: handleSetStartDateFilter,
@@ -421,6 +749,7 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
     setSortDirection,
     handleSort,
     loadTransactions,
+    loadTransactionsWithDates,
     refreshTransactions,
     searchTransactions,
     exportTransactions

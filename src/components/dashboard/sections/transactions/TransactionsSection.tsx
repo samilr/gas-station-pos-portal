@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   CreditCard, 
   Filter, 
-  Eye, 
-  Calendar, 
   DollarSign, 
   Package, 
   User, 
@@ -14,7 +12,6 @@ import {
   Download,
   FileText,
   QrCode,
-  Receipt,
   ArrowLeft,
   ArrowRight,
   RefreshCw,
@@ -34,7 +31,6 @@ import { useAuth } from '../../../../context/AuthContext';
 import { 
   getStatusText, 
   getStatusColor, 
-  getPaymentTypeText, 
   getPaymentTypeColor,
   getCfTypeText,
   formatDate,
@@ -43,13 +39,10 @@ import {
   formatCurrency,
   filterTransactionsBySearch,
   filterTransactionsByStatus,
-  getTotalProducts,
-  isReturnTransaction,
-  getTransactionIcon,
   getCurrentSantoDomingoDate
 } from '../../../../utils/transactionUtils';
-import { TransactionStatus, PaymentType, CFStatus, ITransactionResume } from '../../../../types/transaction';
-import { SortField, SortDirection } from '../../../../hooks/useTransactions';
+import { CFStatus, ITransactionResume } from '../../../../types/transaction';
+import { SortField } from '../../../../hooks/useTransactions';
 
 // Componente QR
 const QRCodeComponent: React.FC<{ url: string; size?: number }> = ({ url, size = 128 }) => {
@@ -142,9 +135,12 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
     error,
     selectedTransaction,
     searchTerm,
+    transNumberFilter,
+    cfNumberFilter,
     statusFilter,
     cfTypeFilter,
     siteIdFilter,
+    terminalFilter,
     staftIdFilter,
     shiftFilter,
     startDateFilter,
@@ -155,9 +151,12 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
     sortField,
     sortDirection,
     setSearchTerm,
+    setTransNumberFilter,
+    setCfNumberFilter,
     setStatusFilter,
     setCfTypeFilter,
     setSiteIdFilter,
+    setTerminalFilter,
     setStaftIdFilter,
     setShiftFilter,
     setStartDateFilter,
@@ -167,7 +166,8 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
     handleSort,
     exportTransactions,
     refreshTransactions,
-    searchTransactions
+    searchTransactions,
+    loadTransactionsWithDates
   } = useTransactions(isNCFView, isTiendaView);
 
   // Función para renderizar el icono de ordenamiento
@@ -243,29 +243,52 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
   };
 
   const handleApplyFilters = async () => {
-    const params: any = {};
-    
-    // Filtros de fecha (siempre se incluyen)
-    if (startDateFilter !== '') params.startDate = startDateFilter;
-    if (endDateFilter !== '') params.endDate = endDateFilter;
-    
-    // Filtros específicos
-    if (statusFilter !== '') params.status = statusFilter;
-    if (cfTypeFilter !== '') params.cfType = cfTypeFilter;
-    if (siteIdFilter !== '') params.siteId = siteIdFilter;
-    if (staftIdFilter !== '') params.staftId = staftIdFilter;
-    if (shiftFilter !== '') params.shift = shiftFilter;
-    
-    // Taxpayer ID (RNC/Cédula)
-    if (searchTerm.trim() !== '') {
-      params.taxpayerId = searchTerm.trim();
-    }
-    
     // Resetear a la primera página
     setCurrentPage(1);
     
-    // Aplicar filtros sin recargar toda la página
-    await searchTransactions(params);
+    // Verificar si solo se están aplicando filtros de fecha (sin otros filtros)
+    const hasOnlyDateFilters = 
+      startDateFilter !== '' && 
+      endDateFilter !== '' && 
+      transNumberFilter === '' && 
+      cfNumberFilter === '' && 
+      statusFilter === '' && 
+      cfTypeFilter === '' && 
+      siteIdFilter === '' && 
+      terminalFilter === '' && 
+      staftIdFilter === '' && 
+      shiftFilter === '' && 
+      searchTerm.trim() === '';
+    
+    if (hasOnlyDateFilters) {
+      // Si solo son filtros de fecha, usar la función específica
+      await loadTransactionsWithDates(startDateFilter, endDateFilter);
+    } else {
+      // Si hay otros filtros, usar la función de búsqueda completa
+      const params: any = {};
+      
+      // Filtros de fecha (siempre se incluyen)
+      if (startDateFilter !== '') params.startDate = startDateFilter;
+      if (endDateFilter !== '') params.endDate = endDateFilter;
+      
+      // Filtros específicos
+      if (transNumberFilter !== '') params.transNumber = transNumberFilter;
+      if (cfNumberFilter !== '') params.cfNumber = cfNumberFilter;
+      if (statusFilter !== '') params.status = statusFilter;
+      if (cfTypeFilter !== '') params.cfType = cfTypeFilter;
+      if (siteIdFilter !== '') params.siteId = siteIdFilter;
+      if (terminalFilter !== '') params.terminal = terminalFilter;
+      if (staftIdFilter !== '') params.staftId = staftIdFilter;
+      if (shiftFilter !== '') params.shift = shiftFilter;
+      
+      // Taxpayer ID (RNC/Cédula)
+      if (searchTerm.trim() !== '') {
+        params.taxpayerId = searchTerm.trim();
+      }
+      
+      // Aplicar filtros sin recargar toda la página
+      await searchTransactions(params);
+    }
     
     // Opcional: Ocultar la sección de filtros después de aplicarlos
     setShowFilters(false);
@@ -277,15 +300,20 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
       return getCurrentSantoDomingoDate();
     };
     
+    const todayDate = getTodayDate();
+    
     // Limpiar todos los filtros
     setSearchTerm('');
+    setTransNumberFilter('');
+    setCfNumberFilter('');
     setStatusFilter('');
     setCfTypeFilter('');
     setSiteIdFilter('');
+    setTerminalFilter('');
     setStaftIdFilter('');
     setShiftFilter('');
-    setStartDateFilter(getTodayDate());
-    setEndDateFilter(getTodayDate());
+    setStartDateFilter(todayDate);
+    setEndDateFilter(todayDate);
     
     // Resetear a la primera página
     setCurrentPage(1);
@@ -294,12 +322,7 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
     setShowFilters(false);
     
     // Recargar con filtros limpios (solo fechas de hoy)
-    const params = {
-      startDate: getTodayDate(),
-      endDate: getTodayDate()
-    };
-    
-    await searchTransactions(params);
+    await loadTransactionsWithDates(todayDate, todayDate);
   };
 
   const handleReverseTransaction = (transNumber: string) => {
@@ -512,22 +535,6 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                 <span>{showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}</span>
               </button>
               <button 
-                onClick={handleClearFilters}
-                disabled={loading}
-                className={`flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg transition-colors ${
-                  loading 
-                    ? 'bg-gray-100 cursor-not-allowed' 
-                    : 'hover:bg-gray-50'
-                }`}
-              >
-                {loading ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-4 h-4" />
-                )}
-                <span>{loading ? 'Limpiando...' : 'Limpiar'}</span>
-              </button>
-              <button 
             onClick={refreshTransactions}
             disabled={loading}
             className="flex items-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
@@ -560,7 +567,31 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
         {/* Filtros expandibles */}
         {showFilters && (
           <div className="p-4 bg-gray-50 border-t border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              {/* Número de Transacción */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Número de Transacción</label>
+                <input
+                  type="text"
+                  placeholder="Ej: 12345"
+                  value={transNumberFilter}
+                  onChange={(e) => setTransNumberFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Número de e-NCF */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Número de e-NCF</label>
+                <input
+                  type="text"
+                  placeholder="Ej: E310000000001"
+                  value={cfNumberFilter}
+                  onChange={(e) => setCfNumberFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
               {/* Estado */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
@@ -618,7 +649,19 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-4">
+              {/* Terminal */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Terminal</label>
+                <input
+                  type="number"
+                  placeholder="Ej: 1, 2, 3"
+                  value={terminalFilter}
+                  onChange={(e) => setTerminalFilter(e.target.value === '' ? '' : Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
               {/* Shift */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Turno</label>
@@ -643,8 +686,8 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                 />
               </div>
 
-              {/* Botón Aplicar Filtros */}
-              <div className="flex items-end">
+              {/* Botones Aplicar y Limpiar Filtros */}
+              <div className="flex items-end space-x-3">
                 <button 
                   onClick={handleApplyFilters}
                   disabled={loading}
@@ -660,6 +703,22 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                     <Filter className="w-4 h-4" />
                   )}
                   <span>{loading ? 'Aplicando...' : 'Aplicar Filtros'}</span>
+                </button>
+                <button 
+                  onClick={handleClearFilters}
+                  disabled={loading}
+                  className={`flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg transition-colors h-10 ${
+                    loading 
+                      ? 'bg-gray-100 cursor-not-allowed text-gray-400' 
+                      : 'hover:bg-gray-50 text-gray-700'
+                  }`}
+                >
+                  {loading ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                  <span>{loading ? 'Limpiando...' : 'Limpiar'}</span>
                 </button>
               </div>
             </div>

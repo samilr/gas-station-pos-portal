@@ -1,22 +1,22 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Users,
   CreditCard,
-  Building2,
-  Monitor,
-  Activity,
   RefreshCw,
   BarChart3,
   XCircle,
   User,
-  DollarSign
+  DollarSign,
+  Fuel,
+  Store
 } from 'lucide-react';
 import { useDashboard } from '../../hooks/useDashboard';
-import { formatCurrency, formatNumber, formatRelativeTime, getActionIcon } from '../../utils/dashboardUtils';
-import DashboardChart from './DashboardChart';
+import { formatCurrency, formatNumber } from '../../utils/dashboardUtils';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { formatDateTimeToSantoDomingo } from '../../utils/dateUtils';
+import DailySalesChart from './DailySalesChart';
+import SiteSalesChart from './SiteSalesChart';
+import CfTypePieChart from './CfTypePieChart';
 
 const DashboardHome: React.FC = () => {
   let navigate: any;
@@ -32,22 +32,36 @@ const DashboardHome: React.FC = () => {
   
   const { user } = useAuth();
   const {
-    totalUsers,
-    activeUsers,
     totalTransactions,
     totalSales,
-    totalSites,
-    activeSites,
-    totalTerminals,
-    activeTerminals,
-    totalErrors,
-    recentTransactions,
-    recentActions,
+    totalReturns,
+    totalFuelSales,
+    totalStoreSales,
     salesByVendor,
+    dailySales,
+    chartLoading,
+    chartError,
+    chartFilters,
+    siteSales,
+    siteLoading,
+    siteError,
+    siteChartFilters,
+    cfTypeData,
     loading,
     error,
-    refresh
+    refresh,
+    loadChartData,
+    updateChartFilters,
+    refreshChartData,
+    getChartStats,
+    loadSiteSalesData,
+    refreshSiteData,
+    updateSiteChartFilters,
+    getSiteStats
   } = useDashboard();
+
+  // Debug: Log CF Type Data
+  console.log('CF Type Data:', cfTypeData);
 
   // Función para obtener la fecha y hora actual de Santo Domingo
   const getCurrentSantoDomingoDateTime = () => {
@@ -64,6 +78,25 @@ const DashboardHome: React.FC = () => {
     });
     return formatter.format(now);
   };
+
+  // Cargar datos del gráfico después de que se cargue el dashboard principal
+  useEffect(() => {
+    if (!loading && !error) {
+      // Esperar un poco para que el usuario vea que el dashboard principal se cargó
+      const timer = setTimeout(() => {
+        console.log('📊 Iniciando carga de datos del gráfico...');
+        loadChartData();
+        
+        // Cargar datos de sucursales después de un pequeño delay adicional
+        setTimeout(() => {
+          console.log('🏢 Iniciando carga de datos de sucursales...');
+          loadSiteSalesData();
+        }, 500); // 0.5 segundos adicionales
+      }, 1000); // 1 segundo de delay
+
+      return () => clearTimeout(timer);
+    }
+  }, [loading, error, loadChartData]);
 
   if (loading) {
     return (
@@ -164,84 +197,85 @@ const DashboardHome: React.FC = () => {
         </button>
       </div>
 
-      {/* Main Content Grid - Stats and Sales by Vendor */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Stats Grid - 2x2 */}
-        <div className="grid grid-cols-2 gap-4">
-          <div 
-            className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer hover:bg-gray-50"
-            onClick={() => navigate('/dashboard/transactions')}
-          >
-            <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-600">Ventas Totales</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalSales)}</p>
-                <p className="text-sm text-gray-500">de {formatNumber(totalTransactions)} transacciones</p>
-              </div>
-              <div className="bg-green-500 p-3 rounded-full">
-                <DollarSign className="w-6 h-6 text-white" />
-              </div>
+      {/* Main Stats Grid - 4 columns */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div 
+          className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer hover:bg-gray-50"
+          onClick={() => navigate('/dashboard/transactions')}
+        >
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-600">Ventas Totales</p>
+              <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalSales)}</p>
+              <p className="text-sm text-gray-500">de {formatNumber(totalTransactions)} transacciones</p>
             </div>
-          </div>
-
-          <div 
-            className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer hover:bg-gray-50"
-            onClick={() => navigate('/dashboard/users')}
-          >
-            <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-600">Usuarios Activos</p>
-                <p className="text-2xl font-bold text-gray-900">{activeUsers}</p>
-                <p className="text-sm text-gray-500">de {totalUsers} total</p>
-              </div>
-              <div className="bg-blue-500 p-3 rounded-full">
-                <Users className="w-6 h-6 text-white" />
-              </div>
-            </div>
-          </div>
-
-          <div 
-            className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer hover:bg-gray-50"
-            onClick={() => navigate('/dashboard/pos/terminals')}
-          >
-            <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-600">Terminales Activas</p>
-                <p className="text-2xl font-bold text-gray-900">{activeTerminals}</p>
-                <p className="text-sm text-gray-500">de {totalTerminals} total</p>
-              </div>
-              <div className="bg-orange-500 p-3 rounded-full">
-                <Monitor className="w-6 h-6 text-white" />
-              </div>
-            </div>
-          </div>
-
-          <div 
-            className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer hover:bg-gray-50"
-            onClick={() => navigate('/dashboard/sites')}
-          >
-            <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-600">Sucursales Activas</p>
-                <p className="text-2xl font-bold text-gray-900">{activeSites}</p>
-                <p className="text-sm text-gray-500">de {totalSites} total</p>
-              </div>
-              <div className="bg-purple-500 p-3 rounded-full">
-                <Building2 className="w-6 h-6 text-white" />
-              </div>
+            <div className="bg-green-500 p-3 rounded-full">
+              <DollarSign className="w-6 h-6 text-white" />
             </div>
           </div>
         </div>
+
+        <div 
+          className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer hover:bg-gray-50"
+          onClick={() => navigate('/dashboard/transactions')}
+        >
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-600">Total de Retornos</p>
+              <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalReturns)}</p>
+              <p className="text-sm text-gray-500">transacciones de devolución</p>
+            </div>
+            <div className="bg-red-500 p-3 rounded-full">
+              <XCircle className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div 
+          className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer hover:bg-gray-50"
+          onClick={() => navigate('/dashboard/transactions/revenue')}
+        >
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-600">Ventas de Combustible</p>
+              <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalFuelSales)}</p>
+              <p className="text-sm text-gray-500">Comprobantes NCF</p>
+            </div>
+            <div className="bg-orange-500 p-3 rounded-full">
+              <Fuel className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div 
+          className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer hover:bg-gray-50"
+          onClick={() => navigate('/dashboard/transactions/tienda')}
+        >
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-600">Ventas de Tienda</p>
+              <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalStoreSales)}</p>
+              <p className="text-sm text-gray-500">Productos de conveniencia</p>
+            </div>
+            <div className="bg-purple-500 p-3 rounded-full">
+              <Store className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Grid - Sales by Vendor and Sales Info */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Sales by Vendor */}
         <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Ventas por Vendedor</h3>
-            <span className="text-sm text-gray-500">Top {salesByVendor.length} vendedores</span>
+            <span className="text-sm text-gray-500">Top {salesByVendor?.length || 0} vendedores</span>
           </div>
           <div className="space-y-3">
-            {salesByVendor.length > 0 ? (
-              salesByVendor.map((vendor, index) => (
+            {salesByVendor && salesByVendor.length > 0 ? (
+              salesByVendor.slice(0, 5).map((vendor, index) => (
                 <div key={vendor.staftId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
@@ -274,98 +308,40 @@ const DashboardHome: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* CF Type Pie Chart */}
+        <CfTypePieChart 
+          data={cfTypeData}
+          loading={loading}
+          error={error}
+        />
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Transactions */}
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Transacciones Recientes</h3>
-            <span className="text-sm text-gray-500">Últimas {recentTransactions.length} transacciones</span>
-          </div>
-          <div className="space-y-3">
-            {recentTransactions.length > 0 ? (
-              recentTransactions.map((transaction, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      transaction.taxpayerName && transaction.taxpayerName !== 'Consumidor Final' 
-                        ? 'bg-green-100' 
-                        : 'bg-blue-100'
-                    }`}>
-                      {transaction.taxpayerName && transaction.taxpayerName !== 'Consumidor Final' ? (
-                        <Building2 className="w-4 h-4 text-green-600" />
-                      ) : (
-                        <User className="w-4 h-4 text-blue-600" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {`#${transaction.transNumber +' - '+ transaction.cfNumber || index + 1}`}
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        {transaction.taxpayerName || transaction.taxpayer_id || 'Consumidor Final'}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">
-                      {formatCurrency(transaction.total || 0)}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {transaction.transDate ? formatRelativeTime(transaction.transDate) : 'Reciente'}
-                    </p>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <CreditCard className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                <p>No hay transacciones recientes</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Recent Actions */}
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Actividad Reciente</h3>
-            <span className="text-sm text-gray-500">Últimas {recentActions.length} acciones</span>
-          </div>
-          <div className="space-y-3">
-            {recentActions.length > 0 ? (
-              recentActions.map((action, index) => (
-                <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                  <div className="text-2xl">
-                    {getActionIcon(action.action || '')}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">
-                      {action.description || 'Acción del sistema'}
-                    </p>
-                    <p className="text-xs text-gray-600">
-                      por {action.staft_id || 'Sistema'}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-gray-500">
-                      {action.created_at ? formatRelativeTime(formatDateTimeToSantoDomingo(action.created_at)) : 'Reciente'}
-                    </p>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <Activity className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                <p>No hay actividad reciente</p>
-              </div>
-            )}
-          </div>
-        </div>
+      {/* Daily Sales Chart Section */}
+      <div className="grid grid-cols-1 gap-6">
+        <DailySalesChart 
+          data={dailySales}
+          loading={chartLoading}
+          error={chartError}
+          chartFilters={chartFilters}
+          onUpdateFilters={updateChartFilters}
+          onRefresh={refreshChartData}
+          chartStats={getChartStats}
+        />
       </div>
 
+      {/* Site Sales Chart Section */}
+      <div className="grid grid-cols-1 gap-6">
+        <SiteSalesChart 
+          data={siteSales}
+          loading={siteLoading}
+          error={siteError}
+          chartFilters={siteChartFilters}
+          onUpdateFilters={updateSiteChartFilters}
+          onRefresh={refreshSiteData}
+          siteStats={getSiteStats}
+        />
+      </div>
 
       {/* Quick Actions */}
       <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">

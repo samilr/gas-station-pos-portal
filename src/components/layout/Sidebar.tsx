@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useNavigation } from '../../hooks/useNavigation';
-import { LayoutDashboard, Users, Settings, BarChart3, Database, Shield, FileText, Bell, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, UserPlus, UserCheck, UserX, TrendingUp, PieChart, Activity, Server, HardDrive, DatabaseBackup as Backup, Lock, Key, AlertTriangle, FileBarChart, Download, Upload, Mail, MessageSquare, Sliders, Globe, Palette, CreditCard, Receipt, DollarSign, TrendingDown, Package, Monitor, Smartphone, Building2, FuelIcon, Store } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, BarChart3, Database, Shield, FileText, Bell, ChevronDown, ChevronUp, UserPlus, UserCheck, UserX, TrendingUp, PieChart, Activity, Server, HardDrive, DatabaseBackup as Backup, Lock, Key, AlertTriangle, FileBarChart, Download, Upload, Mail, MessageSquare, Sliders, Globe, Palette, CreditCard, Receipt, Package, Monitor, Smartphone, Building2, FuelIcon, Store } from 'lucide-react';
 import { usePermissions } from '../../hooks/usePermissions';
 
 interface SidebarProps {
@@ -175,16 +175,15 @@ const menuItems: MenuItem[] = [
 
 const Sidebar: React.FC<SidebarProps> = ({ 
   activeSection, 
-  setActiveSection, 
-  isCollapsed, 
-  setIsCollapsed 
+  isCollapsed
 }) => {
-  const { hasPermission, user } = useAuth();
+  const { hasPermission } = useAuth();
   const navigate = useNavigate();
   const { routeMap } = useNavigation();
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [hoveredItemRef, setHoveredItemRef] = useState<HTMLButtonElement | null>(null);
 
   // Minimizar todas las categorías cuando se está en el dashboard
   // Expandir automáticamente la categoría del item activo
@@ -211,11 +210,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     };
   }, [hoverTimeout]);
 
-  const toggleExpanded = (itemId: string) => {
-    setExpandedItem(prev => 
-      prev === itemId ? null : itemId
-    );
-  };
 
   const handleNavigation = (sectionId: string) => {
     const route = routeMap[sectionId];
@@ -224,17 +218,19 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  const handleMouseEnter = (itemId: string) => {
+  const handleMouseEnter = (itemId: string, element: HTMLButtonElement) => {
     if (hoverTimeout) {
       clearTimeout(hoverTimeout);
       setHoverTimeout(null);
     }
     setHoveredItem(itemId);
+    setHoveredItemRef(element);
   };
 
   const handleMouseLeave = () => {
     const timeout = setTimeout(() => {
       setHoveredItem(null);
+      setHoveredItemRef(null);
     }, 150); // 150ms de delay antes de ocultar
     setHoverTimeout(timeout);
   };
@@ -292,9 +288,14 @@ const Sidebar: React.FC<SidebarProps> = ({
               <li key={item.id}>
                 <div className="space-y-1">
                   <button
-                    onMouseEnter={() => {
+                    ref={(el) => {
+                      if (el && isCollapsed && hasSubItems) {
+                        // Solo asignar la referencia si es el elemento hovereado
+                      }
+                    }}
+                    onMouseEnter={(e) => {
                       if (isCollapsed && hasSubItems) {
-                        handleMouseEnter(item.id);
+                        handleMouseEnter(item.id, e.currentTarget);
                       }
                     }}
                     onMouseLeave={() => {
@@ -388,16 +389,26 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Menú desplegable en hover cuando está colapsado */}
-      {isCollapsed && hoveredItem && (
+      {isCollapsed && hoveredItem && hoveredItemRef && (
         <div 
           className="absolute left-16 z-50 bg-gray-800 text-white rounded-lg shadow-xl border border-gray-700 min-w-48"
           style={{ 
             top: `${(() => {
-              const itemIndex = filteredMenuItems.findIndex(item => item.id === hoveredItem);
-              return 80 + (itemIndex * 60); // 80px para el header + 60px por cada item
+              if (hoveredItemRef) {
+                const rect = hoveredItemRef.getBoundingClientRect();
+                const sidebarRect = hoveredItemRef.closest('.relative')?.getBoundingClientRect();
+                if (sidebarRect) {
+                  return rect.top - sidebarRect.top;
+                }
+              }
+              return 0;
             })()}px` 
           }}
-          onMouseEnter={() => handleMouseEnter(hoveredItem)}
+          onMouseEnter={() => {
+            if (hoveredItemRef) {
+              handleMouseEnter(hoveredItem, hoveredItemRef);
+            }
+          }}
           onMouseLeave={() => handleMouseLeave()}
         >
           {(() => {
