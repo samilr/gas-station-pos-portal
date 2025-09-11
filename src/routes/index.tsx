@@ -11,8 +11,11 @@ import TerminalsSection from '../components/dashboard/sections/pos/TerminalsSect
 import DevicesSection from '../components/dashboard/sections/pos/DevicesSection';
 import SitesSection from '../components/dashboard/sections/sites/SitesSection';
 import GenericSection from '../components/dashboard/sections/GenericSection';
+import ProductsSection from '../components/dashboard/sections/products/ProductsSection';
+import ActionsLogSection from '../components/dashboard/sections/logs/ActionsLogSection';
+import ErrorLogSection from '../components/dashboard/sections/logs/ErrorLogSection';
+import AnalyticsSection from '../components/dashboard/sections/analytics/AnalyticsSection';
 import { 
-  BarChart3, 
   Database, 
   Shield, 
   FileText, 
@@ -20,34 +23,8 @@ import {
   Settings,
   Users,
   CreditCard,
-  Package,
-  UserPlus,
-  UserCheck,
-  UserX,
-  TrendingUp,
-  PieChart,
-  Activity,
-  Server,
-  HardDrive,
-  DatabaseBackup as Backup,
-  Lock,
-  Key,
-  AlertTriangle,
-  FileBarChart,
-  Download,
-  Upload,
-  Mail,
-  MessageSquare,
-  Sliders,
-  Globe,
-  Palette,
-  Receipt,
-  DollarSign,
-  TrendingDown
+  Package
 } from 'lucide-react';
-import ProductsSection from '../components/dashboard/sections/products/ProductsSection';
-import ActionsLogSection from '../components/dashboard/sections/logs/ActionsLogSection';
-import ErrorLogSection from '../components/dashboard/sections/logs/ErrorLogSection';
 
 // Componente de protección de rutas
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -233,11 +210,7 @@ export const router = createBrowserRouter([
             path: 'overview',
             element: (
               <PermissionRoute permission="analytics.view">
-                <GenericSection
-                  title="Analytics - Vista General"
-                  description="Dashboard general de analytics y métricas"
-                  icon={BarChart3}
-                />
+                <AnalyticsSection />
               </PermissionRoute>
             )
           },
@@ -245,11 +218,7 @@ export const router = createBrowserRouter([
             path: 'charts',
             element: (
               <PermissionRoute permission="analytics.view">
-                <GenericSection
-                  title="Gráficos Analytics"
-                  description="Visualización avanzada de datos con gráficos"
-                  icon={BarChart3}
-                />
+                <AnalyticsSection />
               </PermissionRoute>
             )
           },
@@ -257,11 +226,7 @@ export const router = createBrowserRouter([
             path: 'realtime',
             element: (
               <PermissionRoute permission="analytics.view">
-                <GenericSection
-                  title="Analytics en Tiempo Real"
-                  description="Monitoreo de métricas en tiempo real"
-                  icon={BarChart3}
-                />
+                <AnalyticsSection />
               </PermissionRoute>
             )
           }
