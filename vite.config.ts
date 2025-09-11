@@ -7,4 +7,26 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  build: {
+    // Asegurar que los archivos de configuración del servidor se copien al build
+    rollupOptions: {
+      output: {
+        // Mantener la estructura de archivos para los archivos de configuración del servidor
+        assetFileNames: (assetInfo) => {
+          if (!assetInfo.name) {
+            return `assets/[name]-[hash][extname]`;
+          }
+          
+          if (/\.(web\.config|htaccess\.txt|_redirects)$/i.test(assetInfo.name)) {
+            // Renombrar htaccess.txt a .htaccess en el build
+            if (assetInfo.name === 'htaccess.txt') {
+              return '.htaccess';
+            }
+            return `[name][extname]`;
+          }
+          return `assets/[name]-[hash][extname]`;
+        }
+      }
+    }
+  }
 });
