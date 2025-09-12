@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useNavigation } from '../../hooks/useNavigation';
-import { LayoutDashboard, Users, Settings, BarChart3, Database, Shield, FileText, Bell, ChevronDown, ChevronUp, UserPlus, UserCheck, UserX, TrendingUp, PieChart, Activity, Server, HardDrive, DatabaseBackup as Backup, Lock, Key, AlertTriangle, FileBarChart, Download, Upload, Mail, MessageSquare, Sliders, Globe, Palette, CreditCard, Receipt, Package, Monitor, Smartphone, Building2, FuelIcon, Store } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, BarChart3, Database, Shield, FileText, Bell, ChevronDown, ChevronUp, UserPlus, UserCheck, UserX, TrendingUp, PieChart, Activity, Server, HardDrive, DatabaseBackup as Backup, Lock, Key, AlertTriangle, FileBarChart, Download, Upload, Mail, MessageSquare, Sliders, Globe, Palette, CreditCard, Receipt, Package, Monitor, Smartphone, Building2, FuelIcon, Store, DollarSign } from 'lucide-react';
 import { usePermissions } from '../../hooks/usePermissions';
 
 interface SidebarProps {
@@ -37,7 +37,7 @@ const menuItems: MenuItem[] = [
   { 
     id: 'transactions', 
     label: 'Transacciones', 
-    icon: CreditCard,
+    icon: DollarSign,
     permission: 'transactions.view',
     subItems: [
       { id: 'transactions.list', label: 'Todas las ventas', icon: Receipt, permission: 'transactions.view' },

@@ -1,4 +1,5 @@
 export interface ITransactionResume {
+  categoryId: string;
   transNumber: string;
   cfNumber: string;
   cfValidity: string;

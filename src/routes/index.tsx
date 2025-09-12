@@ -3,18 +3,18 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Login from '../components/auth/Login';
 import DashboardLayout from '../components/layout/DashboardLayout';
-import DashboardHome from '../components/dashboard/DashboardHome';
-import UsersSection from '../components/dashboard/sections/users/UsersSection';
-import UserProfile from '../components/dashboard/sections/users/UserProfile';
-import TransactionsSection from '../components/dashboard/sections/transactions/TransactionsSection';
-import TerminalsSection from '../components/dashboard/sections/pos/TerminalsSection';
-import DevicesSection from '../components/dashboard/sections/pos/DevicesSection';
-import SitesSection from '../components/dashboard/sections/sites/SitesSection';
-import GenericSection from '../components/dashboard/sections/GenericSection';
-import ProductsSection from '../components/dashboard/sections/products/ProductsSection';
-import ActionsLogSection from '../components/dashboard/sections/audit/ActionsLogSection';
-import ErrorLogSection from '../components/dashboard/sections/audit/ErrorLogSection';
-import AnalyticsSection from '../components/dashboard/sections/analytics/AnalyticsSection';
+import DashboardHome from '../components/sections/dashboard/DashboardHome';
+import UsersSection from '../components/sections/users/UsersSection';
+import UserProfile from '../components/sections/users/UserProfile';
+import TransactionsSection from '../components/sections/transactions/TransactionsSection';
+import TerminalsSection from '../components/sections/pos/TerminalsSection';
+import DevicesSection from '../components/sections/pos/DevicesSection';
+import SitesSection from '../components/sections/sites/SitesSection';
+import GenericSection from '../components/sections/GenericSection';
+import ProductsSection from '../components/sections/products/ProductsSection';
+import ActionsLogSection from '../components/sections/audit/ActionsLogSection';
+import ErrorLogSection from '../components/sections/audit/ErrorLogSection';
+import AnalyticsSection from '../components/sections/analytics/AnalyticsSection';
 import { 
   Database, 
   Shield, 

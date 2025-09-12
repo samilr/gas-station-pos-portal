@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { transactionService } from '../services/transactionService';
 import { getCurrentSantoDomingoDate } from '../utils/transactionUtils';
+import { ITransactionResume } from '../types/transaction';
 
 export interface DashboardStats {
   totalTransactions: number;
@@ -126,6 +127,7 @@ export const useDashboard = () => {
   });
 
   const [cfTypeData, setCfTypeData] = useState<CfTypeData[]>([]);
+  const [recentTransactions, setRecentTransactions] = useState<ITransactionResume[]>([]);
 
   const loadDashboardData = async () => {
     setStats(prev => ({ ...prev, loading: true, error: null }));
@@ -231,6 +233,11 @@ export const useDashboard = () => {
       const cfData = getCfTypeData(transactionsResponse);
       setCfTypeData(cfData);
 
+      // Obtener transacciones recientes (últimas 5, ordenadas por fecha descendente)
+      const recentTrans = transactionsResponse
+        .sort((a: any, b: any) => new Date(b.transDate).getTime() - new Date(a.transDate).getTime())
+        .slice(0, 5);
+
       setStats({
         totalTransactions,
         totalSales,
@@ -241,6 +248,9 @@ export const useDashboard = () => {
         loading: false,
         error: null
       });
+
+      // Actualizar transacciones recientes
+      setRecentTransactions(recentTrans);
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -668,6 +678,7 @@ export const useDashboard = () => {
     siteError: siteChartData.error,
     siteChartFilters,
     cfTypeData,
+    recentTransactions,
     refresh: loadDashboardData,
     loadChartData,
     updateChartFilters,
