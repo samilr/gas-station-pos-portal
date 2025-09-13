@@ -128,6 +128,7 @@ export const useDashboard = () => {
 
   const [cfTypeData, setCfTypeData] = useState<CfTypeData[]>([]);
   const [recentTransactions, setRecentTransactions] = useState<ITransactionResume[]>([]);
+  const [allTransactions, setAllTransactions] = useState<ITransactionResume[]>([]);
 
   const loadDashboardData = async () => {
     setStats(prev => ({ ...prev, loading: true, error: null }));
@@ -251,6 +252,9 @@ export const useDashboard = () => {
 
       // Actualizar transacciones recientes
       setRecentTransactions(recentTrans);
+      
+      // Guardar todas las transacciones para el gráfico de productos
+      setAllTransactions(transactionsResponse);
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -679,6 +683,7 @@ export const useDashboard = () => {
     siteChartFilters,
     cfTypeData,
     recentTransactions,
+    allTransactions,
     refresh: loadDashboardData,
     loadChartData,
     updateChartFilters,

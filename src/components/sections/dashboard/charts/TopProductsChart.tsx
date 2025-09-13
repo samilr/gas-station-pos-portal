@@ -21,8 +21,8 @@ const TopProductsChart: React.FC<TopProductsChartProps> = ({ data, loading, erro
       productName: string; 
       sales: number; 
       quantity: number; 
-      transactions: number;
-      averagePrice: number;
+      timesSold: number; // Cuántas veces se vendió este producto
+      realPrice: number; // Precio real del producto
     } } = {};
 
     data.forEach(transaction => {
@@ -37,28 +37,25 @@ const TopProductsChart: React.FC<TopProductsChartProps> = ({ data, loading, erro
           if (productMap[productId]) {
             productMap[productId].sales += total;
             productMap[productId].quantity += quantity;
-            productMap[productId].transactions += 1;
+            productMap[productId].timesSold += 1; // Incrementar cada vez que aparece
           } else {
             productMap[productId] = {
               productId,
               productName,
               sales: total,
               quantity,
-              transactions: 1,
-              averagePrice: price
+              timesSold: 1, // Primera vez que aparece
+              realPrice: price // Precio real del producto
             };
           }
         });
       }
     });
 
-    // Calcular precio promedio y convertir a array
-    const products = Object.values(productMap).map(product => ({
-      ...product,
-      averagePrice: product.sales / product.quantity
-    }));
+    // Convertir a array (ya tenemos el precio real)
+    const products = Object.values(productMap);
 
-    // Ordenar por ventas descendente y tomar top 5
+    // Ordenar por monto total de ventas (mayor volumen en $ primero)
     return products
       .sort((a, b) => b.sales - a.sales)
       .slice(0, 5);
@@ -90,9 +87,9 @@ const TopProductsChart: React.FC<TopProductsChartProps> = ({ data, loading, erro
         <div className="bg-gray-900 text-white p-3 rounded-lg shadow-lg">
           <p className="font-semibold">{data.productName}</p>
           <p className="text-green-400">Ventas: {formatCurrency(data.sales)}</p>
-          <p className="text-blue-400">Cantidad: {data.quantity.toFixed(2)}</p>
-          <p className="text-purple-400">Transacciones: {data.transactions}</p>
-          <p className="text-yellow-400">Precio Promedio: {formatCurrency(data.averagePrice)}</p>
+          <p className="text-blue-400">Cantidad Total: {data.quantity.toFixed(2)}</p>
+          <p className="text-purple-400">Veces Vendido: {data.timesSold}</p>
+          <p className="text-yellow-400">Precio: {formatCurrency(data.realPrice)}</p>
         </div>
       );
     }
@@ -144,8 +141,8 @@ const TopProductsChart: React.FC<TopProductsChartProps> = ({ data, loading, erro
   return (
     <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Top Productos</h3>
-        <span className="text-sm text-gray-500">Top {chartData.length} productos</span>
+        <h3 className="text-lg font-semibold text-gray-900">Productos con Mayor Volumen</h3>
+        <span className="text-sm text-gray-500">Por monto total de ventas</span>
       </div>
       
       <div className="h-80">

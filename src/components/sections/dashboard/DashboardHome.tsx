@@ -18,7 +18,6 @@ import { useAuth } from "./../../../context/AuthContext";
 import DailySalesChart from "./charts/DailySalesChart";
 import SiteSalesChart from "./charts/SiteSalesChart";
 import CfTypePieChart from "./charts/CfTypePieChart";
-import RecentTransactions from "./charts/RecentTransactions";
 import TopProductsChart from "./charts/TopProductsChart";
 
 const DashboardHome: React.FC = () => {
@@ -51,6 +50,7 @@ const DashboardHome: React.FC = () => {
     siteChartFilters,
     cfTypeData,
     recentTransactions,
+    allTransactions,
     loading,
     error,
     refresh,
@@ -410,7 +410,7 @@ const DashboardHome: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         <TopProductsChart
-          data={recentTransactions}
+          data={allTransactions}
           loading={loading}
           error={error}
         />
