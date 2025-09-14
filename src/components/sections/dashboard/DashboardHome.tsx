@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { motion } from "framer-motion";
 import {
   Users,
   CreditCard,
@@ -189,7 +190,12 @@ const DashboardHome: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex items-center justify-between"
+      >
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
             ¡Bienvenido, {user?.name || "Usuario"}!
@@ -199,107 +205,92 @@ const DashboardHome: React.FC = () => {
             {getCurrentSantoDomingoDateTime()}
           </p>
         </div>
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={refresh}
           className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <RefreshCw className="w-4 h-4" />
           <span>Actualizar</span>
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
 
       {/* Main Stats Grid - 4 columns */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div
-          className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer hover:bg-gray-50"
-          onClick={() => navigate("/dashboard/transactions")}
-        >
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-600">
-                Ventas Totales
-              </p>
-              <p className="text-2xl font-bold text-gray-900">
-                {formatCurrency(totalSales)}
-              </p>
-              <p className="text-sm text-gray-500">
-                de {formatNumber(totalTransactions)} transacciones
-              </p>
+        {[
+          {
+            title: "Ventas Totales",
+            value: formatCurrency(totalSales),
+            subtitle: `de ${formatNumber(totalTransactions)} transacciones`,
+            icon: DollarSign,
+            bgColor: "bg-green-500",
+            onClick: () => navigate("/dashboard/transactions")
+          },
+          {
+            title: "Total de Retornos",
+            value: formatCurrency(totalReturns),
+            subtitle: "transacciones de devolución",
+            icon: XCircle,
+            bgColor: "bg-red-500",
+            onClick: () => navigate("/dashboard/transactions")
+          },
+          {
+            title: "Ventas de Combustible",
+            value: formatCurrency(totalFuelSales),
+            subtitle: "Comprobantes NCF",
+            icon: Fuel,
+            bgColor: "bg-orange-500",
+            onClick: () => navigate("/dashboard/transactions/revenue")
+          },
+          {
+            title: "Ventas de Tienda",
+            value: formatCurrency(totalStoreSales),
+            subtitle: "Productos de conveniencia",
+            icon: Store,
+            bgColor: "bg-purple-500",
+            onClick: () => navigate("/dashboard/transactions/tienda")
+          }
+        ].map((stat, index) => (
+          <motion.div
+            key={stat.title}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: index * 0.1 }}
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer hover:bg-gray-50"
+            onClick={stat.onClick}
+          >
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-600">
+                  {stat.title}
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stat.value}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {stat.subtitle}
+                </p>
+              </div>
+              <div className={`${stat.bgColor} p-3 rounded-full`}>
+                <stat.icon className="w-6 h-6 text-white" />
+              </div>
             </div>
-            <div className="bg-green-500 p-3 rounded-full">
-              <DollarSign className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </div>
-
-        <div
-          className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer hover:bg-gray-50"
-          onClick={() => navigate("/dashboard/transactions")}
-        >
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-600">
-                Total de Retornos
-              </p>
-              <p className="text-2xl font-bold text-gray-900">
-                {formatCurrency(totalReturns)}
-              </p>
-              <p className="text-sm text-gray-500">
-                transacciones de devolución
-              </p>
-            </div>
-            <div className="bg-red-500 p-3 rounded-full">
-              <XCircle className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </div>
-
-        <div
-          className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer hover:bg-gray-50"
-          onClick={() => navigate("/dashboard/transactions/revenue")}
-        >
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-600">
-                Ventas de Combustible
-              </p>
-              <p className="text-2xl font-bold text-gray-900">
-                {formatCurrency(totalFuelSales)}
-              </p>
-              <p className="text-sm text-gray-500">Comprobantes NCF</p>
-            </div>
-            <div className="bg-orange-500 p-3 rounded-full">
-              <Fuel className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </div>
-
-        <div
-          className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer hover:bg-gray-50"
-          onClick={() => navigate("/dashboard/transactions/tienda")}
-        >
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-600">
-                Ventas de Tienda
-              </p>
-              <p className="text-2xl font-bold text-gray-900">
-                {formatCurrency(totalStoreSales)}
-              </p>
-              <p className="text-sm text-gray-500">Productos de conveniencia</p>
-            </div>
-            <div className="bg-purple-500 p-3 rounded-full">
-              <Store className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </div>
+          </motion.div>
+        ))}
       </div>
 
       {/* Main Content Grid - Recent Transactions and Sales by Vendor */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Transactions */}
-{/* Recent Transactions */}
-<div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
+        >
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Transacciones Recientes</h3>
             <span className="text-sm text-gray-500">Últimas {recentTransactions.length} transacciones</span>
@@ -307,7 +298,13 @@ const DashboardHome: React.FC = () => {
           <div className="space-y-3">
             {recentTransactions.length > 0 ? (
               recentTransactions.map((transaction, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.5 + index * 0.1 }}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                >
                   <div className="flex items-center space-x-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                       transaction.taxpayerName && transaction.taxpayerName !== 'Consumidor Final' 
@@ -337,7 +334,7 @@ const DashboardHome: React.FC = () => {
                       {transaction.transDate ? formatRelativeTime(transaction.transDate) : 'Reciente'}
                     </p>
                   </div>
-                </div>
+                </motion.div>
               ))
             ) : (
               <div className="text-center py-8 text-gray-500">
@@ -346,10 +343,15 @@ const DashboardHome: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
+        </motion.div>
 
         {/* Sales by Vendor */}
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
+        >
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">
               Ventas por Vendedor
@@ -361,8 +363,11 @@ const DashboardHome: React.FC = () => {
           <div className="space-y-3">
             {salesByVendor && salesByVendor.length > 0 ? (
               salesByVendor.slice(0, 5).map((vendor, index) => (
-                <div
+                <motion.div
                   key={vendor.staftId}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.5 + index * 0.1 }}
                   className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                 >
                   <div className="flex items-center space-x-3">
@@ -394,7 +399,7 @@ const DashboardHome: React.FC = () => {
                       del total
                     </p>
                   </div>
-                </div>
+                </motion.div>
               ))
             ) : (
               <div className="text-center py-8 text-gray-500">
@@ -403,22 +408,38 @@ const DashboardHome: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* CF Type Pie Chart and Top Products Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        <TopProductsChart
-          data={allTransactions}
-          loading={loading}
-          error={error}
-        />
-        <CfTypePieChart data={cfTypeData} loading={loading} error={error} />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.6 }}
+        >
+          <TopProductsChart
+            data={allTransactions}
+            loading={loading}
+            error={error}
+          />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.7 }}
+        >
+          <CfTypePieChart data={cfTypeData} loading={loading} error={error} />
+        </motion.div>
       </div>
 
       {/* Daily Sales Chart Section */}
-      <div className="grid grid-cols-1 gap-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.8 }}
+        className="grid grid-cols-1 gap-6"
+      >
         <DailySalesChart
           data={dailySales}
           loading={chartLoading}
@@ -428,10 +449,15 @@ const DashboardHome: React.FC = () => {
           onRefresh={refreshChartData}
           chartStats={getChartStats}
         />
-      </div>
+      </motion.div>
 
       {/* Site Sales Chart Section */}
-      <div className="grid grid-cols-1 gap-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.9 }}
+        className="grid grid-cols-1 gap-6"
+      >
         <SiteSalesChart
           data={siteSales}
           loading={siteLoading}
@@ -441,46 +467,61 @@ const DashboardHome: React.FC = () => {
           onRefresh={refreshSiteData}
           siteStats={getSiteStats}
         />
-      </div>
+      </motion.div>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 1.0 }}
+        className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
+      >
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
           Acciones Rápidas
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button
-            onClick={() => navigate("/dashboard/users")}
-            className="p-4 text-left bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors"
-          >
-            <Users className="w-8 h-8 text-blue-600 mb-2" />
-            <h4 className="font-medium text-gray-900">Gestionar Usuarios</h4>
-            <p className="text-sm text-gray-600">
-              Ver y administrar usuarios del sistema
-            </p>
-          </button>
-
-          <button
-            onClick={() => navigate("/dashboard/transactions")}
-            className="p-4 text-left bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors"
-          >
-            <CreditCard className="w-8 h-8 text-green-600 mb-2" />
-            <h4 className="font-medium text-gray-900">Ver Transacciones</h4>
-            <p className="text-sm text-gray-600">
-              Revisar transacciones y ventas
-            </p>
-          </button>
-
-          <button
-            onClick={() => navigate("/dashboard/reports")}
-            className="p-4 text-left bg-purple-50 hover:bg-purple-100 rounded-lg border border-purple-200 transition-colors"
-          >
-            <BarChart3 className="w-8 h-8 text-purple-600 mb-2" />
-            <h4 className="font-medium text-gray-900">Generar Reportes</h4>
-            <p className="text-sm text-gray-600">Crear reportes detallados</p>
-          </button>
+          {[
+            {
+              title: "Gestionar Usuarios",
+              description: "Ver y administrar usuarios del sistema",
+              icon: Users,
+              color: "blue",
+              onClick: () => navigate("/dashboard/users")
+            },
+            {
+              title: "Ver Transacciones",
+              description: "Revisar transacciones y ventas",
+              icon: CreditCard,
+              color: "green",
+              onClick: () => navigate("/dashboard/transactions")
+            },
+            {
+              title: "Generar Reportes",
+              description: "Crear reportes detallados",
+              icon: BarChart3,
+              color: "purple",
+              onClick: () => navigate("/dashboard/reports")
+            }
+          ].map((action, index) => (
+            <motion.button
+              key={action.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 1.1 + index * 0.1 }}
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={action.onClick}
+              className={`p-4 text-left bg-${action.color}-50 hover:bg-${action.color}-100 rounded-lg border border-${action.color}-200 transition-colors`}
+            >
+              <action.icon className={`w-8 h-8 text-${action.color}-600 mb-2`} />
+              <h4 className="font-medium text-gray-900">{action.title}</h4>
+              <p className="text-sm text-gray-600">
+                {action.description}
+              </p>
+            </motion.button>
+          ))}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

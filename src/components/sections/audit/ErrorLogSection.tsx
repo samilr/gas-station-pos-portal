@@ -11,6 +11,7 @@ import {
   X,
   MapPin,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { useErrorLogs } from "../../../hooks/useLogs";
 import { IErrorLog } from "../../../types/logs";
 import { getCurrentSantoDomingoDate } from "../../../utils/transactionUtils";
@@ -166,7 +167,12 @@ const ErrorLogSection: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Search and Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+      >
         {/* Header con búsqueda y botones de acción */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
@@ -181,7 +187,9 @@ const ErrorLogSection: React.FC = () => {
               />
             </div>
             <div className="flex items-center space-x-3 ml-4">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setShowFilters(!showFilters)}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
                   showFilters 
@@ -191,28 +199,38 @@ const ErrorLogSection: React.FC = () => {
               >
                 <Filter className="w-4 h-4" />
                 <span>{showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}</span>
-              </button>
-              <button
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={handleExport}
                 className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
               >
                 <Download className="w-4 h-4" />
                 <span>Exportar</span>
-              </button>
-              <button
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={handleRefresh}
                 className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
               >
                 <RefreshCw className="w-4 h-4" />
                 <span>Actualizar</span>
-              </button>
+              </motion.button>
             </div>
           </div>
         </div>
 
         {/* Filtros expandibles */}
         {showFilters && (
-          <div className="p-4 bg-gray-50 border-t border-gray-200">
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="p-4 bg-gray-50 border-t border-gray-200"
+          >
             {/* Filtros de fecha */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
@@ -237,22 +255,26 @@ const ErrorLogSection: React.FC = () => {
             
             {/* Botones de acción para filtros de fecha */}
             <div className="flex items-center space-x-3 mb-4">
-              <button
+              <motion.button
+                whileHover={{ scale: loading ? 1 : 1.05 }}
+                whileTap={{ scale: loading ? 1 : 0.95 }}
                 onClick={handleApplyDateFilters}
                 disabled={loading}
                 className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg transition-colors"
               >
                 <Calendar className="w-4 h-4" />
                 <span>Aplicar Filtros de Fecha</span>
-              </button>
-              <button
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: loading ? 1 : 1.05 }}
+                whileTap={{ scale: loading ? 1 : 0.95 }}
                 onClick={handleClearFilters}
                 disabled={loading}
                 className="flex items-center space-x-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
               >
                 <RefreshCw className="w-4 h-4" />
                 <span>Limpiar Filtros</span>
-              </button>
+              </motion.button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -291,12 +313,17 @@ const ErrorLogSection: React.FC = () => {
                 </select>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
 
       {/* Tabla */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="bg-white rounded-lg shadow overflow-hidden"
+      >
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -325,11 +352,14 @@ const ErrorLogSection: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {currentLogs.map((log) => {
+              {currentLogs.map((log, index) => {
                 const { date, time } = formatDateToSantoDomingo(log.created_at);
                 return (
-                  <tr 
-                    key={log.error_id} 
+                  <motion.tr
+                    key={log.error_id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
                     className="hover:bg-gray-50 cursor-pointer transition-colors"
                     onClick={() => handleShowDetails(log)}
                   >
@@ -393,16 +423,21 @@ const ErrorLogSection: React.FC = () => {
                       <div className="flex items-center space-x-2">
                       </div>
                     </td>
-                  </tr>
+                  </motion.tr>
                 );
               })}
             </tbody>
           </table>
         </div>
-      </div>
+      </motion.div>
 
       {/* Paginación */}
-      <div className="flex items-center justify-between bg-white px-6 py-3 border border-gray-200 rounded-lg">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+        className="flex items-center justify-between bg-white px-6 py-3 border border-gray-200 rounded-lg"
+      >
         <div className="text-sm text-gray-700">
           Mostrando <span className="font-medium">{startIndex + 1}</span> a{' '}
           <span className="font-medium">{Math.min(endIndex, filteredLogs.length)}</span> de{' '}
@@ -412,7 +447,9 @@ const ErrorLogSection: React.FC = () => {
           )}
         </div>
         <div className="flex items-center space-x-2">
-          <button 
+          <motion.button
+            whileHover={{ scale: currentPage === 1 ? 1 : 1.05 }}
+            whileTap={{ scale: currentPage === 1 ? 1 : 0.95 }}
             onClick={handlePrevPage}
             disabled={currentPage === 1}
             className={`px-3 py-1 text-sm rounded transition-colors ${
@@ -422,7 +459,7 @@ const ErrorLogSection: React.FC = () => {
             }`}
           >
             Anterior
-          </button>
+          </motion.button>
           
           {/* Números de página */}
           <div className="flex items-center space-x-1">
@@ -433,8 +470,10 @@ const ErrorLogSection: React.FC = () => {
                   page === totalPages || 
                   (page >= currentPage - 1 && page <= currentPage + 1)) {
                 return (
-                  <button
+                  <motion.button
                     key={page}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={() => handlePageChange(page)}
                     className={`px-3 py-1 text-sm rounded transition-colors ${
                       page === currentPage
@@ -443,7 +482,7 @@ const ErrorLogSection: React.FC = () => {
                     }`}
                   >
                     {page}
-                  </button>
+                  </motion.button>
                 );
               } else if (page === currentPage - 2 || page === currentPage + 2) {
                 return <span key={page} className="px-2 text-gray-500">...</span>;
@@ -452,7 +491,9 @@ const ErrorLogSection: React.FC = () => {
             })}
           </div>
           
-          <button 
+          <motion.button
+            whileHover={{ scale: currentPage === totalPages ? 1 : 1.05 }}
+            whileTap={{ scale: currentPage === totalPages ? 1 : 0.95 }}
             onClick={handleNextPage}
             disabled={currentPage === totalPages}
             className={`px-3 py-1 text-sm rounded transition-colors ${
@@ -462,9 +503,9 @@ const ErrorLogSection: React.FC = () => {
             }`}
           >
             Siguiente
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Modal de detalles */}
       {showDetailsModal && selectedError && (

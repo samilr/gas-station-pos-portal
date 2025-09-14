@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Monitor, Plus, Search, Filter, RefreshCw, Edit, Trash2, Smartphone, Fuel } from 'lucide-react';
+import { motion } from 'framer-motion';
 import TerminalModal from './TerminalModal';
 import DeleteTerminalDialog from './DeleteTerminalDialog';
 import { useAuth } from '../../../context/AuthContext';
@@ -156,7 +157,12 @@ const TerminalsSection: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Search and Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+      >
         {/* Header con búsqueda y botones */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
@@ -175,39 +181,48 @@ const TerminalsSection: React.FC = () => {
                 
                 {/* Stats Cards */}
                 <div className="flex items-center space-x-4">
-                  <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">Total</span>
-                      <span className="text-lg font-bold text-gray-900">{totalTerminals}</span>
-                      <Fuel className="w-5 h-5 text-blue-500" />
-                    </div>
-                  </div>
-                  <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">Activas</span>
-                      <span className="text-lg font-bold text-green-600">{activeTerminals}</span>
-                      <Monitor className="w-5 h-5 text-green-500" />
-                    </div>
-                  </div>
-                  <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">Inactivas</span>
-                      <span className="text-lg font-bold text-red-600">{inactiveTerminals}</span>
-                      <Monitor className="w-5 h-5 text-red-500" />
-                    </div>
-                  </div>
-                  <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]">
+                  {[
+                    { label: "Total", value: totalTerminals, icon: Fuel, color: "text-blue-500" },
+                    { label: "Activas", value: activeTerminals, icon: Monitor, color: "text-green-500" },
+                    { label: "Inactivas", value: inactiveTerminals, icon: Monitor, color: "text-red-500" }
+                  ].map((stat, index) => (
+                    <motion.div
+                      key={stat.label}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                      whileHover={{ scale: 1.05 }}
+                      className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-600">{stat.label}</span>
+                        <span className={`text-lg font-bold ${stat.label === 'Activas' ? 'text-green-600' : stat.label === 'Inactivas' ? 'text-red-600' : 'text-gray-900'}`}>
+                          {stat.value}
+                        </span>
+                        <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                      </div>
+                    </motion.div>
+                  ))}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3, delay: 0.3 }}
+                    whileHover={{ scale: 1.05 }}
+                    className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]"
+                  >
                     <div className="flex items-center space-x-2">
                       <span className="text-sm text-gray-600">Conectadas</span>
                       <span className="text-lg font-bold text-blue-600">{connectedTerminals}</span>
                       <Smartphone className="w-5 h-5 text-blue-500" />
                     </div>
-                  </div>
+                  </motion.div>
                 </div>
               </div>
             </div>
             <div className="flex items-center space-x-3 ml-4">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setShowFilters(!showFilters)}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
                   showFilters 
@@ -217,8 +232,10 @@ const TerminalsSection: React.FC = () => {
               >
                 <Filter className="w-4 h-4" />
                 <span>{showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}</span>
-              </button>
-              <button 
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: loading ? 1 : 1.05 }}
+                whileTap={{ scale: loading ? 1 : 0.95 }}
                 onClick={handleClearFilters}
                 disabled={loading}
                 className={`flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg transition-colors ${
@@ -233,23 +250,27 @@ const TerminalsSection: React.FC = () => {
                   <RefreshCw className="w-4 h-4" />
                 )}
                 <span>{loading ? 'Limpiando...' : 'Limpiar'}</span>
-              </button>
-              <button 
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: loading ? 1 : 1.05 }}
+                whileTap={{ scale: loading ? 1 : 0.95 }}
                 onClick={refreshTerminals}
                 disabled={loading}
                 className="flex items-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
               >
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 <span>Actualizar</span>
-              </button>
+              </motion.button>
               <PermissionGate permissions={['terminals.create']}>
-                <button 
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={handleCreateTerminal}
                   className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Nueva Terminal</span>
-                </button>
+                </motion.button>
               </PermissionGate>
             </div>
           </div>
@@ -257,7 +278,13 @@ const TerminalsSection: React.FC = () => {
 
         {/* Filtros expandibles */}
         {showFilters && (
-          <div className="p-4 bg-gray-50 border-t border-gray-200">
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="p-4 bg-gray-50 border-t border-gray-200"
+          >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Status Filter */}
               <div>
@@ -302,13 +329,18 @@ const TerminalsSection: React.FC = () => {
                 </select>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
 
       {/* Warning Message */}
       {error && error.includes('datos de prueba') && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6"
+        >
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
@@ -321,11 +353,16 @@ const TerminalsSection: React.FC = () => {
               </p>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Terminals Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+      >
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
@@ -340,9 +377,12 @@ const TerminalsSection: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {paginatedTerminals.map((terminal) => (
-                <tr 
-                  key={`${terminal.site_id}-${terminal.terminal_id}`} 
+              {paginatedTerminals.map((terminal, index) => (
+                <motion.tr
+                  key={`${terminal.site_id}-${terminal.terminal_id}`}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
                   className="hover:bg-gray-50 cursor-pointer transition-colors"
                   onClick={() => handleViewDetails(terminal)}
                 >
@@ -387,34 +427,43 @@ const TerminalsSection: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
                       <PermissionGate permissions={['terminals.edit']}>
-                        <button 
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
                           onClick={() => handleEditTerminal(terminal)}
                           className="p-1 text-blue-600 hover:text-blue-900" 
                           title="Editar"
                         >
                           <Edit className="w-4 h-4" />
-                        </button>
+                        </motion.button>
                       </PermissionGate>
                       <PermissionGate permissions={['terminals.delete']}>
-                        <button 
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
                           onClick={() => handleDeleteTerminal(terminal)}
                           className="p-1 text-red-600 hover:text-red-900" 
                           title="Eliminar"
                         >
                           <Trash2 className="w-4 h-4" />
-                        </button>
+                        </motion.button>
                       </PermissionGate>
                     </div>
                   </td>
-                </tr>
+                </motion.tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
+      </motion.div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between bg-white px-6 py-3 border border-gray-200 rounded-lg">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+        className="flex items-center justify-between bg-white px-6 py-3 border border-gray-200 rounded-lg"
+      >
         <div className="text-sm text-gray-700">
           Mostrando <span className="font-medium">{startIndex + 1}</span> a{' '}
           <span className="font-medium">{Math.min(endIndex, filteredTerminals.length)}</span> de{' '}
@@ -424,7 +473,9 @@ const TerminalsSection: React.FC = () => {
           )}
         </div>
         <div className="flex items-center space-x-2">
-          <button 
+          <motion.button
+            whileHover={{ scale: currentPage === 1 ? 1 : 1.05 }}
+            whileTap={{ scale: currentPage === 1 ? 1 : 0.95 }}
             onClick={handlePreviousPage}
             disabled={currentPage === 1}
             className={`px-3 py-1 text-sm rounded transition-colors ${
@@ -434,7 +485,7 @@ const TerminalsSection: React.FC = () => {
             }`}
           >
             Anterior
-          </button>
+          </motion.button>
           
           {/* Números de página */}
           <div className="flex items-center space-x-1">
@@ -445,8 +496,10 @@ const TerminalsSection: React.FC = () => {
                   page === totalPages || 
                   (page >= currentPage - 1 && page <= currentPage + 1)) {
                 return (
-                  <button
+                  <motion.button
                     key={page}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={() => handlePageChange(page)}
                     className={`px-3 py-1 text-sm rounded transition-colors ${
                       page === currentPage
@@ -455,7 +508,7 @@ const TerminalsSection: React.FC = () => {
                     }`}
                   >
                     {page}
-                  </button>
+                  </motion.button>
                 );
               } else if (page === currentPage - 2 || page === currentPage + 2) {
                 return <span key={page} className="px-2 text-gray-500">...</span>;
@@ -464,7 +517,9 @@ const TerminalsSection: React.FC = () => {
             })}
           </div>
           
-          <button 
+          <motion.button
+            whileHover={{ scale: currentPage === totalPages ? 1 : 1.05 }}
+            whileTap={{ scale: currentPage === totalPages ? 1 : 0.95 }}
             onClick={handleNextPage}
             disabled={currentPage === totalPages}
             className={`px-3 py-1 text-sm rounded transition-colors ${
@@ -474,9 +529,9 @@ const TerminalsSection: React.FC = () => {
             }`}
           >
             Siguiente
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Terminal Modal */}
       <TerminalModal

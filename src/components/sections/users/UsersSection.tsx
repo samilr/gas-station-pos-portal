@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Users, Search, Plus, Edit, Trash2, RefreshCw, Filter, CheckCircle, UserCheck, UserX, Shield } from 'lucide-react';
 import DeleteUserDialog from './DeleteUserDialog';
 import UserModal from './UserModal';
@@ -214,7 +215,12 @@ const UsersSection: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Search and Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+      >
         {/* Header con búsqueda y botones de acción */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
@@ -233,46 +239,37 @@ const UsersSection: React.FC = () => {
                 
                 {/* Stats Cards */}
                 <div className="flex items-center space-x-4">
-                  <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">Total</span>
-                      <span className="text-lg font-bold text-gray-900">{totalUsers}</span>
-                      <Users className="w-5 h-5 text-blue-500" />
-                    </div>
-                  </div>
-                  <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">Activos</span>
-                      <span className="text-lg font-bold text-green-600">{activeUsers}</span>
-                      <UserCheck className="w-5 h-5 text-green-500" />
-                    </div>
-                  </div>
-                  <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">Inactivos</span>
-                      <span className="text-lg font-bold text-red-600">{inactiveUsers}</span>
-                      <UserX className="w-5 h-5 text-red-500" />
-                    </div>
-                  </div>
-                  <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">Admins</span>
-                      <span className="text-lg font-bold text-purple-600">{adminUsers}</span>
-                      <Shield className="w-5 h-5 text-purple-500" />
-                    </div>
-                  </div>
-                  <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">Portal</span>
-                      <span className="text-lg font-bold text-blue-600">{portalAccessUsers}</span>
-                      <CheckCircle className="w-5 h-5 text-blue-500" />
-                    </div>
-                  </div>
+                  {[
+                    { label: "Total", value: totalUsers, icon: Users, color: "text-blue-500" },
+                    { label: "Activos", value: activeUsers, icon: UserCheck, color: "text-green-500" },
+                    { label: "Inactivos", value: inactiveUsers, icon: UserX, color: "text-red-500" },
+                    { label: "Admins", value: adminUsers, icon: Shield, color: "text-purple-500" },
+                    { label: "Portal", value: portalAccessUsers, icon: CheckCircle, color: "text-blue-500" }
+                  ].map((stat, index) => (
+                    <motion.div
+                      key={stat.label}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                      whileHover={{ scale: 1.05 }}
+                      className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-600">{stat.label}</span>
+                        <span className={`text-lg font-bold ${stat.label === 'Activos' ? 'text-green-600' : stat.label === 'Inactivos' ? 'text-red-600' : stat.label === 'Admins' ? 'text-purple-600' : 'text-gray-900'}`}>
+                          {stat.value}
+                        </span>
+                        <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
               </div>
             </div>
             <div className="flex items-center space-x-3 ml-4">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setShowFilters(!showFilters)}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
                   showFilters 
@@ -282,29 +279,35 @@ const UsersSection: React.FC = () => {
               >
                 <Filter className="w-4 h-4" />
                 <span>{showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}</span>
-              </button>
-              <button 
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={handleClearFilters}
                 className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg transition-colors hover:bg-gray-50"
               >
                 <RefreshCw className="w-4 h-4" />
                 <span>Limpiar</span>
-              </button>
-              <button 
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={refreshUsers}
                 className="flex items-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
               >
                 <RefreshCw className="w-4 h-4" />
                 <span>Actualizar</span>
-              </button>
+              </motion.button>
               <PermissionGate permissions={['users.create']}>
-                <button 
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={handleCreateUser}
                   className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Nuevo Usuario</span>
-                </button>
+                </motion.button>
               </PermissionGate>
             </div>
           </div>
@@ -312,7 +315,13 @@ const UsersSection: React.FC = () => {
 
         {/* Filtros expandibles */}
         {showFilters && (
-          <div className="p-4 bg-gray-50 border-t border-gray-200">
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="p-4 bg-gray-50 border-t border-gray-200"
+          >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Rol */}
               <div>
@@ -388,9 +397,9 @@ const UsersSection: React.FC = () => {
                 </select>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
 
       {/* Warning Message */}
       {error && error.includes('datos de prueba') && (
@@ -413,7 +422,12 @@ const UsersSection: React.FC = () => {
 
 
       {/* Users Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+      >
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
@@ -430,9 +444,12 @@ const UsersSection: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {paginatedUsers.map((user) => (
-                <tr 
-                  key={user.user_id} 
+              {paginatedUsers.map((user, index) => (
+                <motion.tr
+                  key={user.user_id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
                   className="hover:bg-gray-50 cursor-pointer transition-colors"
                   onClick={() => handleViewDetails(user)}
                 >
@@ -484,34 +501,43 @@ const UsersSection: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
                       <PermissionGate permissions={['users.edit']}>
-                        <button 
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
                           onClick={() => handleEditUser(user)}
                           className="p-1 text-blue-600 hover:text-blue-900" 
                           title="Editar"
                         >
                           <Edit className="w-4 h-4" />
-                        </button>
+                        </motion.button>
                       </PermissionGate>
                       <PermissionGate permissions={['users.delete']}>
-                        <button 
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
                           onClick={() => handleDeleteUser(user)}
                           className="p-1 text-red-600 hover:text-red-900" 
                           title="Eliminar"
                         >
                           <Trash2 className="w-4 h-4" />
-                        </button>
+                        </motion.button>
                       </PermissionGate>
                     </div>
                   </td>
-                </tr>
+                </motion.tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
+      </motion.div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between bg-white px-6 py-3 border border-gray-200 rounded-lg">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.4 }}
+        className="flex items-center justify-between bg-white px-6 py-3 border border-gray-200 rounded-lg"
+      >
         <div className="text-sm text-gray-700">
           Mostrando <span className="font-medium">{startIndex + 1}</span> a{' '}
           <span className="font-medium">{Math.min(endIndex, filteredUsers.length)}</span> de{' '}
@@ -521,7 +547,9 @@ const UsersSection: React.FC = () => {
           )}
         </div>
         <div className="flex items-center space-x-2">
-          <button 
+          <motion.button
+            whileHover={{ scale: currentPage === 1 ? 1 : 1.05 }}
+            whileTap={{ scale: currentPage === 1 ? 1 : 0.95 }}
             onClick={handlePreviousPage}
             disabled={currentPage === 1}
             className={`px-3 py-1 text-sm rounded transition-colors ${
@@ -531,7 +559,7 @@ const UsersSection: React.FC = () => {
             }`}
           >
             Anterior
-          </button>
+          </motion.button>
           
           {/* Números de página */}
           <div className="flex items-center space-x-1">
@@ -542,8 +570,10 @@ const UsersSection: React.FC = () => {
                   page === totalPages || 
                   (page >= currentPage - 1 && page <= currentPage + 1)) {
                 return (
-                  <button
+                  <motion.button
                     key={page}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={() => handlePageChange(page)}
                     className={`px-3 py-1 text-sm rounded transition-colors ${
                       page === currentPage
@@ -552,7 +582,7 @@ const UsersSection: React.FC = () => {
                     }`}
                   >
                     {page}
-                  </button>
+                  </motion.button>
                 );
               } else if (page === currentPage - 2 || page === currentPage + 2) {
                 return <span key={page} className="px-2 text-gray-500">...</span>;
@@ -561,7 +591,9 @@ const UsersSection: React.FC = () => {
             })}
           </div>
           
-          <button 
+          <motion.button
+            whileHover={{ scale: currentPage === totalPages ? 1 : 1.05 }}
+            whileTap={{ scale: currentPage === totalPages ? 1 : 0.95 }}
             onClick={handleNextPage}
             disabled={currentPage === totalPages}
             className={`px-3 py-1 text-sm rounded transition-colors ${
@@ -571,9 +603,9 @@ const UsersSection: React.FC = () => {
             }`}
           >
             Siguiente
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
 
       {/* User Modal */}
       <UserModal

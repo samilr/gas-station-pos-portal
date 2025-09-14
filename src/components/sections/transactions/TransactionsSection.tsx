@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { 
   Filter, 
   DollarSign, 
@@ -335,7 +336,12 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="bg-white p-4 rounded-lg border border-gray-200"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Ventas</p>
@@ -343,8 +349,13 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
             </div>
             <DollarSign className="w-8 h-8 text-green-500" />
           </div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+          className="bg-white p-4 rounded-lg border border-gray-200"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Retornos</p>
@@ -352,48 +363,61 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
             </div>
             <RefreshCw className="w-8 h-8 text-red-500" />
           </div>
-        </div>
-
-
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Aceptadas</p>
-              <p className="text-2xl font-bold text-green-600">{stats.acceptedTransactions}</p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.3 }}
+            className="bg-white p-4 rounded-lg border border-gray-200"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Aceptadas</p>
+                <p className="text-2xl font-bold text-green-600">{stats.acceptedTransactions}</p>
+              </div>
+              <CheckCircle className="w-8 h-8 text-green-500" />
             </div>
-            <CheckCircle className="w-8 h-8 text-green-500" />
-          </div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Pendientes</p>
-              <p className="text-2xl font-bold text-yellow-600">{stats.pendingTransactions}</p>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.4 }}
+            className="bg-white p-4 rounded-lg border border-gray-200"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Pendientes</p>
+                <p className="text-2xl font-bold text-yellow-600">{stats.pendingTransactions}</p>
+              </div>
+              <Clock className="w-8 h-8 text-yellow-500" />
             </div>
-            <Clock className="w-8 h-8 text-yellow-500" />
-          </div>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Rechazadas</p>
-              <p className="text-2xl font-bold text-red-600">{stats.rejectedTransactions}</p>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.5 }}
+            className="bg-white p-4 rounded-lg border border-gray-200"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Rechazadas</p>
+                <p className="text-2xl font-bold text-red-600">{stats.rejectedTransactions}</p>
+              </div>
+              <AlertCircle className="w-8 h-8 text-red-500" />
             </div>
-            <AlertCircle className="w-8 h-8 text-red-500" />
-          </div>
-          
+          </motion.div>
         </div>
-
-        
-      </div>
-
-        
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.5 }}
+        className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+      >
         {/* Header con filtros de fecha y botón de filtros */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-end justify-between">
@@ -423,7 +447,9 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
               </div>
             </div>
             <div className="flex items-end space-x-3 ml-4">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setShowFilters(!showFilters)}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
                   showFilters 
@@ -433,33 +459,37 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
               >
                 <Filter className="w-4 h-4" />
                 <span>{showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}</span>
-              </button>
-              <button 
-            onClick={refreshTransactions}
-            disabled={loading}
-            className="flex items-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            <span>Actualizar</span>
-          </button>
-          <button 
-            onClick={() => handleExport('excel')}
-            disabled={isExporting}
-            className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-4 py-2 rounded-lg transition-colors"
-            title="Exportar a Excel con 3 hojas: Transacciones, Productos y Pagos"
-          >
-            {isExporting ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Exportando...</span>
-              </>
-            ) : (
-              <>
-                <Download className="w-4 h-4" />
-                <span>Exportar Excel</span>
-              </>
-            )}
-          </button>
+              </motion.button>
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={refreshTransactions}
+                disabled={loading}
+                className="flex items-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                <span>Actualizar</span>
+              </motion.button>
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handleExport('excel')}
+                disabled={isExporting}
+                className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-4 py-2 rounded-lg transition-colors"
+                title="Exportar a Excel con 3 hojas: Transacciones, Productos y Pagos"
+              >
+                {isExporting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Exportando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    <span>Exportar Excel</span>
+                  </>
+                )}
+              </motion.button>
             </div>
           </div>
         </div>
@@ -624,12 +654,17 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
             </div>
           </div>
         )}
-      </div>
+      </motion.div>
 
 
 
       {/* Transactions Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.7 }}
+        className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+      >
 
         
         {paginatedTransactions.length > 0 ? (
@@ -646,9 +681,12 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {paginatedTransactions.map((transaction) => (
-                  <tr 
-                    key={transaction.transNumber} 
+                {paginatedTransactions.map((transaction, index) => (
+                  <motion.tr 
+                    key={transaction.transNumber}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
                     className={`hover:bg-gray-50 cursor-pointer transition-colors ${transaction.isReturn ? 'text-red-600' : ''} ${transaction.status === 0 ? 'opacity-50' : ''}`}
                     onClick={() => setSelectedTransaction(transaction)}
                   >
@@ -730,7 +768,7 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                       <div className='text-sm text-gray-500'>Terminal {transaction.terminalId}</div>
 
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))}
               </tbody>                                                                                        
             </table>
@@ -753,7 +791,7 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
             </button>
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Transaction Details Modal */}
       {selectedTransaction && (
@@ -768,7 +806,12 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
       )}
 
       {/* Pagination */}
-      <div className="flex items-center justify-between bg-white px-6 py-3 border border-gray-200 rounded-lg">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.8 }}
+        className="flex items-center justify-between bg-white px-6 py-3 border border-gray-200 rounded-xl"
+      >
         <div className="text-sm text-gray-700">
           Mostrando <span className="font-medium">{startIndex + 1}</span> a <span className="font-medium">{Math.min(endIndex, filteredTransactions.length)}</span> de{' '}
           <span className="font-medium">{filteredTransactions.length}</span> transacciones
@@ -818,7 +861,7 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Diálogo de Confirmación para Reversar Transacción */}
       <Dialog

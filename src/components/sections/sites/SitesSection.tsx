@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { motion } from "framer-motion";
 import {
   Building2,
   Search,
@@ -209,7 +210,12 @@ const SitesSection: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Search and Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+      >
         {/* Header con búsqueda y botones */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
@@ -228,47 +234,36 @@ const SitesSection: React.FC = () => {
 
                 {/* Stats Cards */}
                 <div className="flex items-center space-x-4">
-                  <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">Total</span>
-                      <span className="text-lg font-bold text-gray-900">
-                        {totalSites}
-                      </span>
-                      <Building2 className="w-5 h-5 text-blue-500" />
-                    </div>
-                  </div>
-                  <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">Activas</span>
-                      <span className="text-lg font-bold text-green-600">
-                        {activeSites}
-                      </span>
-                      <Building2 className="w-5 h-5 text-green-500" />
-                    </div>
-                  </div>
-                  <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">Inactivas</span>
-                      <span className="text-lg font-bold text-red-600">
-                        {inactiveSites}
-                      </span>
-                      <Building2 className="w-5 h-5 text-red-500" />
-                    </div>
-                  </div>
-                  <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">Con POS</span>
-                      <span className="text-lg font-bold text-blue-600">
-                        {posSites}
-                      </span>
-                      <DollarSign className="w-5 h-5 text-blue-500" />
-                    </div>
-                  </div>
+                  {[
+                    { label: "Total", value: totalSites, icon: Building2, color: "text-blue-500" },
+                    { label: "Activas", value: activeSites, icon: Building2, color: "text-green-500" },
+                    { label: "Inactivas", value: inactiveSites, icon: Building2, color: "text-red-500" },
+                    { label: "Con POS", value: posSites, icon: DollarSign, color: "text-blue-500" }
+                  ].map((stat, index) => (
+                    <motion.div
+                      key={stat.label}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                      whileHover={{ scale: 1.05 }}
+                      className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-600">{stat.label}</span>
+                        <span className={`text-lg font-bold ${stat.label === 'Activas' ? 'text-green-600' : stat.label === 'Inactivas' ? 'text-red-600' : 'text-gray-900'}`}>
+                          {stat.value}
+                        </span>
+                        <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
               </div>
             </div>
             <div className="flex items-center space-x-3 ml-4">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setShowFilters(!showFilters)}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
                   showFilters
@@ -280,8 +275,10 @@ const SitesSection: React.FC = () => {
                 <span>
                   {showFilters ? "Ocultar Filtros" : "Mostrar Filtros"}
                 </span>
-              </button>
-              <button
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={handleRefresh}
                 disabled={loading}
                 className="flex items-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
@@ -290,15 +287,17 @@ const SitesSection: React.FC = () => {
                   className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
                 />
                 <span>Actualizar</span>
-              </button>
+              </motion.button>
               <PermissionGate permissions={['sites.create']}>
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={handleCreateSite}
                   className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Nueva Sucursal</span>
-                </button>
+                </motion.button>
               </PermissionGate>
             </div>
           </div>
@@ -306,7 +305,13 @@ const SitesSection: React.FC = () => {
 
         {/* Filtros expandibles */}
         {showFilters && (
-          <div className="p-4 bg-gray-50 border-t border-gray-200">
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="p-4 bg-gray-50 border-t border-gray-200"
+          >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Status Filter */}
               <div>
@@ -340,9 +345,9 @@ const SitesSection: React.FC = () => {
                 </select>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
 
       {/* Warning Message */}
       {error && error.includes("datos de prueba") && (
@@ -369,7 +374,12 @@ const SitesSection: React.FC = () => {
       )}
 
       {/* Sites Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+      >
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50 border-b border-gray-200">
@@ -392,9 +402,12 @@ const SitesSection: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {currentSites.map((site) => (
-                <tr 
-                  key={site.site_id} 
+              {currentSites.map((site, index) => (
+                <motion.tr
+                  key={site.site_id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
                   className="hover:bg-gray-50 cursor-pointer transition-colors"
                   onClick={() => handleViewDetails(site)}
                 >
@@ -467,33 +480,42 @@ const SitesSection: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
                       <PermissionGate permissions={['sites.edit']}>
-                        <button
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
                           onClick={() => handleEditSite(site)}
                           className="p-1 text-blue-600 hover:text-blue-900"
                           title="Editar"
                         >
                           <Edit className="w-4 h-4" />
-                        </button>
+                        </motion.button>
                       </PermissionGate>
                       <PermissionGate permissions={['sites.delete']}>
-                        <button
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
                           onClick={() => handleDeleteSite(site)}
                           className="p-1 text-red-600 hover:text-red-900"
                           title="Eliminar"
                         >
                           <Trash2 className="w-4 h-4" />
-                        </button>
+                        </motion.button>
                       </PermissionGate>
                     </div>
                   </td>
-                </tr>
+                </motion.tr>
               ))}
             </tbody>
           </table>
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between bg-white px-6 py-3 border border-gray-200 rounded-lg">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.4 }}
+          className="flex items-center justify-between bg-white px-6 py-3 border border-gray-200 rounded-lg"
+        >
           <div className="text-sm text-gray-700">
             Mostrando <span className="font-medium">{startIndex + 1}</span> a{" "}
             <span className="font-medium">
@@ -509,7 +531,9 @@ const SitesSection: React.FC = () => {
             )}
           </div>
           <div className="flex items-center space-x-2">
-            <button
+            <motion.button
+              whileHover={{ scale: currentPage === 1 ? 1 : 1.05 }}
+              whileTap={{ scale: currentPage === 1 ? 1 : 0.95 }}
               onClick={handlePrevPage}
               disabled={currentPage === 1}
               className={`px-3 py-1 text-sm rounded transition-colors ${
@@ -519,7 +543,7 @@ const SitesSection: React.FC = () => {
               }`}
             >
               Anterior
-            </button>
+            </motion.button>
 
             {/* Números de página */}
             <div className="flex items-center space-x-1">
@@ -533,8 +557,10 @@ const SitesSection: React.FC = () => {
                     (page >= currentPage - 1 && page <= currentPage + 1)
                   ) {
                     return (
-                      <button
+                      <motion.button
                         key={page}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={() => handlePageChange(page)}
                         className={`px-3 py-1 text-sm rounded transition-colors ${
                           page === currentPage
@@ -543,7 +569,7 @@ const SitesSection: React.FC = () => {
                         }`}
                       >
                         {page}
-                      </button>
+                      </motion.button>
                     );
                   } else if (
                     page === currentPage - 2 ||
@@ -560,7 +586,9 @@ const SitesSection: React.FC = () => {
               )}
             </div>
 
-            <button
+            <motion.button
+              whileHover={{ scale: currentPage === totalPages ? 1 : 1.05 }}
+              whileTap={{ scale: currentPage === totalPages ? 1 : 0.95 }}
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
               className={`px-3 py-1 text-sm rounded transition-colors ${
@@ -570,10 +598,10 @@ const SitesSection: React.FC = () => {
               }`}
             >
               Siguiente
-            </button>
+            </motion.button>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
