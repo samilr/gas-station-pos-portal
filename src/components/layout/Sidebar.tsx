@@ -103,60 +103,13 @@ const menuItems: MenuItem[] = [
   },
   { 
     id: 'logs', 
-    label: 'Registros', 
+    label: 'LOG', 
     icon: FileText,
     permission: 'logs.view',
     categoryPermission: 'logs.view', // Solo ADMIN y AUDITOR pueden ver esta categoría
     subItems: [
       { id: 'logs.actions', label: 'Actions Log', icon: Activity, permission: 'logs.view' },
       { id: 'logs.errors', label: 'Error Log', icon: AlertTriangle, permission: 'logs.view' },
-    ]
-  },
-  { 
-    id: 'database', 
-    label: 'Base de Datos', 
-    icon: Database,
-    permission: 'database.view',
-    categoryPermission: 'database.view', // Solo ADMIN puede ver esta categoría
-    subItems: [
-      { id: 'database.connections', label: 'Conexiones', icon: Server, permission: 'database.view' },
-      { id: 'database.tables', label: 'Tablas', icon: HardDrive, permission: 'database.view' },
-      { id: 'database.backup', label: 'Respaldos', icon: Backup, permission: 'database.edit' },
-    ]
-  },
-  { 
-    id: 'security', 
-    label: 'Seguridad', 
-    icon: Shield,
-    permission: 'security.view',
-    categoryPermission: 'security.view', // Solo ADMIN puede ver esta categoría
-    subItems: [
-      { id: 'security.permissions', label: 'Permisos', icon: Lock, permission: 'security.view' },
-      { id: 'security.keys', label: 'API Keys', icon: Key, permission: 'security.edit' },
-      { id: 'security.alerts', label: 'Alertas', icon: AlertTriangle, permission: 'security.view' },
-    ]
-  },
-  { 
-    id: 'reports', 
-    label: 'Reportes', 
-    icon: FileText,
-    permission: 'reports.view',
-    categoryPermission: 'reports.view', // Solo ADMIN, MANAGER y SUPERVISOR pueden ver esta categoría
-    subItems: [
-      { id: 'reports.analytics', label: 'Reportes Analytics', icon: FileBarChart, permission: 'reports.view' },
-      { id: 'reports.export', label: 'Exportar Datos', icon: Download, permission: 'reports.create' },
-      { id: 'reports.import', label: 'Importar Datos', icon: Upload, permission: 'reports.create' },
-    ]
-  },
-  { 
-    id: 'notifications', 
-    label: 'Notificaciones', 
-    icon: Bell,
-    permission: 'notifications.view',
-    categoryPermission: 'notifications.view', // Solo ADMIN y MANAGER pueden ver esta categoría
-    subItems: [
-      { id: 'notifications.email', label: 'Email', icon: Mail, permission: 'notifications.view' },
-      { id: 'notifications.push', label: 'Push', icon: MessageSquare, permission: 'notifications.edit' },
     ]
   },
   { 
