@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useNavigation } from '../../hooks/useNavigation';
-import { LayoutDashboard, Users, Settings, BarChart3, Database, Shield, FileText, Bell, ChevronDown, ChevronUp, UserPlus, UserCheck, UserX, TrendingUp, PieChart, Activity, Server, HardDrive, DatabaseBackup as Backup, Lock, Key, AlertTriangle, FileBarChart, Download, Upload, Mail, MessageSquare, Sliders, Globe, Palette, CreditCard, Receipt, Package, Monitor, Smartphone, Building2, FuelIcon, Store, DollarSign } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, BarChart3, FileText, ChevronDown, ChevronUp, UserPlus, UserCheck, UserX, TrendingUp, PieChart, Activity, AlertTriangle, Sliders, Globe, Palette, Receipt, Package, Monitor, Smartphone, Building2, FuelIcon, Store, DollarSign } from 'lucide-react';
 import { usePermissions } from '../../hooks/usePermissions';
 
 interface SidebarProps {
@@ -262,12 +262,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                         if (!isExpanded) {
                           setExpandedItem(item.id);
                         }
-                        // Si ya está expandida, navegar al primer subitem
+                        // Si ya está expandida, colapsarla
                         else {
-                          const firstSubItem = getFilteredSubItems(item.subItems)[0];
-                          if (firstSubItem) {
-                            handleNavigation(firstSubItem.id);
-                          }
+                          setExpandedItem(null);
                         }
                       } else {
                         handleNavigation(item.id);
