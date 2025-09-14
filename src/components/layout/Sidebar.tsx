@@ -54,8 +54,6 @@ const menuItems: MenuItem[] = [
     permission: 'analytics.view',
     subItems: [
       { id: 'analytics.overview', label: 'Vista General', icon: TrendingUp, permission: 'analytics.view' },
-      { id: 'analytics.charts', label: 'Gráficos', icon: PieChart, permission: 'analytics.view' },
-      { id: 'analytics.realtime', label: 'Tiempo Real', icon: Activity, permission: 'analytics.view' },
     ]
   },
  
@@ -66,7 +64,6 @@ const menuItems: MenuItem[] = [
     permission: 'products.view',
     subItems: [
       { id: 'products.list', label: 'Inventario', icon: Package, permission: 'products.view' },
-      { id: 'products.create', label: 'Nuevo Producto', icon: UserPlus, permission: 'products.create' },
       { id: 'products.categories', label: 'Categorías', icon: Users, permission: 'products.view' },
     ]
   },
@@ -88,8 +85,6 @@ const menuItems: MenuItem[] = [
     permission: 'users.view',
     subItems: [
       { id: 'users.list', label: 'Lista de Usuarios', icon: Users, permission: 'users.view' },
-      { id: 'users.active', label: 'Usuarios Activos', icon: UserCheck, permission: 'users.view' },
-      { id: 'users.inactive', label: 'Usuarios Inactivos', icon: UserX, permission: 'users.view' },
     ]
   },
   { 
@@ -120,8 +115,6 @@ const menuItems: MenuItem[] = [
     categoryPermission: 'settings.view', // Solo ADMIN puede ver esta categoría
     subItems: [
       { id: 'settings.general', label: 'General', icon: Sliders, permission: 'settings.view' },
-      { id: 'settings.api', label: 'API Config', icon: Globe, permission: 'settings.edit' },
-      { id: 'settings.theme', label: 'Tema', icon: Palette, permission: 'settings.view' },
     ]
   },
 ];
