@@ -1,5 +1,5 @@
 // Service Worker simple para ISLADOM POS Portal
-const CACHE_NAME = 'isladom-pos-v1.0.2';
+const CACHE_NAME = 'isladom-pos-v1.0.3';
 
 // Instalación del Service Worker
 self.addEventListener('install', (event) => {
@@ -30,6 +30,28 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // Solo manejar requests HTTP/HTTPS
   if (!event.request.url.startsWith('http')) {
+    return;
+  }
+
+  // Para manifest.json, siempre ir a la red para obtener la versión más reciente
+  if (event.request.url.includes('manifest.json')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          // Actualizar cache con la nueva versión
+          if (response.ok) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, responseClone);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          // Si falla la red, usar cache como fallback
+          return caches.match(event.request);
+        })
+    );
     return;
   }
 
