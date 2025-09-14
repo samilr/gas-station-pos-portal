@@ -24,40 +24,62 @@ export const usePWA = (): PWAState => {
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [updateAvailable, setUpdateAvailable] = useState(false);
 
   useEffect(() => {
+    // Verificar si estamos en el cliente
+    if (typeof window === 'undefined') return;
+
     // Verificar si la app está en modo standalone
     const checkStandalone = () => {
-      const standalone = window.matchMedia('(display-mode: standalone)').matches ||
-                        (window.navigator as any).standalone ||
-                        document.referrer.includes('android-app://');
-      setIsStandalone(standalone);
-      setIsInstalled(standalone);
+      try {
+        const standalone = window.matchMedia('(display-mode: standalone)').matches ||
+                          (window.navigator as any).standalone ||
+                          document.referrer.includes('android-app://');
+        setIsStandalone(standalone);
+        setIsInstalled(standalone);
+      } catch (error) {
+        console.warn('Error checking standalone mode:', error);
+      }
     };
 
     checkStandalone();
 
     // Escuchar cambios en el modo de visualización
-    const mediaQuery = window.matchMedia('(display-mode: standalone)');
-    const handleDisplayModeChange = () => checkStandalone();
-    mediaQuery.addEventListener('change', handleDisplayModeChange);
+    let mediaQuery: MediaQueryList | null = null;
+    let handleDisplayModeChange: (() => void) | null = null;
+    
+    try {
+      mediaQuery = window.matchMedia('(display-mode: standalone)');
+      handleDisplayModeChange = () => checkStandalone();
+      mediaQuery.addEventListener('change', handleDisplayModeChange);
+    } catch (error) {
+      console.warn('Error setting up display mode listener:', error);
+    }
 
     // Manejar el evento beforeinstallprompt
     const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setInstallPrompt(e as BeforeInstallPromptEvent);
-      setIsInstallable(true);
+      try {
+        e.preventDefault();
+        setInstallPrompt(e as BeforeInstallPromptEvent);
+        setIsInstallable(true);
+      } catch (error) {
+        console.warn('Error handling beforeinstallprompt:', error);
+      }
     };
 
     // Manejar la instalación exitosa
     const handleAppInstalled = () => {
-      setIsInstalled(true);
-      setIsInstallable(false);
-      setInstallPrompt(null);
-      console.log('PWA instalada exitosamente');
+      try {
+        setIsInstalled(true);
+        setIsInstallable(false);
+        setInstallPrompt(null);
+        console.log('PWA instalada exitosamente');
+      } catch (error) {
+        console.warn('Error handling app installed:', error);
+      }
     };
 
     // Escuchar cambios en el estado de conexión
@@ -70,10 +92,14 @@ export const usePWA = (): PWAState => {
     };
 
     // Registrar event listeners
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    try {
+      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.addEventListener('appinstalled', handleAppInstalled);
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+    } catch (error) {
+      console.warn('Error adding event listeners:', error);
+    }
 
     // Registrar Service Worker
     if ('serviceWorker' in navigator) {
@@ -99,11 +125,17 @@ export const usePWA = (): PWAState => {
     }
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      mediaQuery.removeEventListener('change', handleDisplayModeChange);
+      try {
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        window.removeEventListener('appinstalled', handleAppInstalled);
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+        if (mediaQuery && handleDisplayModeChange) {
+          mediaQuery.removeEventListener('change', handleDisplayModeChange);
+        }
+      } catch (error) {
+        console.warn('Error removing event listeners:', error);
+      }
     };
   }, []);
 

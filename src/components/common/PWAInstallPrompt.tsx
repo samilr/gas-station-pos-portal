@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, X, Smartphone, Monitor, Wifi, WifiOff } from 'lucide-react';
-import { usePWA } from '../../hooks/usePWA';
 import toast from 'react-hot-toast';
 
 interface PWAInstallPromptProps {
@@ -9,9 +8,77 @@ interface PWAInstallPromptProps {
 }
 
 const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ className = '' }) => {
-  const { isInstallable, isInstalled, isStandalone, isOnline, installApp } = usePWA();
+  const [isInstallable, setIsInstallable] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [isDismissed, setIsDismissed] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
+
+  useEffect(() => {
+    // Verificar si estamos en el cliente
+    if (typeof window === 'undefined') return;
+
+    // Verificar si está en modo standalone
+    const checkStandalone = () => {
+      try {
+        const standalone = window.matchMedia('(display-mode: standalone)').matches ||
+                          (window.navigator as any).standalone;
+        setIsStandalone(standalone);
+        setIsInstalled(standalone);
+      } catch (error) {
+        console.warn('Error checking standalone mode:', error);
+      }
+    };
+
+    checkStandalone();
+
+    // Manejar beforeinstallprompt
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+      setIsInstallable(true);
+    };
+
+    // Manejar appinstalled
+    const handleAppInstalled = () => {
+      setIsInstalled(true);
+      setIsInstallable(false);
+      setInstallPrompt(null);
+    };
+
+    // Manejar estado de conexión
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Verificar si el usuario ya rechazó la instalación recientemente
+    if (typeof window === 'undefined') return;
+    
+    const dismissedTime = localStorage.getItem('pwa-install-dismissed');
+    if (dismissedTime) {
+      const daysSinceDismissed = (Date.now() - parseInt(dismissedTime)) / (1000 * 60 * 60 * 24);
+      if (daysSinceDismissed < 7) {
+        setIsDismissed(true);
+      } else {
+        localStorage.removeItem('pwa-install-dismissed');
+      }
+    }
+  }, []);
 
   // No mostrar si ya está instalada o en modo standalone
   if (isInstalled || isStandalone || !isInstallable || isDismissed) {
@@ -19,10 +86,22 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ className = '' }) =
   }
 
   const handleInstall = async () => {
+    if (!installPrompt) return;
+    
     try {
       setIsInstalling(true);
-      await installApp();
-      toast.success('¡Aplicación instalada exitosamente!');
+      await installPrompt.prompt();
+      const choiceResult = await installPrompt.userChoice;
+      
+      if (choiceResult.outcome === 'accepted') {
+        toast.success('¡Aplicación instalada exitosamente!');
+        setIsInstalled(true);
+        setIsInstallable(false);
+      } else {
+        toast.error('Instalación cancelada');
+      }
+      
+      setInstallPrompt(null);
     } catch (error) {
       console.error('Error instalando PWA:', error);
       toast.error('Error al instalar la aplicación');
@@ -34,21 +113,10 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ className = '' }) =
   const handleDismiss = () => {
     setIsDismissed(true);
     // Recordar la decisión por 7 días
-    localStorage.setItem('pwa-install-dismissed', Date.now().toString());
-  };
-
-  // Verificar si el usuario ya rechazó la instalación recientemente
-  React.useEffect(() => {
-    const dismissedTime = localStorage.getItem('pwa-install-dismissed');
-    if (dismissedTime) {
-      const daysSinceDismissed = (Date.now() - parseInt(dismissedTime)) / (1000 * 60 * 60 * 24);
-      if (daysSinceDismissed < 7) {
-        setIsDismissed(true);
-      } else {
-        localStorage.removeItem('pwa-install-dismissed');
-      }
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pwa-install-dismissed', Date.now().toString());
     }
-  }, []);
+  };
 
   return (
     <AnimatePresence>
@@ -146,15 +214,43 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ className = '' }) =
 
 // Componente para mostrar actualizaciones disponibles
 export const PWAUpdatePrompt: React.FC = () => {
-  const { updateAvailable, updateApp } = usePWA();
+  const [updateAvailable, setUpdateAvailable] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // Escuchar actualizaciones del Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistration().then((registration) => {
+        if (registration) {
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            if (newWorker) {
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  setUpdateAvailable(true);
+                }
+              });
+            }
+          });
+        }
+      });
+    }
+  }, []);
 
   if (!updateAvailable) return null;
 
   const handleUpdate = async () => {
     try {
       setIsUpdating(true);
-      updateApp();
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (registration && registration.waiting) {
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          window.location.reload();
+        }
+      }
     } catch (error) {
       console.error('Error actualizando PWA:', error);
       toast.error('Error al actualizar la aplicación');
