@@ -17,7 +17,7 @@ export default defineConfig({
             return `assets/[name]-[hash][extname]`;
           }
           
-          if (/\.(web\.config|htaccess\.txt|_redirects|staticwebapp\.config\.json)$/i.test(assetInfo.name)) {
+          if (/\.(web\.config|htaccess\.txt|_redirects|staticwebapp\.config\.json|manifest\.json|browserconfig\.xml|sw\.js|offline\.html)$/i.test(assetInfo.name)) {
             // Renombrar htaccess.txt a .htaccess en el build
             if (assetInfo.name === 'htaccess.txt') {
               return '.htaccess';
@@ -28,5 +28,16 @@ export default defineConfig({
         }
       }
     }
-  }
+  },
+  // Configuración para PWA
+  server: {
+    headers: {
+      'Cache-Control': 'no-cache',
+    },
+  },
+  preview: {
+    headers: {
+      'Cache-Control': 'no-cache',
+    },
+  },
 });

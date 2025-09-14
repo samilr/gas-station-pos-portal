@@ -3,11 +3,17 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { RouterProvider } from 'react-router-dom';
 import { router } from './routes';
+import { PWAInstallPrompt, PWAUpdatePrompt } from './components/common';
 
 function App() {
   return (
     <AuthProvider>
       <RouterProvider router={router} />
+      
+      {/* PWA Components */}
+      <PWAInstallPrompt />
+      <PWAUpdatePrompt />
+      
       <Toaster
         position="top-right"
         toastOptions={{
