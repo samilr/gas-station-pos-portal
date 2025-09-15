@@ -82,15 +82,12 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'users.view', 'users.create', 'users.edit',
     'transactions.view', 'transactions.create', 'transactions.edit',
     'products.view', 'products.create', 'products.edit',
-    'sites.view', 'sites.create', 'sites.edit',
-    'terminals.view', 'terminals.create', 'terminals.edit',
-    'devices.view', 'devices.create', 'devices.edit',
+    //'sites.view', 'sites.create', 'sites.edit',
+    //'terminals.view', 'terminals.create', 'terminals.edit',
+    //'devices.view', 'devices.create', 'devices.edit',
     'analytics.view',
-    'reports.view', 'reports.create',
     // Categorías restringidas para MANAGER
-    'pos.view',        // Puede ver Puntos de Venta
-    'reports.view',    // Puede ver Reportes
-    'notifications.view', // Puede ver Notificaciones
+    //'pos.view',        // Puede ver Puntos de Venta
     // NO puede ver: logs, database, security, settings
   ],
   
@@ -180,19 +177,7 @@ export const COMPONENT_PERMISSIONS: Record<string, Permission[]> = {
   'ActionsLogSection': ['logs.view'],
   'ErrorLogSection': ['logs.view'],
   
-  // Base de datos
-  'DatabaseSection': ['database.view'],
-  'DatabaseEdit': ['database.edit'],
-  'DatabaseBackup': ['database.backup'],
-  
-  // Seguridad
-  'SecuritySection': ['security.view'],
-  'SecurityEdit': ['security.edit'],
-  'SecurityKeys': ['security.keys'],
-  
-  // Notificaciones
-  'NotificationsSection': ['notifications.view'],
-  'NotificationsEdit': ['notifications.edit'],
+
   
   // Configuración
   'SettingsSection': ['settings.view'],
