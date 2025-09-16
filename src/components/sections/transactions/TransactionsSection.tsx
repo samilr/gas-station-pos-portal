@@ -302,6 +302,12 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
       case CFStatus.ACCEPTED_ALT:
         return <CheckCircle className="w-4 h-4 text-green-500" />;
       case CFStatus.PENDING:
+      case 0:
+      case 1:
+      case 5:
+      case 6:
+      case 7:
+      case 8:
         return <Clock className="w-4 h-4 text-yellow-500" />;
       case CFStatus.REJECTED:
         return <AlertCircle className="w-4 h-4 text-red-500" />;

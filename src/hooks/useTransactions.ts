@@ -118,7 +118,18 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
   const calculateStats = useCallback((transactions: ITransactionResume[]) => {
     const totalSales = transactions.reduce((sum, t) => sum + t.total, 0);
     const acceptedTransactions = transactions.filter(t => t.cfStatus === CFStatus.ACCEPTED || t.cfStatus === CFStatus.ACCEPTED_ALT).length;
-    const pendingTransactions = transactions.filter(t => t.cfStatus === CFStatus.PENDING).length;
+    
+    // Facturas con cf_status 0, 1, 5, 6, 7, 8 se consideran como "Pendientes"
+    const pendingTransactions = transactions.filter(t => 
+      t.cfStatus === CFStatus.PENDING || 
+      t.cfStatus === 0 || 
+      t.cfStatus === 1 || 
+      t.cfStatus === 5 || 
+      t.cfStatus === 6 || 
+      t.cfStatus === 7 || 
+      t.cfStatus === 8
+    ).length;
+    
     const rejectedTransactions = transactions.filter(t => t.cfStatus === CFStatus.REJECTED).length;
 
     return {
