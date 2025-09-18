@@ -13,7 +13,7 @@ interface TransactionStats {
   totalTransactions: number;
 }
 
-export type SortField = 'transNumber' | 'cfNumber' | 'transDate' | 'siteId' | 'taxpayerName' | 'total' | 'cfStatus';
+export type SortField = 'transNumber' | 'cfNumber' | 'transDate' | 'siteId' | 'taxpayerName' | 'total' | 'cfStatus' | 'staftId';
 export type SortDirection = 'asc' | 'desc';
 
 interface UseTransactionsReturn {
@@ -175,6 +175,10 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
         case 'cfStatus':
           aValue = a.cfStatus;
           bValue = b.cfStatus;
+          break;
+        case 'staftId':
+          aValue = a.staftId;
+          bValue = b.staftId;
           break;
         default:
           aValue = a.transDate;

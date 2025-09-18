@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useNavigation } from '../../hooks/useNavigation';
-import { LayoutDashboard, Users, Settings, BarChart3, FileText, ChevronDown, ChevronUp, UserPlus, UserCheck, UserX, TrendingUp, PieChart, Activity, AlertTriangle, Sliders, Globe, Palette, Receipt, Package, Monitor, Smartphone, Building2, FuelIcon, Store, DollarSign } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, BarChart3, FileText, ChevronDown, ChevronUp, TrendingUp, Activity, AlertTriangle, Sliders, Receipt, Package, Monitor, Smartphone, Building2, FuelIcon, Store, DollarSign } from 'lucide-react';
 import { usePermissions } from '../../hooks/usePermissions';
 
 interface SidebarProps {
@@ -132,7 +132,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [hoveredItemRef, setHoveredItemRef] = useState<HTMLButtonElement | null>(null);
 
   // Minimizar todas las categorías cuando se está en el dashboard
-  // Expandir automáticamente la categoría del item activo
+  // Expandir automáticamente la categoría del item activo (solo si no es una sola opción)
   React.useEffect(() => {
     if (activeSection === 'dashboard') {
       setExpandedItem(null);
@@ -141,7 +141,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       const activeItem = menuItems.find(item => 
         item.subItems?.some(subItem => subItem.id === activeSection)
       );
-      if (activeItem) {
+      if (activeItem && !hasOnlyOneOption(activeItem)) {
         setExpandedItem(activeItem.id);
       }
     }
@@ -198,6 +198,20 @@ const Sidebar: React.FC<SidebarProps> = ({
     ) || [];
   };
 
+  // Función para verificar si una categoría tiene solo una opción disponible
+  const hasOnlyOneOption = (item: MenuItem) => {
+    if (!item.subItems) return false;
+    const filteredSubItems = getFilteredSubItems(item.subItems);
+    return filteredSubItems.length === 1;
+  };
+
+  // Función para obtener la única opción de una categoría
+  const getSingleOption = (item: MenuItem) => {
+    if (!item.subItems) return null;
+    const filteredSubItems = getFilteredSubItems(item.subItems);
+    return filteredSubItems.length === 1 ? filteredSubItems[0] : null;
+  };
+
   return (
     <div className="relative">
       {/* Sidebar principal */}
@@ -226,7 +240,10 @@ const Sidebar: React.FC<SidebarProps> = ({
         <ul className="space-y-2">
           {filteredMenuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = activeSection === item.id || activeSection.startsWith(item.id + '.');
+            const isSingleOption = hasOnlyOneOption(item);
+            const singleOption = getSingleOption(item);
+            const isActive = activeSection === item.id || activeSection.startsWith(item.id + '.') || 
+              (isSingleOption && singleOption && activeSection === singleOption.id);
             const isExpanded = expandedItem === item.id;
             const hasSubItems = item.subItems && getFilteredSubItems(item.subItems).length > 0;
             
@@ -240,7 +257,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       }
                     }}
                     onMouseEnter={(e) => {
-                      if (isCollapsed && hasSubItems) {
+                      if (isCollapsed && hasSubItems && !isSingleOption) {
                         handleMouseEnter(item.id, e.currentTarget);
                       }
                     }}
@@ -250,7 +267,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                       }
                     }}
                     onClick={() => {
-                      if (hasSubItems && !isCollapsed) {
+                      if (isSingleOption && singleOption) {
+                        // Si la categoría tiene solo una opción, navegar directamente a esa opción
+                        handleNavigation(singleOption.id);
+                      } else if (hasSubItems && !isCollapsed) {
                         // Si la categoría no está expandida, expandirla
                         if (!isExpanded) {
                           setExpandedItem(item.id);
@@ -280,7 +300,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         <span className="font-medium">{item.label}</span>
                       )}
                     </div>
-                    {!isCollapsed && hasSubItems && (
+                    {!isCollapsed && hasSubItems && !isSingleOption && (
                       <div className="flex-shrink-0">
                         {isExpanded ? (
                           <ChevronUp className="w-4 h-4" />
@@ -291,8 +311,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                     )}
                   </button>
 
-                  {/* Sub Items */}
-                  {!isCollapsed && hasSubItems && isExpanded && (
+                  {/* Sub Items - Solo mostrar si no es una sola opción */}
+                  {!isCollapsed && hasSubItems && isExpanded && !isSingleOption && (
                     <ul className="ml-6 space-y-1 border-l border-gray-700 pl-4">
                       {getFilteredSubItems(item.subItems).map((subItem) => {
                         const SubIcon = subItem.icon;

@@ -14,7 +14,9 @@ import {
   Building2,
   FileX,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Smartphone,
+  Clock9Icon
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Dialog } from '@headlessui/react';
@@ -680,10 +682,10 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                 <tr>
                   {renderSortableHeader('transNumber', 'Transacción')}
                   {renderSortableHeader('siteId', 'Sucursal')}
+                  {renderSortableHeader('staftId', 'Vendedor')}
                   {renderSortableHeader('taxpayerName', 'Cliente')}
                   {renderSortableHeader('transDate', 'Fecha')}
                   {renderSortableHeader('total', 'Total')}
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -714,10 +716,37 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                     <td className="px-4 py-4">
                       <div>
                         <div className={`text-sm font-medium ${transaction.isReturn ? 'text-red-600' : 'text-gray-900'}`}>{transaction.siteId} {transaction.siteName}</div>
-                        {/*<div className="text-sm text-gray-500"> Terminal {transaction.terminalId}</div>*/}
-                        <div className={`text-xs ${transaction.isReturn ? 'text-red-500' : 'text-blue-600'}`}>{transaction.staftId} - {transaction.staftName}</div>
+                        <div className={`flex items-center space-x-1 text-sm ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`}>
+                          <Smartphone className={`w-3 h-3 ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`} />
+                          <span>Terminal {transaction.terminalId}</span>
+                        </div>
                       </div>
                     </td>
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedTransaction(transaction);
+                        }}
+                        className="flex items-center space-x-1 text-blue-600 hover:text-blue-900 transition-colors"
+                      >
+
+                      </button>
+                      <div className={`text-sm font-medium ${transaction.isReturn ? 'text-red-600' : 'text-gray-900'}`}>{transaction.staftName}</div>
+                      <div className='flex items-center space-x-4 text-sm'>
+                        <div className={`flex items-center space-x-1 ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`}>
+                          <User className={`w-3 h-3 ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`} />
+                          <span>{transaction.staftId}</span>
+                        </div>
+                        <div className={`flex items-center space-x-1 ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`}>
+                          <Clock9Icon className={`w-3 h-3 ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`} />
+                          <span>{transaction.shift}</span>
+                        </div>
+                      </div>
+
+                    </td>
+
+
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -761,19 +790,7 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedTransaction(transaction);
-                        }}
-                        className="flex items-center space-x-1 text-blue-600 hover:text-blue-900 transition-colors"
-                      >
-
-                      </button>
-                      <div className='text-sm text-gray-500'>Terminal {transaction.terminalId}</div>
-
-                    </td>
+                    
                   </motion.tr>
                 ))}
               </tbody>                                                                                        
