@@ -7,6 +7,8 @@ import {
   RefreshCw,
   FileText,
   Undo2,
+  Download,
+  Printer,
 } from "lucide-react";
 import {
   getStatusText,
@@ -128,6 +130,20 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
     } catch (error) {
       console.error("Error al generar el PDF:", error);
       toast.error("Error al generar el PDF de la transacción", {
+        duration: 5000,
+        icon: "❌",
+      });
+    }
+  };
+ 
+  const handleDownloadTrasaction = async (transaction: ITransactionResume) => {
+    try {
+
+      await pdfService.generateTransactionPDF(transaction, false);
+      
+    } catch (error) {
+      console.error("Error al descargar el PDF:", error);
+      toast.error("Error al descargar el PDF de la transacción", {
         duration: 5000,
         icon: "❌",
       });
@@ -491,11 +507,18 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
               Cerrar
             </button>
             <button
+              onClick={() => handleDownloadTrasaction(transaction)}
+              className="px-4 py-2 bg-green-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2"
+            >
+              <Download className="w-4 h-4" />
+              <span>Descargar</span>
+            </button>
+            <button
               onClick={() => handlePrintTransaction(transaction)}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2"
             >
-              <FileText className="w-4 h-4" />
-              <span>Imprimir Recibo</span>
+              <Printer className="w-4 h-4" />
+              <span>Imprimir</span>
             </button>
           </div>
         </div>

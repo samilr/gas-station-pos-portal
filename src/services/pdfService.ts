@@ -232,7 +232,7 @@ class PDFService {
       return pdfUrl;
     } else {
       const fileName = transactionData.taxpayerName && transactionData.taxpayerName !== 'Consumidor Final'
-        ? `transaccion-${transactionData.transNumber}-${transactionData.taxpayerId}.pdf`
+        ? `${transactionData.taxpayerName} - ${transactionData.cfNumber} - ${transactionData.transNumber}.pdf`
         : `transaccion-${transactionData.transNumber}.pdf`;
       doc.save(fileName);
       return '';
