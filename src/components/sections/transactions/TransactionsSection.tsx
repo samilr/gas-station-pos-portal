@@ -681,10 +681,10 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   {renderSortableHeader('transNumber', 'Transacción')}
+                  {renderSortableHeader('transDate', 'Fecha')}
                   {renderSortableHeader('siteId', 'Sucursal')}
                   {renderSortableHeader('staftId', 'Vendedor')}
                   {renderSortableHeader('taxpayerName', 'Cliente')}
-                  {renderSortableHeader('transDate', 'Fecha')}
                   {renderSortableHeader('total', 'Total')}
                 </tr>
               </thead>
@@ -711,6 +711,12 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                             </span>
                           )}
                         </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        <div className={`text-sm ${transaction.isReturn ? 'text-red-600' : 'text-gray-900'}`}>{formatDateOnly(transaction.transDate)}</div>
+                        <div className={`text-sm ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`}>{formatTimeOnly(transaction.transDate)}</div>
                       </div>
                     </td>
                     <td className="px-4 py-4">
@@ -766,12 +772,6 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                           </div>
                           <div className={`text-sm ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`}>{transaction.taxpayerId}</div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className={`text-sm ${transaction.isReturn ? 'text-red-600' : 'text-gray-900'}`}>{formatDateOnly(transaction.transDate)}</div>
-                        <div className={`text-sm ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`}>{formatTimeOnly(transaction.transDate)}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
