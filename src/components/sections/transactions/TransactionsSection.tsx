@@ -16,7 +16,8 @@ import {
   ChevronUp,
   ChevronDown,
   Smartphone,
-  Clock9Icon
+  Clock9Icon,
+  X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Dialog } from '@headlessui/react';
@@ -419,233 +420,235 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
         </div>
       </div>
 
-      {/* Search and Filters */}
+      {/* Botones de Acción */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.5 }}
-        className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+        transition={{ duration: 0.3, delay: 0.6 }}
+        className="flex items-center justify-end space-x-3 mb-4"
       >
-        {/* Header con filtros de fecha y botón de filtros */}
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-end justify-between">
-            <div className="flex-1">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Fecha inicio */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setShowFilters(!showFilters)}
+          className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
+            showFilters 
+              ? 'bg-blue-100 text-blue-700 border border-blue-300' 
+              : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
+          }`}
+          title={showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+        >
+          <Filter className="w-4 h-4" />
+        </motion.button>
+        <motion.button 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={refreshTransactions}
+          disabled={loading}
+          className="flex items-center justify-center w-8 h-8 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+          title="Actualizar"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+        </motion.button>
+        <motion.button 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => handleExport('excel')}
+          disabled={isExporting}
+          className="flex items-center justify-center w-8 h-8 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg transition-colors"
+          title="Exportar a Excel con 3 hojas: Transacciones, Productos y Pagos"
+        >
+          {isExporting ? (
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
+        </motion.button>
+      </motion.div>
+
+      {/* Modal de Filtros */}
+      {showFilters && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center space-x-3">
+                <Filter className="w-6 h-6 text-blue-600" />
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio</label>
-                  <input
-                    type="date"
-                    value={startDateFilter}
-                    onChange={(e) => setStartDateFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Filtros de Búsqueda
+                  </h3>
+                  <p className="text-sm text-gray-600">Configura los filtros para buscar transacciones</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              <div className="space-y-6">
+                {/* Fechas */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Rango de Fechas</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio</label>
+                      <input
+                        type="date"
+                        value={startDateFilter}
+                        onChange={(e) => setStartDateFilter(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Fin</label>
+                      <input
+                        type="date"
+                        value={endDateFilter}
+                        onChange={(e) => setEndDateFilter(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                {/* Fecha fin */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Fin</label>
-                  <input
-                    type="date"
-                    value={endDateFilter}
-                    onChange={(e) => setEndDateFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                {/* Filtros de Transacción */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Transacción</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Número de Transacción</label>
+                      <input
+                        type="text"
+                        placeholder="Ej: 12345"
+                        value={transNumberFilter}
+                        onChange={(e) => setTransNumberFilter(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Número de e-NCF</label>
+                      <input
+                        type="text"
+                        placeholder="Ej: E310000000001"
+                        value={cfNumberFilter}
+                        onChange={(e) => setCfNumberFilter(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                      <select 
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value === '' ? '' : Number(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="">Todos los estados</option>
+                        <option value={CFStatus.ACCEPTED}>Aceptadas</option>
+                        <option value={CFStatus.PENDING}>Pendientes</option>
+                        <option value={CFStatus.REJECTED}>Rechazadas</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de comprobante</label>
+                      <select 
+                        value={cfTypeFilter}
+                        onChange={(e) => setCfTypeFilter(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="">Todos los tipos</option>
+                        <option value="31">32 - Factura de Crédito Fiscal</option>
+                        <option value="32">31 - Factura Consumidor Final</option>
+                        <option value="34">34 - Factura Nota de Credito</option>
+                        <option value="44">44 - Factura Regimen Especial</option>
+                        <option value="45">45 - Factura Gubernamental</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Filtros de Ubicación y Personal */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Ubicación y Personal</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Sucursal</label>
+                      <input
+                        type="text"
+                        placeholder="CO-0017"
+                        value={siteIdFilter}
+                        onChange={(e) => setSiteIdFilter(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Terminal</label>
+                      <input
+                        type="number"
+                        placeholder="Ej: 1, 2, 3"
+                        value={terminalFilter}
+                        onChange={(e) => setTerminalFilter(e.target.value === '' ? '' : Number(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Código vendedor</label>
+                      <input
+                        type="number"
+                        placeholder="0000"
+                        value={staftIdFilter}
+                        onChange={(e) => setStaftIdFilter(e.target.value === '' ? '' : Number(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Turno</label>
+                      <input
+                        type="number"
+                        placeholder="1, 2 o 3"
+                        value={shiftFilter}
+                        onChange={(e) => setShiftFilter(e.target.value === '' ? '' : Number(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Filtros de Cliente */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Cliente</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">RNC/Cédula</label>
+                      <input
+                        type="text"
+                        placeholder="RNC o Cédula"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="flex items-end space-x-3 ml-4">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                  showFilters 
-                    ? 'bg-blue-100 text-blue-700 border border-blue-300' 
-                    : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
-                }`}
-              >
-                <Filter className="w-4 h-4" />
-                <span>{showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}</span>
-              </motion.button>
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={refreshTransactions}
-                disabled={loading}
-                className="flex items-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                <span>Actualizar</span>
-              </motion.button>
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => handleExport('excel')}
-                disabled={isExporting}
-                className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-4 py-2 rounded-lg transition-colors"
-                title="Exportar a Excel con 3 hojas: Transacciones, Productos y Pagos"
-              >
-                {isExporting ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Exportando...</span>
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4" />
-                    <span>Exportar Excel</span>
-                  </>
-                )}
-              </motion.button>
-            </div>
-          </div>
-        </div>
 
-        {/* Filtros expandibles */}
-        {showFilters && (
-          <div className="p-4 bg-gray-50 border-t border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              {/* Número de Transacción */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Número de Transacción</label>
-                <input
-                  type="text"
-                  placeholder="Ej: 12345"
-                  value={transNumberFilter}
-                  onChange={(e) => setTransNumberFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* Número de e-NCF */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Número de e-NCF</label>
-                <input
-                  type="text"
-                  placeholder="Ej: E310000000001"
-                  value={cfNumberFilter}
-                  onChange={(e) => setCfNumberFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* Estado */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                <select 
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value === '' ? '' : Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Todos los estados</option>
-                  <option value={CFStatus.ACCEPTED}>Aceptadas</option>
-                  <option value={CFStatus.PENDING}>Pendientes</option>
-                  <option value={CFStatus.REJECTED}>Rechazadas</option>
-                </select>
-              </div>
-
-              {/* Tipo de CF */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de comprobante</label>
-                <select 
-                  value={cfTypeFilter}
-                  onChange={(e) => setCfTypeFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Todos los tipos</option>
-                  <option value="31">32 - Factura de Crédito Fiscal</option>
-                  <option value="32">31 - Factura Consumidor Final</option>
-                  <option value="34">34 - Factura Nota de Credito</option>
-                  <option value="44">44 - Factura Regimen Especial</option>
-                  <option value="45">45 - Factura Gubernamental</option>
-                </select>
-              </div>
-
-              {/* Site ID */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sucursal</label>
-                <input
-                  type="text"
-                  placeholder="CO-0017"
-                  value={siteIdFilter}
-                  onChange={(e) => setSiteIdFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* Staft ID */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Código vendedor</label>
-                <input
-                  type="number"
-                  placeholder="0000"
-                  value={staftIdFilter}
-                  onChange={(e) => setStaftIdFilter(e.target.value === '' ? '' : Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-4">
-              {/* Terminal */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Terminal</label>
-                <input
-                  type="number"
-                  placeholder="Ej: 1, 2, 3"
-                  value={terminalFilter}
-                  onChange={(e) => setTerminalFilter(e.target.value === '' ? '' : Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* Shift */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Turno</label>
-                <input
-                  type="number"
-                  placeholder="1, 2 o 3"
-                  value={shiftFilter}
-                  onChange={(e) => setShiftFilter(e.target.value === '' ? '' : Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* Taxpayer ID */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">RNC/Cédula</label>
-                <input
-                  type="text"
-                  placeholder="RNC o Cédula"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* Botones Aplicar y Limpiar Filtros */}
-              <div className="flex items-end space-x-3">
-                <button 
-                  onClick={handleApplyFilters}
-                  disabled={loading}
-                  className={`flex items-center space-x-2 px-6 py-2 rounded-lg transition-colors font-medium ${
-                    loading 
-                      ? 'bg-blue-400 cursor-not-allowed' 
-                      : 'bg-blue-600 hover:bg-blue-700'
-                  } text-white h-10`}
-                >
-                  {loading ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Filter className="w-4 h-4" />
-                  )}
-                  <span>{loading ? 'Aplicando...' : 'Aplicar Filtros'}</span>
-                </button>
+              {/* Botones de Acción */}
+              <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200 mt-6">
                 <button 
                   onClick={handleClearFilters}
                   disabled={loading}
-                  className={`flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg transition-colors h-10 ${
+                  className={`flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg transition-colors ${
                     loading 
                       ? 'bg-gray-100 cursor-not-allowed text-gray-400' 
                       : 'hover:bg-gray-50 text-gray-700'
@@ -658,11 +661,27 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                   )}
                   <span>{loading ? 'Limpiando...' : 'Limpiar'}</span>
                 </button>
+                <button 
+                  onClick={handleApplyFilters}
+                  disabled={loading}
+                  className={`flex items-center space-x-2 px-6 py-2 rounded-lg transition-colors font-medium ${
+                    loading 
+                      ? 'bg-blue-400 cursor-not-allowed' 
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  } text-white`}
+                >
+                  {loading ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Filter className="w-4 h-4" />
+                  )}
+                  <span>{loading ? 'Aplicando...' : 'Aplicar Filtros'}</span>
+                </button>
               </div>
             </div>
           </div>
-        )}
-      </motion.div>
+        </div>
+      )}
 
 
 

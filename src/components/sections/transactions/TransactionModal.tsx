@@ -18,6 +18,7 @@ import {
   formatDate,
   formatCurrency,
 } from "../../../utils/transactionUtils";
+import { formatDateOnly } from "../../../utils/dateUtils";
 import { ITransactionResume } from "../../../types/transaction";
 import pdfService from "../../../services/pdfService";
 import toast from "react-hot-toast";
@@ -171,13 +172,20 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
               <p className="text-md font-semibold text-gray-900">
                 {getCfTypeText(transaction.cfType)}
               </p>
-              <span
-                className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                  transaction.cfStatus
-                )}`}
-              >
-                {getStatusText(transaction.cfStatus)}
-              </span>
+              <div className="flex items-center space-x-3">
+                {transaction.cfValidity && (
+                  <span className="text-sm text-gray-600">
+                    Válida hasta: <span className="font-semibold text-gray-900">{formatDateOnly(transaction.cfValidity)}</span>
+                  </span>
+                )}
+                <span
+                  className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+                    transaction.cfStatus
+                  )}`}
+                >
+                  {getStatusText(transaction.cfStatus)}
+                </span>
+              </div>
             </div>
             <button
               onClick={onClose}
@@ -254,6 +262,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                     </div>
                   </>
                 )}
+                
               </div>
             </div>
 
@@ -508,7 +517,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
             </button>
             <button
               onClick={() => handleDownloadTrasaction(transaction)}
-              className="px-4 py-2 bg-green-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2"
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center space-x-2"
             >
               <Download className="w-4 h-4" />
               <span>Descargar</span>

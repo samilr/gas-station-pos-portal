@@ -40,14 +40,13 @@ export const formatDateTimeToSantoDomingo = (dateString: string | Date): Date =>
  * @returns Fecha formateada
  */
 export const formatDateOnly = (dateString: string | Date): string => {
-  const utcDate = new Date(dateString);
-  const santoDomingoDate = new Date(utcDate.getTime() - (4 * 60 * 60 * 1000));
+  const date = new Date(dateString);
   
-  return santoDomingoDate.toLocaleDateString('es-DO', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  });
+  const day = date.getUTCDate().toString().padStart(2, '0');
+  const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+  const year = date.getUTCFullYear();
+  
+  return `${day}-${month}-${year}`;
 };
 
 /**
