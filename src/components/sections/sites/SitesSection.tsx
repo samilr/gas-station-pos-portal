@@ -483,7 +483,10 @@ const SitesSection: React.FC = () => {
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
-                          onClick={() => handleEditSite(site)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditSite(site);
+                          }}
                           className="p-1 text-blue-600 hover:text-blue-900"
                           title="Editar"
                         >
@@ -494,7 +497,10 @@ const SitesSection: React.FC = () => {
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
-                          onClick={() => handleDeleteSite(site)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteSite(site);
+                          }}
                           className="p-1 text-red-600 hover:text-red-900"
                           title="Eliminar"
                         >

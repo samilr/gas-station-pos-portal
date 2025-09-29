@@ -48,6 +48,20 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
   const [showReverseDialog, setShowReverseDialog] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [transactionToReverse, setTransactionToReverse] = useState<string | null>(null);
+  
+  // Estados temporales para el modal de filtros (no afectan la búsqueda hasta aplicar)
+  const [tempSearchTerm, setTempSearchTerm] = useState('');
+  const [tempTransNumberFilter, setTempTransNumberFilter] = useState('');
+  const [tempCfNumberFilter, setTempCfNumberFilter] = useState('');
+  const [tempStatusFilter, setTempStatusFilter] = useState<number | ''>('');
+  const [tempCfTypeFilter, setTempCfTypeFilter] = useState('');
+  const [tempSiteIdFilter, setTempSiteIdFilter] = useState('');
+  const [tempTerminalFilter, setTempTerminalFilter] = useState<number | ''>('');
+  const [tempStaftIdFilter, setTempStaftIdFilter] = useState<number | ''>('');
+  const [tempShiftFilter, setTempShiftFilter] = useState<number | ''>('');
+  const [tempStartDateFilter, setTempStartDateFilter] = useState('');
+  const [tempEndDateFilter, setTempEndDateFilter] = useState('');
+  
   const { user } = useAuth();
   
   // Verificar si el usuario puede reversar transacciones (solo ADMIN o AUDITOR)
@@ -91,7 +105,7 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
     handleSort,
     exportTransactions,
     refreshTransactions,
-    searchTransactions,
+    searchTransactionsDirectly,
     loadTransactionsWithDates
   } = useTransactions(isNCFView, isTiendaView);
 
@@ -167,56 +181,105 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
     }
   };
 
+  // Función para inicializar los filtros temporales con los valores actuales
+  const initializeTempFilters = () => {
+    setTempSearchTerm(searchTerm);
+    setTempTransNumberFilter(transNumberFilter);
+    setTempCfNumberFilter(cfNumberFilter);
+    setTempStatusFilter(statusFilter);
+    setTempCfTypeFilter(cfTypeFilter);
+    setTempSiteIdFilter(siteIdFilter);
+    setTempTerminalFilter(terminalFilter);
+    setTempStaftIdFilter(staftIdFilter);
+    setTempShiftFilter(shiftFilter);
+    setTempStartDateFilter(startDateFilter);
+    setTempEndDateFilter(endDateFilter);
+  };
+
+  // Función para abrir el modal y inicializar filtros temporales
+  const handleOpenFilters = () => {
+    initializeTempFilters();
+    setShowFilters(true);
+  };
+
   const handleApplyFilters = async () => {
     // Resetear a la primera página
     setCurrentPage(1);
     
-    // Verificar si solo se están aplicando filtros de fecha (sin otros filtros)
-    const hasOnlyDateFilters = 
-      startDateFilter !== '' && 
-      endDateFilter !== '' && 
-      transNumberFilter === '' && 
-      cfNumberFilter === '' && 
-      statusFilter === '' && 
-      cfTypeFilter === '' && 
-      siteIdFilter === '' && 
-      terminalFilter === '' && 
-      staftIdFilter === '' && 
-      shiftFilter === '' && 
-      searchTerm.trim() === '';
+    // Siempre buscar en la API cuando se aplican filtros desde el modal
+    const params: any = {};
     
-    if (hasOnlyDateFilters) {
-      // Si solo son filtros de fecha, usar la función específica
-      await loadTransactionsWithDates(startDateFilter, endDateFilter);
+    // Verificar si hay filtros específicos (no fechas) completados
+    const hasSpecificFilters = 
+      tempTransNumberFilter !== '' || 
+      tempCfNumberFilter !== '' || 
+      tempSiteIdFilter !== '' || 
+      tempTerminalFilter !== '' || 
+      tempCfTypeFilter !== '' || 
+      tempStaftIdFilter !== '' || 
+      tempShiftFilter !== '' || 
+      tempSearchTerm.trim() !== '';
+    
+    // Filtros de fecha
+    if (tempStartDateFilter !== '' && tempEndDateFilter !== '') {
+      // Si el usuario especificó fechas, usarlas
+      params.startDate = tempStartDateFilter;
+      params.endDate = tempEndDateFilter;
+    } else if (hasSpecificFilters) {
+      // Si hay filtros específicos pero no fechas, usar el día actual
+      const todayDate = getCurrentSantoDomingoDate();
+      params.startDate = todayDate;
+      params.endDate = todayDate;
     } else {
-      // Si hay otros filtros, usar la función de búsqueda completa
-      const params: any = {};
-      
-      // Filtros de fecha (siempre se incluyen)
-      if (startDateFilter !== '') params.startDate = startDateFilter;
-      if (endDateFilter !== '') params.endDate = endDateFilter;
-      
-      // Filtros específicos
-      if (transNumberFilter !== '') params.transNumber = transNumberFilter;
-      if (cfNumberFilter !== '') params.cfNumber = cfNumberFilter;
-      if (statusFilter !== '') params.status = statusFilter;
-      if (cfTypeFilter !== '') params.cfType = cfTypeFilter;
-      if (siteIdFilter !== '') params.siteId = siteIdFilter;
-      if (terminalFilter !== '') params.terminal = terminalFilter;
-      if (staftIdFilter !== '') params.staftId = staftIdFilter;
-      if (shiftFilter !== '') params.shift = shiftFilter;
-      
-      // Taxpayer ID (RNC/Cédula)
-      if (searchTerm.trim() !== '') {
-        params.taxpayerId = searchTerm.trim();
-      }
-      
-      // Aplicar filtros sin recargar toda la página
-      await searchTransactions(params);
+      // Si no hay filtros específicos ni fechas, usar las fechas actuales del estado
+      params.startDate = tempStartDateFilter;
+      params.endDate = tempEndDateFilter;
     }
     
-    // Opcional: Ocultar la sección de filtros después de aplicarlos
+    // Filtros específicos - asegurando que coincidan con los query params de la API
+    if (tempTransNumberFilter !== '') params.transNumber = tempTransNumberFilter;
+    if (tempCfNumberFilter !== '') params.cfNumber = tempCfNumberFilter;
+    if (tempSiteIdFilter !== '') params.siteId = tempSiteIdFilter;
+    if (tempTerminalFilter !== '') params.terminal = tempTerminalFilter;
+    if (tempCfTypeFilter !== '') params.cfType = tempCfTypeFilter;
+    if (tempStaftIdFilter !== '') params.staftId = tempStaftIdFilter;
+    if (tempShiftFilter !== '') params.shift = tempShiftFilter;
+    
+    // Taxpayer ID (RNC/Cédula)
+    if (tempSearchTerm.trim() !== '') {
+      params.taxpayerId = tempSearchTerm.trim();
+    }
+    
+    // Buscar directamente en la API con los filtros aplicados
+    await searchTransactionsDirectlyWrapper(params);
+    
+    // Ocultar la sección de filtros después de aplicarlos
     setShowFilters(false);
+  };
+
+  // Función para buscar directamente en la API sin lógica de filtrado local
+  const searchTransactionsDirectlyWrapper = async (params: {
+    transNumber?: string;
+    cfNumber?: string;
+    siteId?: string;
+    terminal?: number;
+    cfType?: string;
+    staftId?: number;
+    taxpayerId?: string;
+    shift?: number;
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    try {
+      console.log('🔍 Buscando directamente en la API con parámetros:', params);
+      
+      // Usar la nueva función del hook que siempre busca en la API
+      await searchTransactionsDirectly(params);
+      
+      console.log('✅ Búsqueda directa completada');
+    } catch (err) {
+      console.warn('Error en búsqueda directa de transacciones:', err);
+    }
   };
 
   const handleClearFilters = async () => {
@@ -227,7 +290,7 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
     
     const todayDate = getTodayDate();
     
-    // Limpiar todos los filtros
+    // Limpiar todos los filtros globales
     setSearchTerm('');
     setTransNumberFilter('');
     setCfNumberFilter('');
@@ -239,6 +302,19 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
     setShiftFilter('');
     setStartDateFilter(todayDate);
     setEndDateFilter(todayDate);
+    
+    // Limpiar también los filtros temporales
+    setTempSearchTerm('');
+    setTempTransNumberFilter('');
+    setTempCfNumberFilter('');
+    setTempStatusFilter('');
+    setTempCfTypeFilter('');
+    setTempSiteIdFilter('');
+    setTempTerminalFilter('');
+    setTempStaftIdFilter('');
+    setTempShiftFilter('');
+    setTempStartDateFilter(todayDate);
+    setTempEndDateFilter(todayDate);
     
     // Resetear a la primera página
     setCurrentPage(1);
@@ -344,7 +420,52 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
 
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+        {/* Botones de Acción */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.6 }}
+          className="flex items-center justify-center space-x-2 bg-white p-4 rounded-lg border border-gray-200"
+        >
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={showFilters ? () => setShowFilters(false) : handleOpenFilters}
+            className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
+              showFilters 
+                ? 'bg-blue-100 text-blue-700 border border-blue-300' 
+                : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
+            }`}
+            title={showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+          >
+            <Filter className="w-4 h-4" />
+          </motion.button>
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={refreshTransactions}
+            disabled={loading}
+            className="flex items-center justify-center w-8 h-8 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+            title="Actualizar"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </motion.button>
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => handleExport('excel')}
+            disabled={isExporting}
+            className="flex items-center justify-center w-8 h-8 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg transition-colors"
+            title="Exportar a Excel con 3 hojas: Transacciones, Productos y Pagos"
+          >
+            {isExporting ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+          </motion.button>
+        </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -374,97 +495,55 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
           </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.3 }}
-            className="bg-white p-4 rounded-lg border border-gray-200"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Aceptadas</p>
-                <p className="text-2xl font-bold text-green-600">{stats.acceptedTransactions}</p>
-              </div>
-              <CheckCircle className="w-8 h-8 text-green-500" />
+        {/* Aceptadas */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.3 }}
+          className="bg-white p-4 rounded-lg border border-gray-200"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Aceptadas</p>
+              <p className="text-2xl font-bold text-green-600">{stats.acceptedTransactions}</p>
             </div>
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.4 }}
-            className="bg-white p-4 rounded-lg border border-gray-200"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Pendientes</p>
-                <p className="text-2xl font-bold text-yellow-600">{stats.pendingTransactions}</p>
-              </div>
-              <Clock className="w-8 h-8 text-yellow-500" />
+            <CheckCircle className="w-8 h-8 text-green-500" />
+          </div>
+        </motion.div>
+        
+        {/* Rechazadas */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.4 }}
+          className="bg-white p-4 rounded-lg border border-gray-200"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Rechazadas</p>
+              <p className="text-2xl font-bold text-red-600">{stats.rejectedTransactions}</p>
             </div>
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.5 }}
-            className="bg-white p-4 rounded-lg border border-gray-200"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Rechazadas</p>
-                <p className="text-2xl font-bold text-red-600">{stats.rejectedTransactions}</p>
-              </div>
-              <AlertCircle className="w-8 h-8 text-red-500" />
+            <AlertCircle className="w-8 h-8 text-red-500" />
+          </div>
+        </motion.div>
+        
+        {/* Pendientes */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.5 }}
+          className="bg-white p-4 rounded-lg border border-gray-200"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Pendientes</p>
+              <p className="text-2xl font-bold text-yellow-600">{stats.pendingTransactions}</p>
             </div>
-          </motion.div>
-        </div>
+            <Clock className="w-8 h-8 text-yellow-500" />
+          </div>
+        </motion.div>
       </div>
 
-      {/* Botones de Acción */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.6 }}
-        className="flex items-center justify-end space-x-3 mb-4"
-      >
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setShowFilters(!showFilters)}
-          className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
-            showFilters 
-              ? 'bg-blue-100 text-blue-700 border border-blue-300' 
-              : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
-          }`}
-          title={showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
-        >
-          <Filter className="w-4 h-4" />
-        </motion.button>
-        <motion.button 
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={refreshTransactions}
-          disabled={loading}
-          className="flex items-center justify-center w-8 h-8 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
-          title="Actualizar"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-        </motion.button>
-        <motion.button 
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => handleExport('excel')}
-          disabled={isExporting}
-          className="flex items-center justify-center w-8 h-8 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg transition-colors"
-          title="Exportar a Excel con 3 hojas: Transacciones, Productos y Pagos"
-        >
-          {isExporting ? (
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-          ) : (
-            <Download className="w-4 h-4" />
-          )}
-        </motion.button>
-      </motion.div>
 
       {/* Modal de Filtros */}
       {showFilters && (
@@ -500,8 +579,8 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                       <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio</label>
                       <input
                         type="date"
-                        value={startDateFilter}
-                        onChange={(e) => setStartDateFilter(e.target.value)}
+                        value={tempStartDateFilter}
+                        onChange={(e) => setTempStartDateFilter(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -509,8 +588,8 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                       <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Fin</label>
                       <input
                         type="date"
-                        value={endDateFilter}
-                        onChange={(e) => setEndDateFilter(e.target.value)}
+                        value={tempEndDateFilter}
+                        onChange={(e) => setTempEndDateFilter(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -526,8 +605,8 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                       <input
                         type="text"
                         placeholder="Ej: 12345"
-                        value={transNumberFilter}
-                        onChange={(e) => setTransNumberFilter(e.target.value)}
+                        value={tempTransNumberFilter}
+                        onChange={(e) => setTempTransNumberFilter(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -537,8 +616,8 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                       <input
                         type="text"
                         placeholder="Ej: E310000000001"
-                        value={cfNumberFilter}
-                        onChange={(e) => setCfNumberFilter(e.target.value)}
+                        value={tempCfNumberFilter}
+                        onChange={(e) => setTempCfNumberFilter(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -546,8 +625,8 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
                       <select 
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value === '' ? '' : Number(e.target.value))}
+                        value={tempStatusFilter}
+                        onChange={(e) => setTempStatusFilter(e.target.value === '' ? '' : Number(e.target.value))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
                         <option value="">Todos los estados</option>
@@ -560,8 +639,8 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de comprobante</label>
                       <select 
-                        value={cfTypeFilter}
-                        onChange={(e) => setCfTypeFilter(e.target.value)}
+                        value={tempCfTypeFilter}
+                        onChange={(e) => setTempCfTypeFilter(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
                         <option value="">Todos los tipos</option>
@@ -584,8 +663,8 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                       <input
                         type="text"
                         placeholder="CO-0017"
-                        value={siteIdFilter}
-                        onChange={(e) => setSiteIdFilter(e.target.value)}
+                        value={tempSiteIdFilter}
+                        onChange={(e) => setTempSiteIdFilter(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -595,8 +674,8 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                       <input
                         type="number"
                         placeholder="Ej: 1, 2, 3"
-                        value={terminalFilter}
-                        onChange={(e) => setTerminalFilter(e.target.value === '' ? '' : Number(e.target.value))}
+                        value={tempTerminalFilter}
+                        onChange={(e) => setTempTerminalFilter(e.target.value === '' ? '' : Number(e.target.value))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -606,8 +685,8 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                       <input
                         type="number"
                         placeholder="0000"
-                        value={staftIdFilter}
-                        onChange={(e) => setStaftIdFilter(e.target.value === '' ? '' : Number(e.target.value))}
+                        value={tempStaftIdFilter}
+                        onChange={(e) => setTempStaftIdFilter(e.target.value === '' ? '' : Number(e.target.value))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -617,8 +696,8 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                       <input
                         type="number"
                         placeholder="1, 2 o 3"
-                        value={shiftFilter}
-                        onChange={(e) => setShiftFilter(e.target.value === '' ? '' : Number(e.target.value))}
+                        value={tempShiftFilter}
+                        onChange={(e) => setTempShiftFilter(e.target.value === '' ? '' : Number(e.target.value))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -634,8 +713,8 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                       <input
                         type="text"
                         placeholder="RNC o Cédula"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        value={tempSearchTerm}
+                        onChange={(e) => setTempSearchTerm(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -717,7 +796,7 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                     className={`hover:bg-gray-50 cursor-pointer transition-colors ${transaction.isReturn ? 'text-red-600' : ''} ${transaction.status === 0 ? 'opacity-50' : ''}`}
                     onClick={() => setSelectedTransaction(transaction)}
                   >
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-2">
                       <div className="flex items-center space-x-2">
                         <span className="text-lg">{getStatusIcon(transaction.cfStatus)}</span>
                         <div>
@@ -732,13 +811,13 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-2">
                       <div>
                         <div className={`text-sm ${transaction.isReturn ? 'text-red-600' : 'text-gray-900'}`}>{formatDateOnly(transaction.transDate)}</div>
                         <div className={`text-sm ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`}>{formatTimeOnly(transaction.transDate)}</div>
                       </div>
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-4 py-2">
                       <div>
                         <div className={`text-sm font-medium ${transaction.isReturn ? 'text-red-600' : 'text-gray-900'}`}>{transaction.siteId} {transaction.siteName}</div>
                         <div className={`flex items-center space-x-1 text-sm ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`}>
@@ -747,7 +826,7 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-2">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -772,7 +851,7 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                     </td>
 
 
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-2">
                       <div className="flex items-center">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                           transaction.taxpayerName && transaction.taxpayerName !== 'Consumidor Final' 
@@ -793,7 +872,7 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-2">
                       <div>
                         <div className={`text-sm font-medium ${transaction.isReturn ? 'text-red-600' : 'text-gray-900'}`}>
                           {transaction.isReturn ? `-${formatCurrency(transaction.total)}` : formatCurrency(transaction.total)}

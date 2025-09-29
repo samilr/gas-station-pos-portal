@@ -504,7 +504,10 @@ const UsersSection: React.FC = () => {
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
-                          onClick={() => handleEditUser(user)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditUser(user);
+                          }}
                           className="p-1 text-blue-600 hover:text-blue-900" 
                           title="Editar"
                         >
@@ -515,7 +518,10 @@ const UsersSection: React.FC = () => {
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
-                          onClick={() => handleDeleteUser(user)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteUser(user);
+                          }}
                           className="p-1 text-red-600 hover:text-red-900" 
                           title="Eliminar"
                         >

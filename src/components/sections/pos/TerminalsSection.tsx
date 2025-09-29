@@ -430,7 +430,10 @@ const TerminalsSection: React.FC = () => {
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
-                          onClick={() => handleEditTerminal(terminal)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditTerminal(terminal);
+                          }}
                           className="p-1 text-blue-600 hover:text-blue-900" 
                           title="Editar"
                         >
@@ -441,7 +444,10 @@ const TerminalsSection: React.FC = () => {
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
-                          onClick={() => handleDeleteTerminal(terminal)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteTerminal(terminal);
+                          }}
                           className="p-1 text-red-600 hover:text-red-900" 
                           title="Eliminar"
                         >

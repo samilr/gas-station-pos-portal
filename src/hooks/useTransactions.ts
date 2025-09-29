@@ -69,6 +69,18 @@ interface UseTransactionsReturn {
     startDate?: string;
     endDate?: string;
   }) => Promise<void>;
+  searchTransactionsDirectly: (params: {
+    transNumber?: string;
+    cfNumber?: string;
+    siteId?: string;
+    terminal?: number;
+    cfType?: string;
+    staftId?: number;
+    taxpayerId?: string;
+    shift?: number;
+    startDate?: string;
+    endDate?: string;
+  }) => Promise<void>;
   exportTransactions: (format: 'pdf' | 'excel' | 'csv') => Promise<void>;
 }
 
@@ -101,7 +113,10 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
   const [startDateFilter, setStartDateFilter] = useState<string>(getTodayDate());
   const [endDateFilter, setEndDateFilter] = useState<string>(getTodayDate());
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(12);
+  
+  // Debug: verificar que itemsPerPage se está aplicando
+  console.log('Items per page:', itemsPerPage);
   const [sortField, setSortField] = useState<SortField>('transDate');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   
@@ -683,6 +698,52 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
     }
   }, [calculateStats, sortField, sortDirection, sortTransactions, filterTransactions, isDateRangeWithinCurrentData, findTransactionByNumber, findTransactionByCfNumber, findTransactionBySiteId, findTransactionByTerminal, findTransactionByCfType, findTransactionByStaftId, findTransactionByTaxpayerId, findTransactionByShift, filterTransactionsLocally, transactions, currentDataDateRange]);
 
+  // Función para buscar directamente en la API sin lógica de filtrado local
+  const searchTransactionsDirectly = useCallback(async (params: {
+    transNumber?: string;
+    cfNumber?: string;
+    siteId?: string;
+    terminal?: number;
+    cfType?: string;
+    staftId?: number;
+    taxpayerId?: string;
+    shift?: number;
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      console.log('🔍 Buscando directamente en la API con parámetros:', params);
+      
+      // Buscar directamente en la API
+      const data = await transactionService.getTransactions(params);
+      
+      // Filtrar transacciones según la vista activa
+      const filteredData = filterTransactions(data);
+      
+      const sortedData = sortTransactions(filteredData, sortField, sortDirection);
+      setTransactions(sortedData);
+      setStats(calculateStats(sortedData));
+      
+      // Actualizar el rango de fechas de los datos actuales
+      if (params.startDate && params.endDate) {
+        setCurrentDataDateRange({
+          startDate: params.startDate,
+          endDate: params.endDate
+        });
+      }
+      
+      console.log('✅ Datos cargados directamente desde API:', sortedData.length);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al buscar transacciones');
+      console.warn('Error en búsqueda directa de transacciones:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [calculateStats, sortField, sortDirection, sortTransactions, filterTransactions]);
+
   // Función para exportar transacciones
   const exportTransactions = useCallback(async (format: 'pdf' | 'excel' | 'csv') => {
     try {
@@ -767,6 +828,7 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
     loadTransactionsWithDates,
     refreshTransactions,
     searchTransactions,
+    searchTransactionsDirectly,
     exportTransactions
   };
 };

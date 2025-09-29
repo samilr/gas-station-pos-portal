@@ -418,7 +418,10 @@ const ProductsSection: React.FC = () => {
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
-                          onClick={() => handleEditProduct(product)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditProduct(product);
+                          }}
                           className="p-1 text-blue-600 hover:text-blue-900" 
                           title="Editar"
                         >
@@ -429,7 +432,10 @@ const ProductsSection: React.FC = () => {
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
-                          onClick={() => handleDeleteProduct(product)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteProduct(product);
+                          }}
                           className="p-1 text-red-600 hover:text-red-900" 
                           title="Eliminar"
                         >
