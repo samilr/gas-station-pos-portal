@@ -504,31 +504,29 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
         {/* Modal Footer */}
         <div className="flex justify-between items-center p-6 border-t border-gray-200">
           {/* Botón de Reversar - Solo visible para ADMIN o AUDIT */}
-          {canReverseTransaction && (
-            <button
-              onClick={() => onReverseTransaction(transaction.transNumber)}
-              disabled={isReversing}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg transition-colors flex items-center space-x-2"
-            >
-              {isReversing ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Reversando...</span>
-                </>
-              ) : (
-                <>
-                  <Undo2 className="w-4 h-4" />
-                  <span>Reversar Transacción</span>
-                </>
-              )}
-            </button>
-          )}
+          <div className="flex-1">
+            {canReverseTransaction && transaction.status === 1 && transaction.cfType !== "34" && !transaction.isReturn && (
+              <button
+                onClick={() => onReverseTransaction(transaction.transNumber)}
+                disabled={isReversing}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg transition-colors flex items-center space-x-2"
+              >
+                {isReversing ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Reversando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Undo2 className="w-4 h-4" />
+                    <span>Reversar Transacción</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
 
-          <div
-            className={`flex space-x-3 ${
-              !canReverseTransaction ? "ml-auto" : ""
-            }`}
-          >
+          <div className="flex space-x-3">
             <button
               onClick={onClose}
               className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
