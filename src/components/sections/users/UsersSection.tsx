@@ -73,7 +73,7 @@ const UsersSection: React.FC = () => {
       case 'admin': return 'bg-purple-100 text-purple-800';
           case 'MANAGER': return 'bg-blue-100 text-blue-800';
     case 'SUPERVISOR': return 'bg-green-100 text-green-800';
-    case 'AUDITOR': return 'bg-purple-100 text-purple-800';
+    case 'AUDIT': return 'bg-purple-100 text-purple-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -335,7 +335,7 @@ const UsersSection: React.FC = () => {
                                   <option value="ADMIN">ADMIN</option>
                 <option value="MANAGER">MANAGER</option>
                 <option value="SUPERVISOR">SUPERVISOR</option>
-                <option value="AUDITOR">AUDITOR</option>
+                <option value="AUDIT">AUDIT</option>
                 </select>
               </div>
 

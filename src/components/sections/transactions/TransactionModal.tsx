@@ -5,7 +5,6 @@ import {
   Package,
   QrCode,
   RefreshCw,
-  FileText,
   Undo2,
   Download,
   Printer,
@@ -483,7 +482,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
 
         {/* Modal Footer */}
         <div className="flex justify-between items-center p-6 border-t border-gray-200">
-          {/* Botón de Reversar - Solo visible para ADMIN o AUDITOR */}
+          {/* Botón de Reversar - Solo visible para ADMIN o AUDIT */}
           {canReverseTransaction && (
             <button
               onClick={() => onReverseTransaction(transaction.transNumber)}

@@ -69,7 +69,7 @@ const mockUsers: IUser[] = [
     staft_group: 'Ventas',
     created_by: 'admin',
     role_id: '2',
-    role: 'AUDITOR',
+    role: 'AUDIT',
     staft_id: 'VEN002',
     site_id: 'SITE001',
     terminal_id: 2,

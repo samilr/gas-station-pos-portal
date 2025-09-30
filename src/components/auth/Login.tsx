@@ -121,7 +121,7 @@ const Login: React.FC = () => {
                     ADMIN: admin@portal.com / admin123<br/>
         MANAGER: manager@portal.com / manager123<br/>
         SUPERVISOR: supervisor@portal.com / supervisor123<br/>
-        AUDITOR: auditor@portal.com / auditor123
+        AUDIT: audit@portal.com / audit123
           </p>
         </div>
         */}

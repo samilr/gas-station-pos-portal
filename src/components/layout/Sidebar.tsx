@@ -101,7 +101,7 @@ const menuItems: MenuItem[] = [
     label: 'LOG', 
     icon: FileText,
     permission: 'logs.view',
-    categoryPermission: 'logs.view', // Solo ADMIN y AUDITOR pueden ver esta categoría
+  categoryPermission: 'logs.view', // Solo ADMIN y AUDIT pueden ver esta categoría
     subItems: [
       { id: 'logs.actions', label: 'Actions Log', icon: Activity, permission: 'logs.view' },
       { id: 'logs.errors', label: 'Error Log', icon: AlertTriangle, permission: 'logs.view' },
@@ -123,7 +123,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   activeSection, 
   isCollapsed
 }) => {
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
   const navigate = useNavigate();
   const { routeMap } = useNavigation();
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
@@ -184,6 +184,10 @@ const Sidebar: React.FC<SidebarProps> = ({
   const { can } = usePermissions();
   
   const filteredMenuItems = menuItems.filter(item => {
+    // Ocultar secciones específicas para AUDIT
+    if (user?.role === 'AUDIT' && (item.id === 'users' || item.id === 'logs' || item.id === 'sites')) {
+      return false;
+    }
     // Verificar permiso de categoría primero
     if (item.categoryPermission && !can(item.categoryPermission as any)) {
       return false;

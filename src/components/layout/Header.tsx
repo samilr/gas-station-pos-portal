@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, User, Bell, AlertCircle, Loader2, ChevronDown, Settings, Shield, HelpCircle, Info, CheckCircle, XCircle } from 'lucide-react';
+import { LogOut, User, Bell, AlertCircle, Loader2, ChevronDown, Settings, Shield, HelpCircle, Info, CheckCircle } from 'lucide-react';
+import { useHeader } from '../../context/HeaderContext';
 
 interface HeaderProps {
   activeSection: string;
@@ -9,6 +10,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ activeSection }) => {
   const { user, logout } = useAuth();
+  const { subtitle } = useHeader();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotificationsMenu, setShowNotificationsMenu] = useState(false);
@@ -133,7 +135,7 @@ const Header: React.FC<HeaderProps> = ({ activeSection }) => {
             {getSectionTitle(activeSection)}
           </h1>
           <p className="text-sm text-gray-600 mt-1">
-            Bienvenido al portal administrativo centralizado
+            {subtitle || 'Bienvenido al portal administrativo centralizado'}
           </p>
         </div>
 

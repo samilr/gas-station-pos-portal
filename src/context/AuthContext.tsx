@@ -7,7 +7,7 @@ const ROLE_MAPPING = {
   'ADMIN': 'ADMIN',
   'MANAGER': 'MANAGER',
   'SUPERVISOR': 'SUPERVISOR',
-  'AUDITOR': 'AUDITOR'
+  'AUDIT': 'AUDIT'
 } as const;
 
 interface User {

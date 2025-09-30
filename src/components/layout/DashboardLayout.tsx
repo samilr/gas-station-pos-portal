@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import { HeaderProvider } from '../../context/HeaderContext';
 
 const DashboardLayout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
@@ -44,7 +45,8 @@ const DashboardLayout: React.FC = () => {
   const activeSection = getActiveSection();
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <HeaderProvider>
+      <div className="flex h-screen bg-gray-100">
       <Sidebar
         activeSection={activeSection}
         setActiveSection={() => {}} // No necesitamos esta función con rutas
@@ -86,7 +88,8 @@ const DashboardLayout: React.FC = () => {
           <Outlet />
         </main>
       </div>
-    </div>
+      </div>
+    </HeaderProvider>
   );
 };
 

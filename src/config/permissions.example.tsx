@@ -23,8 +23,8 @@ export const ExampleComponent1: React.FC = () => {
         <button>Crear Usuario</button>
       </PermissionGate>
       
-      {/* Solo usuarios con rol ADMIN o AUDITOR */}
-      <PermissionGate roles={['ADMIN', 'AUDITOR']}>
+      {/* Solo usuarios con rol ADMIN o AUDIT */}
+      <PermissionGate roles={['ADMIN', 'AUDIT']}>
         <button>Acción Administrativa</button>
       </PermissionGate>
       

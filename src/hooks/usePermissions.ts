@@ -84,10 +84,10 @@ export const usePermissions = () => {
   };
   
   /**
-   * Verifica si el usuario es administrador (ADMIN o AUDITOR)
+  * Verifica si el usuario es administrador (ADMIN o AUDIT)
    */
   const isAdmin = (): boolean => {
-    return hasAnyRole(['ADMIN', 'AUDITOR']);
+  return hasAnyRole(['ADMIN', 'AUDIT']);
   };
   
   /**
@@ -98,10 +98,10 @@ export const usePermissions = () => {
   };
   
   /**
-   * Verifica si el usuario es solo lector (AUDITOR)
+  * Verifica si el usuario es solo lector (AUDIT)
    */
   const isReadOnly = (): boolean => {
-    return hasRole('AUDITOR');
+  return hasRole('AUDIT');
   };
 
   return {

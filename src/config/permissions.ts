@@ -1,5 +1,5 @@
 // Sistema centralizado de permisos para controlar la visibilidad de componentes
-// Basado en roles de usuario: ADMIN, MANAGER, SUPERVISOR, AUDITOR
+// Basado en roles de usuario: ADMIN, MANAGER, SUPERVISOR, AUDIT, ACCOUNTANT
 
 export type Permission = 
   // Dashboard
@@ -52,7 +52,7 @@ export type Permission =
   | 'reports.view'    // Reportes (ya existe, se reutiliza)
   | 'notifications.view'; // Notificaciones (ya existe, se reutiliza)
 
-export type Role = 'ADMIN' | 'MANAGER' | 'SUPERVISOR' | 'AUDITOR';
+export type Role = 'ADMIN' | 'MANAGER' | 'SUPERVISOR' | 'AUDIT' | 'ACCOUNTANT';
 
 // Configuración de permisos por rol
 export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
@@ -108,21 +108,25 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     // NO puede ver: logs, database, security, notifications, settings
   ],
   
-  AUDITOR: [
+  AUDIT: [
     // Acceso de auditoría (solo lectura y reversión de transacciones)
     'dashboard.view',
-    'users.view',
     'transactions.view', 'transactions.reverse',
     'products.view',
-    'sites.view',
-    'terminals.view',
-    'devices.view',
     'analytics.view', 'analytics.export',
     'reports.view', 'reports.export',
-    'logs.view', 'logs.export',
-    // Categorías restringidas para AUDITOR
-    'logs.view',       // Puede ver Registros (es su función principal)
+    // NO puede ver Users, Logs ni Sucursales
     // NO puede ver: pos, database, security, notifications, settings
+  ]
+  ,
+  
+  ACCOUNTANT: [
+    // Rol contable: solo lectura en dashboard, transacciones y productos
+    'dashboard.view',
+    'transactions.view',
+    'products.view',
+    'analytics.view'
+    // Sin permisos de create/edit/delete/reverse en ninguna sección
   ]
 };
 
@@ -176,8 +180,6 @@ export const COMPONENT_PERMISSIONS: Record<string, Permission[]> = {
   'LogsExport': ['logs.export'],
   'ActionsLogSection': ['logs.view'],
   'ErrorLogSection': ['logs.view'],
-  
-
   
   // Configuración
   'SettingsSection': ['settings.view'],

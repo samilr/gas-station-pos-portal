@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Filter, 
@@ -34,6 +34,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { SortField, useTransactions } from '../../../hooks/useTransactions';
 import transactionService from '../../../services/transactionService';
 import { CFStatus } from '../../../types/transaction';
+import { useHeader } from '../../../context/HeaderContext';
 
 
 
@@ -63,9 +64,10 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
   const [tempEndDateFilter, setTempEndDateFilter] = useState('');
   
   const { user } = useAuth();
+  const { setSubtitle } = useHeader();
   
-  // Verificar si el usuario puede reversar transacciones (solo ADMIN o AUDITOR)
-  const canReverseTransaction = user?.role === 'ADMIN' || user?.role === 'AUDITOR';
+  // Verificar si el usuario puede reversar transacciones (solo ADMIN o AUDIT)
+  const canReverseTransaction = user?.role === 'ADMIN' || user?.role === 'AUDIT';
   
   const {
     transactions,
@@ -253,9 +255,59 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
     // Buscar directamente en la API con los filtros aplicados
     await searchTransactionsDirectlyWrapper(params);
     
+    // Actualizar subtítulo del Header con resumen de filtros
+    const readable = (d: string) => {
+      if (!d) return '';
+      // Evitar desfases de zona horaria: formatear YYYY-MM-DD manualmente a M/D/YYYY
+      const [year, month, day] = d.split('-');
+      return `${Number(month)}/${Number(day)}/${year}`;
+    };
+    const parts: string[] = [];
+    if (params.startDate && params.endDate) {
+      const startText = readable(params.startDate);
+      const endText = readable(params.endDate);
+      parts.push(
+        startText === endText
+          ? `Estás viendo transacciones del ${startText}`
+          : `Estás viendo transacciones del ${startText} al ${endText}`
+      );
+    }
+    const extra: string[] = [];
+    if (params.transNumber) extra.push(`Transacción: ${params.transNumber}`);
+    if (params.cfNumber) extra.push(`e-NCF: ${params.cfNumber}`);
+    if (params.siteId) extra.push(`Sucursal: ${params.siteId}`);
+    if (params.terminal !== undefined) extra.push(`Terminal: ${params.terminal}`);
+    if (params.cfType) extra.push(`Tipo NCF: ${params.cfType}`);
+    if (params.staftId !== undefined) extra.push(`Vendedor: ${params.staftId}`);
+    if (params.taxpayerId) extra.push(`RNC/Cédula: ${params.taxpayerId}`);
+    if (params.shift !== undefined) extra.push(`Turno: ${params.shift}`);
+    if (extra.length) parts.push(`Filtros: ${extra.join(' · ')}`);
+    setSubtitle(parts.join(' — '));
+
     // Ocultar la sección de filtros después de aplicarlos
     setShowFilters(false);
   };
+
+  // Mostrar rango por defecto (fecha actual) al cargar la página de transacciones
+  useEffect(() => {
+    const readable = (d: string) => {
+      if (!d) return '';
+      const [year, month, day] = d.split('-');
+      return `${Number(month)}/${Number(day)}/${year}`;
+    };
+    if (startDateFilter && endDateFilter) {
+      const startText = readable(startDateFilter);
+      const endText = readable(endDateFilter);
+      const base = startText === endText
+        ? `Estás viendo transacciones del ${startText}`
+        : `Estás viendo transacciones del ${startText} al ${endText}`;
+      setSubtitle(base);
+    }
+    // Limpiar el subtítulo al salir de esta pantalla
+    return () => {
+      setSubtitle('');
+    };
+  }, [startDateFilter, endDateFilter, setSubtitle]);
 
   // Función para buscar directamente en la API sin lógica de filtrado local
   const searchTransactionsDirectlyWrapper = async (params: {
@@ -604,7 +656,7 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                       <label className="block text-sm font-medium text-gray-700 mb-1">Número de Transacción</label>
                       <input
                         type="text"
-                        placeholder="Ej: 12345"
+                        placeholder="Ej: CO0017P"
                         value={tempTransNumberFilter}
                         onChange={(e) => setTempTransNumberFilter(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
