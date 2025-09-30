@@ -58,21 +58,23 @@ export class ExcelService {
       'e-NCF',
       'Tipo e-NCF',
       'Fecha',
-      'Sucursal',
+      'Codigo sucursal',
+      'Nombre Sucursal',
       'Terminal',
       'Turno',
-      'Estado',
       'Estado e-NCF',
+      'Fecha vencimiento de Secuencia',
       'Es Devolución',
       'Cliente',
       'RNC/Cédula',
       'Vendedor',
+      'Codigo Vendedor',
       'Subtotal',
       'Impuestos',
       'Total',
-      'URL DGII',
       'Código de Seguridad',
-      'Fecha Firma Digital'
+      'Fecha Firma Digital',
+      'URL DGII'
     ];
 
     // Preparar los datos para la hoja de transacciones
@@ -81,21 +83,23 @@ export class ExcelService {
       transaction.cfNumber,
       getCfTypeText(transaction.cfType),
       formatDate(transaction.transDate),
+      transaction.siteId,
       transaction.siteName,
       transaction.terminalId,
       transaction.staftId,
-      getStatusText(transaction.status),
       this.getCfStatusText(transaction.cfStatus),
+      formatDate(transaction.cfValidity),
       transaction.isReturn ? 'Sí' : 'No',
       transaction.taxpayerName || '',
       transaction.taxpayerId,
       transaction.staftName,
+      transaction.staftId,
       transaction.isReturn ? -transaction.subtotal : transaction.subtotal,
       transaction.isReturn ? -transaction.tax : transaction.tax,
       transaction.isReturn ? -transaction.total : transaction.total,
-      transaction.cfQr || '',
       transaction.cfSecurityCode || '',
-      transaction.digitalSignatureDate ? formatDate(transaction.digitalSignatureDate) : ''
+      transaction.digitalSignatureDate,
+      transaction.cfQr || ''
     ]);
 
     // Crear la hoja con encabezados en la primera fila
@@ -114,8 +118,6 @@ export class ExcelService {
       }
     }
 
-
-    
     // Ajustar el ancho de las columnas
     const columnWidths = [
       { wch: 20 }, // Número de Transacción
@@ -210,8 +212,6 @@ export class ExcelService {
       }
     }
 
-
-    
     // Ajustar el ancho de las columnas
     const columnWidths = [
       { wch: 20 }, // Número de Transacción

@@ -218,6 +218,27 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                   </span>
                 </div>
 
+                {transaction.returnCfNumber && transaction.returnTransNUmber && (
+                  <>
+                <div className="flex justify-between">
+                  <span className="text-sm text-red-600">
+                    Transacción Reversada:
+                  </span>
+                  <span className="text-sm text-red-600 font-medium">
+                    {transaction.returnTransNUmber}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-red-600">
+                    e-NCF Reversado:
+                  </span>
+                  <span className="text-sm text-red-600 font-medium">
+                    {transaction.returnCfNumber}
+                  </span>
+                </div>
+                  </>
+                )}
+
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Fecha:</span>
                   <span className="text-sm font-medium">

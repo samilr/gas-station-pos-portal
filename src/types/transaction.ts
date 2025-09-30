@@ -2,6 +2,8 @@ export interface ITransactionResume {
   categoryId: string;
   transNumber: string;
   cfNumber: string;
+  returnCfNumber: string,
+  returnTransNUmber: string,
   cfValidity: string;
   cfType: string; 
   transDate: string;
