@@ -696,11 +696,11 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
                         <option value="">Todos los tipos</option>
-                        <option value="31">32 - Factura de Crédito Fiscal</option>
-                        <option value="32">31 - Factura Consumidor Final</option>
-                        <option value="34">34 - Factura Nota de Credito</option>
-                        <option value="44">44 - Factura Regimen Especial</option>
-                        <option value="45">45 - Factura Gubernamental</option>
+                        <option value="31">32 - Crédito Fiscal</option>
+                        <option value="32">31 - Consumidor Final</option>
+                        <option value="34">34 - Nota de Credito</option>
+                        <option value="44">44 - Regimen Especial</option>
+                        <option value="45">45 - Gubernamental</option>
                       </select>
                     </div>
                   </div>
