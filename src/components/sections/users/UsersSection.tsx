@@ -440,7 +440,9 @@ const UsersSection: React.FC = () => {
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Portal</th>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha de Creacion</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                <PermissionGate roles={[Role.ADMIN]}>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                </PermissionGate>
                 
               </tr>
             </thead>
@@ -499,9 +501,9 @@ const UsersSection: React.FC = () => {
                       </div>
                     )}
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-2">
-                      <PermissionGate roles={[Role.ADMIN]}>
+                  <PermissionGate roles={[Role.ADMIN]}>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center space-x-2">
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
@@ -514,23 +516,23 @@ const UsersSection: React.FC = () => {
                         >
                           <Edit className="w-4 h-4" />
                         </motion.button>
-                      </PermissionGate>
-                      <PermissionGate permissions={['users.delete']}>
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteUser(user);
-                          }}
-                          className="p-1 text-red-600 hover:text-red-900" 
-                          title="Eliminar"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </motion.button>
-                      </PermissionGate>
-                    </div>
-                  </td>
+                        <PermissionGate permissions={['users.delete']}>
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteUser(user);
+                            }}
+                            className="p-1 text-red-600 hover:text-red-900" 
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </motion.button>
+                        </PermissionGate>
+                      </div>
+                    </td>
+                  </PermissionGate>
                 </motion.tr>
               ))}
             </tbody>

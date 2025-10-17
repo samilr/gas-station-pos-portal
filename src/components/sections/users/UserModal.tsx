@@ -13,6 +13,8 @@ import {
 import toast from "react-hot-toast";
 import { usePermissions } from "../../../hooks/usePermissions";
 import { IUser, userService } from "../../../services/userService";
+import { PermissionGate } from "../../common";
+import { Role } from "../../../config/permissions";
 
 interface UserFormData {
   username: string;
@@ -492,7 +494,8 @@ const UserModal: React.FC<UserModalProps> = ({
             </div>
 
             {/* Role and Permissions */}
-            <div className="space-y-4">
+            <PermissionGate roles={[Role.ADMIN]}>                
+              <div className="space-y-4">
               <h3 className="text-lg font-medium text-gray-900 flex items-center space-x-2">
                 <Shield className="w-5 h-5 text-gray-600" />
                 <span>Rol y Permisos</span>
@@ -548,7 +551,8 @@ const UserModal: React.FC<UserModalProps> = ({
                   </select>
                 </div>
               </div>
-            </div>
+              </div>
+            </PermissionGate>
 
             {/* Work Information */}
             <div className="space-y-4">
