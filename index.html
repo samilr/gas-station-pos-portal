@@ -50,7 +50,26 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16x16.png" />
     
-    <title>Magic Cloud ISLADOM</title>
+    <script type="module">
+      const favicon = document.querySelector('link[rel="icon"]');
+      try {
+        const icoUrl = new URL('/src/assets/isla_ico.png', import.meta.url).href;
+        if (favicon) {
+          favicon.href = icoUrl;
+          favicon.type = 'image/png';
+        } else {
+          const link = document.createElement('link');
+          link.rel = 'icon';
+          link.type = 'image/png';
+          link.href = icoUrl;
+          document.head.appendChild(link);
+        }
+      } catch (e) {
+        // noop
+      }
+    </script>
+
+    <title>Magic Cloud</title>
   </head>
   <body>
     <div id="root"></div>
