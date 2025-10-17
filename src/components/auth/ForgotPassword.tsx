@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Lock, AlertCircle, ArrowLeft, CheckCircle, Clock, RefreshCw } from 'lucide-react';
+import logoImage from '../../assets/isladominicana.png';
+import shellImage from '../../assets/Shell.png';
+import bgShell from '../../assets/shell_do.jpg';
 
 interface ForgotPasswordProps {
   onBackToLogin: () => void;
@@ -155,7 +158,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBackToLogin }) => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200"
             placeholder="tu@email.com"
           />
         </div>
@@ -164,7 +167,12 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBackToLogin }) => {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200"
+        className="w-full disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl transition-colors duration-200"
+        style={{ 
+          background: isLoading 
+            ? 'linear-gradient(135deg, #808184 0%, #6a6a6c 100%)' 
+            : 'linear-gradient(135deg, #d83c30 0%, #c02820 100%)'
+        }}
       >
         {isLoading ? 'Enviando código...' : 'Enviar Código de Verificación'}
       </button>
@@ -198,7 +206,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBackToLogin }) => {
           onChange={(e) => setCode(e.target.value)}
           required
           maxLength={6}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-center text-lg font-mono"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 text-center text-lg font-mono"
           placeholder="000000"
         />
         <p className="text-xs text-gray-500 mt-1">Código demo: 123456</p>
@@ -207,7 +215,12 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBackToLogin }) => {
       <button
         type="submit"
         disabled={isLoading || timeLeft === 0}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200"
+        className="w-full disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl transition-colors duration-200"
+        style={{ 
+          background: isLoading 
+            ? 'linear-gradient(135deg, #808184 0%, #6a6a6c 100%)' 
+            : 'linear-gradient(135deg, #d83c30 0%, #c02820 100%)'
+        }}
       >
         {isLoading ? 'Verificando...' : 'Verificar Código'}
       </button>
@@ -217,7 +230,8 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBackToLogin }) => {
           type="button"
           onClick={handleResendCode}
           disabled={isLoading}
-          className="w-full bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+          className="w-full text-white font-semibold py-3 px-4 rounded-xl transition-colors duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{ background: 'linear-gradient(135deg, #808184 0%, #6a6a6c 100%)' }}
         >
           <RefreshCw className="w-4 h-4" />
           <span>{isLoading ? 'Reenviando...' : 'Reenviar Código'}</span>
@@ -241,7 +255,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBackToLogin }) => {
             onChange={(e) => setNewPassword(e.target.value)}
             required
             minLength={6}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200"
             placeholder="••••••••"
           />
         </div>
@@ -260,7 +274,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBackToLogin }) => {
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
             minLength={6}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200"
             placeholder="••••••••"
           />
         </div>
@@ -269,7 +283,12 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBackToLogin }) => {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200"
+        className="w-full disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl transition-colors duration-200"
+        style={{ 
+          background: isLoading 
+            ? 'linear-gradient(135deg, #808184 0%, #6a6a6c 100%)' 
+            : 'linear-gradient(135deg, #d83c30 0%, #c02820 100%)'
+        }}
       >
         {isLoading ? 'Cambiando contraseña...' : 'Cambiar Contraseña'}
       </button>
@@ -277,65 +296,131 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBackToLogin }) => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <button
-            onClick={onBackToLogin}
-            className="absolute top-6 left-6 p-2 text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          
-          <div className="mx-auto w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
-            <Lock className="w-8 h-8 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 relative overflow-hidden">
+      {/* Background image layer (sutil debajo) */}
+      <div
+        className="absolute inset-0 bg-center bg-cover opacity-5 pointer-events-none"
+        style={{ backgroundImage: `url(${bgShell})` }}
+      />
+
+      <div className="relative z-10 min-h-screen flex flex-col">
+        {/* Header con logos (igual a Login) */}
+        <div className="w-full py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between">
+              {/* Logo ISLA */}
+              <div className="flex items中心 space-x-2 sm:space-x-3">
+                {logoImage ? (
+                  <img 
+                    src={logoImage}
+                    alt="ISLA Logo" 
+                    className="h-12 sm:h-14 w-auto object-contain"
+                  />
+                ) : (
+                  <div 
+                    className="w-10 h-10 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center shadow-lg" 
+                    style={{ backgroundColor: '#d83c30' }}
+                  > 
+                    <span className="text-white font-bold text-sm sm:text-xl">ISLA</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Shell Logo */}
+              <div className="flex items-center space-x-2">
+                {shellImage ? (
+                  <img 
+                    src={shellImage}
+                    alt="Shell Logo" 
+                    className="h-8 sm:h-12 w-auto object-contain"
+                  />
+                ) : (
+                  <div 
+                    className="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center" 
+                    style={{ backgroundColor: '#d83c30' }}
+                  >
+                    <span className="text-white font-bold text-xs sm:text-sm">S</span>
+                  </div>
+                )}
+                <div className="text-xs sm:text-sm font-medium" style={{ color: '#273691' }}>
+                  Shell Licensee
+                </div>
+              </div>
+            </div>
           </div>
-          
-          <h1 className="text-2xl font-bold text-gray-900">
-            {step === 'email' && 'Recuperar Contraseña'}
-            {step === 'code' && 'Verificar Código'}
-            {step === 'password' && 'Nueva Contraseña'}
-          </h1>
-          
-          <p className="text-gray-600 mt-2">
-            {step === 'email' && 'Ingresa tu correo electrónico para recibir un código de verificación'}
-            {step === 'code' && 'Ingresa el código de 6 dígitos enviado a tu correo'}
-            {step === 'password' && 'Crea una nueva contraseña segura'}
-          </p>
         </div>
 
-        {/* Mensajes de error y éxito */}
-        {error && (
-          <div className="flex items-center space-x-2 text-red-600 bg-red-50 p-3 rounded-lg mb-6">
-            <AlertCircle className="w-5 h-5" />
-            <span className="text-sm">{error}</span>
+        {/* Contenido principal */}
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8">
+          <div className="w-full max-w-md mx-auto">
+            {/* Card */}
+            <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-100 overflow-hidden relative">
+              <button
+                onClick={onBackToLogin}
+                className="absolute top-4 left-4 p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Volver al login"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+
+              <div className="p-6 sm:p-8">
+                {/* Header */}
+                <div className="text-center mb-8">
+                  <div 
+                    className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 shadow-lg" 
+                    style={{ background: 'linear-gradient(135deg, #d83c30 0%, #c02820 100%)' }}
+                  >
+                    <Lock className="w-8 h-8 text-white" />
+                  </div>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-black mb-2">
+                    {step === 'email' && 'Recuperar Contraseña'}
+                    {step === 'code' && 'Verificar Código'}
+                    {step === 'password' && 'Nueva Contraseña'}
+                  </h1>
+                  <p className="text-sm sm:text-base" style={{ color: '#808184' }}>
+                    {step === 'email' && 'Ingresa tu correo electrónico para recibir un código de verificación'}
+                    {step === 'code' && 'Ingresa el código de 6 dígitos enviado a tu correo'}
+                    {step === 'password' && 'Crea una nueva contraseña segura'}
+                  </p>
+                </div>
+
+                {/* Mensajes */}
+                {error && (
+                  <div className="mb-6 p-4 rounded-xl border-l-4 border-red-500 bg-red-50">
+                    <div className="flex items-center">
+                      <AlertCircle className="w-5 h-5 text-red-500 mr-3 flex-shrink-0" />
+                      <span className="text-sm text-red-700">{error}</span>
+                    </div>
+                  </div>
+                )}
+
+                {success && (
+                  <div className="mb-6 p-4 rounded-xl border-l-4 border-green-500 bg-green-50">
+                    <div className="flex items-center">
+                      <CheckCircle className="w-5 h-5 text-green-600 mr-3 flex-shrink-0" />
+                      <span className="text-sm text-green-700">{success}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Formularios por paso */}
+                {step === 'email' && renderEmailStep()}
+                {step === 'code' && renderCodeStep()}
+                {step === 'password' && renderPasswordStep()}
+
+                {/* Enlace de volver */}
+                <div className="mt-6 text-center">
+                  <button
+                    onClick={onBackToLogin}
+                    className="text-sm font-medium hover:underline"
+                    style={{ color: '#d83c30' }}
+                  >
+                    Volver al login
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-        )}
-
-        {success && (
-          <div className="flex items-center space-x-2 text-green-600 bg-green-50 p-3 rounded-lg mb-6">
-            <CheckCircle className="w-5 h-5" />
-            <span className="text-sm">{success}</span>
-          </div>
-        )}
-
-        {/* Contenido del formulario */}
-        {step === 'email' && renderEmailStep()}
-        {step === 'code' && renderCodeStep()}
-        {step === 'password' && renderPasswordStep()}
-
-        {/* Información adicional */}
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
-            ¿Recordaste tu contraseña?{' '}
-            <button
-              onClick={onBackToLogin}
-              className="text-blue-600 hover:text-blue-800 font-medium"
-            >
-              Volver al login
-            </button>
-          </p>
         </div>
       </div>
     </div>
