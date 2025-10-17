@@ -11,6 +11,7 @@ import {
   EditorGate 
 } from '../components/common/PermissionGate';
 import { usePermissions } from '../hooks/usePermissions';
+import { Role } from './permissions';
 
 // Ejemplo 1: Uso básico con PermissionGate
 export const ExampleComponent1: React.FC = () => {
@@ -24,7 +25,7 @@ export const ExampleComponent1: React.FC = () => {
       </PermissionGate>
       
       {/* Solo usuarios con rol ADMIN o AUDIT */}
-      <PermissionGate roles={['ADMIN', 'AUDIT']}>
+      <PermissionGate roles={[Role.ADMIN, Role.AUDIT]}>
         <button>Acción Administrativa</button>
       </PermissionGate>
       

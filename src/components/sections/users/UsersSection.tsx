@@ -9,6 +9,7 @@ import { usePermissions } from '../../../hooks/usePermissions';
 import { useUsers } from '../../../hooks/useUsers';
 import { IUser } from '../../../services/userService';
 import { PermissionGate } from '../../common';
+import { Role } from '../../../config/permissions';
 
 
 // Función para formatear fecha de creación de usuario
@@ -133,7 +134,7 @@ const UsersSection: React.FC = () => {
   const totalUsers = users.length;
   const activeUsers = users.filter(user => user.active === 1).length;
   const inactiveUsers = users.filter(user => user.active === 0).length;
-  const adminUsers = users.filter(user => user.role.toLowerCase() === 'admin').length;
+  const adminUsers = users.filter(user => user.role.toLowerCase() === Role.ADMIN.toLowerCase()).length;
   const portalAccessUsers = users.filter(user => user.portal_access).length;
 
   // Obtener valores únicos para los filtros
@@ -298,7 +299,7 @@ const UsersSection: React.FC = () => {
                 <RefreshCw className="w-4 h-4" />
                 <span>Actualizar</span>
               </motion.button>
-              <PermissionGate permissions={['users.create']}>
+              <PermissionGate roles={[Role.ADMIN]}>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -500,7 +501,7 @@ const UsersSection: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
-                      <PermissionGate permissions={['users.edit']}>
+                      <PermissionGate roles={[Role.ADMIN]}>
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}

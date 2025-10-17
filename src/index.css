@@ -30,3 +30,8 @@
 .leaflet-popup-tip {
   background: white;
 }
+
+/* Fondo global de la aplicación usando la paleta */
+html, body, #root {
+  @apply bg-app-bg;
+}

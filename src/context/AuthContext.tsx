@@ -1,20 +1,20 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authService } from '../services/authService';
-import { ROLE_PERMISSIONS, hasPermission, hasAnyPermission, hasAllPermissions } from '../config/permissions';
+import { ROLE_PERMISSIONS, hasPermission, hasAnyPermission, hasAllPermissions, Role } from '../config/permissions';
 
 // Mapeo de roles de la API a roles del proyecto
-const ROLE_MAPPING = {
-  'ADMIN': 'ADMIN',
-  'MANAGER': 'MANAGER',
-  'SUPERVISOR': 'SUPERVISOR',
-  'AUDIT': 'AUDIT'
-} as const;
+const ROLE_MAPPING: Record<string, Role> = {
+  'ADMIN': Role.ADMIN,
+  'MANAGER': Role.MANAGER,
+  'SUPERVISOR': Role.SUPERVISOR,
+  'AUDIT': Role.AUDIT
+};
 
 interface User {
   id: string;
   name: string;
   username: string;
-  role: string;
+  role: Role;
   permissions: string[];
   staftId?: string;
   shift?: string;
@@ -97,9 +97,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await authService.login({ username, password });
       
       if (response.successful && response.data) {
-        const apiRole = response.data.role as keyof typeof ROLE_MAPPING;
-        const mappedRole = ROLE_MAPPING[apiRole] || apiRole;
-        const permissions = [...(ROLE_PERMISSIONS[apiRole] || [])];
+        const apiRole = response.data.role as string;
+        const mappedRole = ROLE_MAPPING[apiRole] || Role.ACCOUNTANT;
+        const permissions = [...(ROLE_PERMISSIONS[mappedRole] || [])];
         
         // Crear objeto de usuario con los datos de la API
         const userData: User = {

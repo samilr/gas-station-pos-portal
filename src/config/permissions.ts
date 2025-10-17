@@ -52,11 +52,17 @@ export type Permission =
   | 'reports.view'    // Reportes (ya existe, se reutiliza)
   | 'notifications.view'; // Notificaciones (ya existe, se reutiliza)
 
-export type Role = 'ADMIN' | 'MANAGER' | 'SUPERVISOR' | 'AUDIT' | 'ACCOUNTANT';
+export enum Role {
+  ADMIN = 'ADMIN',
+  MANAGER = 'MANAGER',
+  SUPERVISOR = 'SUPERVISOR',
+  AUDIT = 'AUDIT',
+  ACCOUNTANT = 'ACCOUNTANT'
+}
 
 // Configuración de permisos por rol
 export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
-  ADMIN: [
+  [Role.ADMIN]: [
     // Acceso completo a todo
     'dashboard.view',
     'users.view', 'users.create', 'users.edit', 'users.delete',
@@ -76,7 +82,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'pos.view'
   ],
   
-  MANAGER: [
+  [Role.MANAGER]: [
     // Acceso de gestión (sin eliminación)
     'dashboard.view',
     'users.view', 'users.create', 'users.edit',
@@ -91,7 +97,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     // NO puede ver: logs, database, security, settings
   ],
   
-  SUPERVISOR: [
+  [Role.SUPERVISOR]: [
     // Acceso de supervisión (similar a MANAGER)
     'dashboard.view',
     'users.view', 'users.create', 'users.edit',
@@ -108,7 +114,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     // NO puede ver: logs, database, security, notifications, settings
   ],
   
-  AUDIT: [
+  [Role.AUDIT]: [
     // Acceso de auditoría (solo lectura y reversión de transacciones)
     'dashboard.view',
     'transactions.view', 'transactions.reverse',
@@ -120,7 +126,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   ]
   ,
   
-  ACCOUNTANT: [
+  [Role.ACCOUNTANT]: [
     // Rol contable: solo lectura en dashboard, transacciones y productos
     'dashboard.view',
     'transactions.view',

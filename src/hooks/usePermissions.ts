@@ -87,21 +87,21 @@ export const usePermissions = () => {
   * Verifica si el usuario es administrador (ADMIN o AUDIT)
    */
   const isAdmin = (): boolean => {
-  return hasAnyRole(['ADMIN', 'AUDIT']);
+  return hasAnyRole([Role.ADMIN, Role.AUDIT]);
   };
   
   /**
    * Verifica si el usuario es editor (MANAGER o SUPERVISOR)
    */
   const isEditor = (): boolean => {
-    return hasAnyRole(['MANAGER', 'SUPERVISOR']);
+    return hasAnyRole([Role.MANAGER, Role.SUPERVISOR]);
   };
   
   /**
   * Verifica si el usuario es solo lector (AUDIT)
    */
   const isReadOnly = (): boolean => {
-  return hasRole('AUDIT');
+  return hasRole(Role.AUDIT);
   };
 
   return {
