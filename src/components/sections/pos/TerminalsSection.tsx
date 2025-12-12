@@ -8,16 +8,13 @@ import { usePermissions } from '../../../hooks/usePermissions';
 import { useTerminals } from '../../../hooks/useTerminals';
 import { ITerminal } from '../../../services/terminalService';
 import { PermissionGate } from '../../common';
+import { formatDateDMY } from '../../../utils/dateUtils';
 
 
 // Función para formatear fecha de conexión de terminal
 const formatTerminalDate = (dateString: string | Date): { date: string; time: string } => {
   const date = new Date(dateString);
-  const dateFormatted = date.toLocaleDateString('es-DO', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  });
+  const dateFormatted = formatDateDMY(dateString);
   const timeFormatted = date.toLocaleTimeString('es-DO', {
     hour: '2-digit',
     minute: '2-digit'

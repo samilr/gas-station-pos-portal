@@ -50,6 +50,17 @@ export const formatDateOnly = (dateString: string | Date): string => {
 };
 
 /**
+ * Formatea una fecha en formato dd/MM/yyyy (forzado, sin depender de locale)
+ */
+export const formatDateDMY = (dateInput: string | Date): string => {
+  const date = new Date(dateInput);
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+/**
  * Convierte una fecha UTC a hora local de Santo Domingo y retorna solo la hora
  * @param dateString - Fecha en formato string o Date
  * @returns Hora formateada

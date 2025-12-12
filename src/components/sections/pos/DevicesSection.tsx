@@ -8,16 +8,13 @@ import { usePermissions } from '../../../hooks/usePermissions';
 import { PermissionGate } from '../../common';
 import { useDevices } from '../../../hooks/useDevices';
 import { IHost } from '../../../services/deviceService';
+import { formatDateDMY } from '../../../utils/dateUtils';
 
 // Función para formatear fecha de conexión
 const formatConnectionDate = (dateString: string | Date | undefined): { date: string; time: string } | null => {
   if (!dateString) return null;
   const date = new Date(dateString);
-  const dateFormatted = date.toLocaleDateString('es-DO', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  });
+  const dateFormatted = formatDateDMY(dateString);
   const timeFormatted = date.toLocaleTimeString('es-DO', {
     hour: '2-digit',
     minute: '2-digit'
@@ -430,7 +427,10 @@ const DevicesSection: React.FC = () => {
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
-                          onClick={() => handleEditDevice(device)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditDevice(device);
+                          }}
                           className="p-1 text-blue-600 hover:text-blue-900" 
                           title="Editar"
                         >
@@ -441,7 +441,10 @@ const DevicesSection: React.FC = () => {
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
-                          onClick={() => handleDeleteDevice(device)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteDevice(device);
+                          }}
                           className="p-1 text-red-600 hover:text-red-900" 
                           title="Eliminar"
                         >

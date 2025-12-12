@@ -58,7 +58,7 @@ class PDFService {
     // Información de la empresa
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    doc.text("ISLA DOMINICANA DE PETROLEO CORPORATION", margin, currentY);
+    doc.text("ISLA DOMINICANA DE PETRÓLEO CORPORATION", margin, currentY);
     currentY += 4.5;
     doc.setFont("helvetica", "normal");
     doc.text(`RNC: 101008172`, margin, currentY);
@@ -69,7 +69,13 @@ class PDFService {
     currentY += 4.5;
     doc.text(`Telefono: (809) 565-7756`, margin, currentY);
     currentY += 4.5;
-    doc.text(`Fecha: ${new Date(transactionData.transDate).toLocaleDateString('es-DO')} ${new Date(transactionData.transDate).toLocaleTimeString('es-DO')}`, margin, currentY);
+    const d = new Date(transactionData.transDate);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    doc.text(`Fecha: ${day}/${month}/${year} ${hours}:${minutes}`, margin, currentY);
 
 
     // Información de la transacción (derecha)

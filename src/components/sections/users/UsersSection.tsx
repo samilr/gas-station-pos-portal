@@ -10,16 +10,13 @@ import { useUsers } from '../../../hooks/useUsers';
 import { IUser } from '../../../services/userService';
 import { PermissionGate } from '../../common';
 import { Role } from '../../../config/permissions';
+import { formatDateDMY } from '../../../utils/dateUtils';
 
 
 // Función para formatear fecha de creación de usuario
 const formatUserDate = (dateString: string | Date): { date: string; time: string } => {
   const date = new Date(dateString);
-  const dateFormatted = date.toLocaleDateString('es-DO', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  });
+  const dateFormatted = formatDateDMY(dateString);
   const timeFormatted = date.toLocaleTimeString('es-DO', {
     hour: '2-digit',
     minute: '2-digit'
