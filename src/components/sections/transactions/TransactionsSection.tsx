@@ -72,6 +72,8 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
   const {
     transactions,
     stats,
+    serverStats,
+    pagination,
     loading,
     error,
     selectedTransaction,
@@ -89,6 +91,7 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
     currentPage,
     totalPages,
     itemsPerPage,
+    setItemsPerPage,
     sortField,
     sortDirection,
     setSearchTerm,
@@ -145,16 +148,27 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
     </th>
   );
 
-  // Filtrar transacciones
+  // Debug: Log cuando cambian los estados del servidor
+  React.useEffect(() => {
+    console.log('🔄 serverStats cambió:', serverStats);
+  }, [serverStats]);
+  
+  React.useEffect(() => {
+    console.log('🔄 pagination cambió:', pagination);
+  }, [pagination]);
+
+  // Filtrar transacciones localmente (solo para búsqueda de texto y estado)
   const filteredTransactions = filterTransactionsByStatus(
     filterTransactionsBySearch(transactions, searchTerm),
     statusFilter
   );
 
-  // Calcular transacciones para la página actual
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedTransactions = filteredTransactions.slice(startIndex, endIndex);
+  // Usar las transacciones filtradas directamente (la paginación viene del servidor)
+  const paginatedTransactions = filteredTransactions;
+  
+  // Calcular índices para mostrar en la paginación
+  const startIndex = pagination ? (pagination.page - 1) * pagination.limit : (currentPage - 1) * itemsPerPage;
+  const endIndex = pagination ? Math.min(startIndex + pagination.limit, pagination.total) : Math.min(startIndex + itemsPerPage, filteredTransactions.length);
 
   const handleExport = async (format: 'pdf' | 'excel' | 'csv') => {
     if (format === 'excel') {
@@ -209,7 +223,10 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
     setCurrentPage(1);
     
     // Siempre buscar en la API cuando se aplican filtros desde el modal
-    const params: any = {};
+    const params: any = {
+      page: 1, // Siempre empezar en la primera página
+      limit: itemsPerPage
+    };
     
     // Verificar si hay filtros específicos (no fechas) completados
     const hasSpecificFilters = 
@@ -250,6 +267,21 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
     // Taxpayer ID (RNC/Cédula)
     if (tempSearchTerm.trim() !== '') {
       params.taxpayerId = tempSearchTerm.trim();
+    }
+    
+    // Actualizar los estados de filtros antes de buscar
+    setTransNumberFilter(tempTransNumberFilter);
+    setCfNumberFilter(tempCfNumberFilter);
+    setStatusFilter(tempStatusFilter);
+    setCfTypeFilter(tempCfTypeFilter);
+    setSiteIdFilter(tempSiteIdFilter);
+    setTerminalFilter(tempTerminalFilter);
+    setStaftIdFilter(tempStaftIdFilter);
+    setShiftFilter(tempShiftFilter);
+    setStartDateFilter(params.startDate || tempStartDateFilter);
+    setEndDateFilter(params.endDate || tempEndDateFilter);
+    if (tempSearchTerm.trim() !== '') {
+      setSearchTerm(tempSearchTerm.trim());
     }
     
     // Buscar directamente en la API con los filtros aplicados
@@ -321,6 +353,8 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
     shift?: number;
     startDate?: string;
     endDate?: string;
+    page?: number;
+    limit?: number;
   }) => {
     try {
       console.log('🔍 Buscando directamente en la API con parámetros:', params);
@@ -527,7 +561,9 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Ventas</p>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalSales)}</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {formatCurrency(serverStats?.totalSales ?? stats.totalSales)}
+              </p>
             </div>
             <DollarSign className="w-8 h-8 text-green-500" />
           </div>
@@ -541,7 +577,9 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Retornos</p>
-              <p className="text-2xl font-bold text-red-600">{formatCurrency(transactions.filter(t => t.isReturn).reduce((sum, t) => sum + t.total, 0))}</p>
+              <p className="text-2xl font-bold text-red-600">
+                {formatCurrency(serverStats?.totalReturn ?? 0)}
+              </p>
             </div>
             <RefreshCw className="w-8 h-8 text-red-500" />
           </div>
@@ -557,7 +595,9 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Aceptadas</p>
-              <p className="text-2xl font-bold text-green-600">{stats.acceptedTransactions}</p>
+              <p className="text-2xl font-bold text-green-600">
+                {serverStats?.dgiiAcceptedTransactions ?? stats.acceptedTransactions}
+              </p>
             </div>
             <CheckCircle className="w-8 h-8 text-green-500" />
           </div>
@@ -573,7 +613,9 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Rechazadas</p>
-              <p className="text-2xl font-bold text-red-600">{stats.rejectedTransactions}</p>
+              <p className="text-2xl font-bold text-red-600">
+                {serverStats?.dgiiRejectedTransactions ?? stats.rejectedTransactions}
+              </p>
             </div>
             <AlertCircle className="w-8 h-8 text-red-500" />
           </div>
@@ -589,7 +631,9 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Pendientes</p>
-              <p className="text-2xl font-bold text-yellow-600">{stats.pendingTransactions}</p>
+              <p className="text-2xl font-bold text-yellow-600">
+                {serverStats?.dgiiPendingTransactions ?? stats.pendingTransactions}
+              </p>
             </div>
             <Clock className="w-8 h-8 text-yellow-500" />
           </div>
@@ -696,8 +740,8 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
                         <option value="">Todos los tipos</option>
-                        <option value="31">32 - Crédito Fiscal</option>
-                        <option value="32">31 - Consumidor Final</option>
+                        <option value="31">31 - Crédito Fiscal</option>
+                        <option value="32">32 - Consumidor Final</option>
                         <option value="34">34 - Nota de Credito</option>
                         <option value="44">44 - Regimen Especial</option>
                         <option value="45">45 - Gubernamental</option>
@@ -985,14 +1029,84 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
         transition={{ duration: 0.3, delay: 0.8 }}
         className="flex items-center justify-between bg-white px-6 py-3 border border-gray-200 rounded-xl"
       >
-        <div className="text-sm text-gray-700">
-          Mostrando <span className="font-medium">{startIndex + 1}</span> a <span className="font-medium">{Math.min(endIndex, filteredTransactions.length)}</span> de{' '}
-          <span className="font-medium">{filteredTransactions.length}</span> transacciones
+        <div className="flex items-center space-x-4">
+          <div className="text-sm text-gray-700">
+            {pagination ? (
+              <>
+                Mostrando <span className="font-medium">{((pagination.page - 1) * pagination.limit) + 1}</span> a{' '}
+                <span className="font-medium">{Math.min(pagination.page * pagination.limit, pagination.total)}</span> de{' '}
+                <span className="font-medium">{pagination.total}</span> transacciones
+              </>
+            ) : (
+              <>
+                Mostrando <span className="font-medium">{startIndex + 1}</span> a <span className="font-medium">{endIndex}</span> de{' '}
+                <span className="font-medium">{filteredTransactions.length}</span> transacciones
+              </>
+            )}
+          </div>
+          <div className="flex items-center space-x-2">
+            <label htmlFor="itemsPerPage" className="text-sm text-gray-700">
+              Items por página:
+            </label>
+            <select
+              id="itemsPerPage"
+              value={itemsPerPage}
+              onChange={async (e) => {
+                const newLimit = parseInt(e.target.value, 10);
+                setItemsPerPage(newLimit);
+                setCurrentPage(1); // Resetear a la primera página
+                
+                // Recargar transacciones con el nuevo límite
+                if (startDateFilter && endDateFilter) {
+                  await searchTransactionsDirectly({
+                    transNumber: transNumberFilter || undefined,
+                    cfNumber: cfNumberFilter || undefined,
+                    siteId: siteIdFilter || undefined,
+                    terminal: terminalFilter || undefined,
+                    cfType: cfTypeFilter || undefined,
+                    staftId: staftIdFilter || undefined,
+                    taxpayerId: searchTerm || undefined,
+                    shift: shiftFilter || undefined,
+                    startDate: startDateFilter,
+                    endDate: endDateFilter,
+                    page: 1,
+                    limit: newLimit
+                  });
+                }
+              }}
+              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+            >
+              <option value={10}>10</option>
+              <option value={15}>15</option>
+              <option value={20}>20</option>
+              <option value={30}>30</option>
+              <option value={40}>40</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
         </div>
         <div className="flex items-center space-x-2">
           <button 
-            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1}
+            onClick={() => {
+              const newPage = Math.max(1, currentPage - 1);
+              // Recargar transacciones con la nueva página
+              if (startDateFilter && endDateFilter) {
+                searchTransactionsDirectly({
+                  transNumber: transNumberFilter || undefined,
+                  cfNumber: cfNumberFilter || undefined,
+                  siteId: siteIdFilter || undefined,
+                  terminal: terminalFilter || undefined,
+                  cfType: cfTypeFilter || undefined,
+                  staftId: staftIdFilter || undefined,
+                  taxpayerId: searchTerm || undefined,
+                  shift: shiftFilter || undefined,
+                  startDate: startDateFilter,
+                  endDate: endDateFilter,
+                  page: newPage
+                });
+              }
+            }}
+            disabled={!pagination?.hasPrev && currentPage === 1}
             className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 rounded transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -1014,7 +1128,24 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
             return (
               <button
                 key={pageNumber}
-                onClick={() => setCurrentPage(pageNumber)}
+                onClick={() => {
+                  // Recargar transacciones con la nueva página
+                  if (startDateFilter && endDateFilter) {
+                    searchTransactionsDirectly({
+                      transNumber: transNumberFilter || undefined,
+                      cfNumber: cfNumberFilter || undefined,
+                      siteId: siteIdFilter || undefined,
+                      terminal: terminalFilter || undefined,
+                      cfType: cfTypeFilter || undefined,
+                      staftId: staftIdFilter || undefined,
+                      taxpayerId: searchTerm || undefined,
+                      shift: shiftFilter || undefined,
+                      startDate: startDateFilter,
+                      endDate: endDateFilter,
+                      page: pageNumber
+                    });
+                  }
+                }}
                 className={`px-3 py-1 text-sm rounded transition-colors ${
                   currentPage === pageNumber
                     ? 'bg-blue-600 text-white'
@@ -1027,8 +1158,26 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
           })}
           
           <button 
-            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage === totalPages}
+            onClick={() => {
+              const newPage = Math.min(totalPages, currentPage + 1);
+              // Recargar transacciones con la nueva página
+              if (startDateFilter && endDateFilter) {
+                searchTransactionsDirectly({
+                  transNumber: transNumberFilter || undefined,
+                  cfNumber: cfNumberFilter || undefined,
+                  siteId: siteIdFilter || undefined,
+                  terminal: terminalFilter || undefined,
+                  cfType: cfTypeFilter || undefined,
+                  staftId: staftIdFilter || undefined,
+                  taxpayerId: searchTerm || undefined,
+                  shift: shiftFilter || undefined,
+                  startDate: startDateFilter,
+                  endDate: endDateFilter,
+                  page: newPage
+                });
+              }
+            }}
+            disabled={!pagination?.hasNext && currentPage === totalPages}
             className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 rounded transition-colors"
           >
             <ArrowRight className="w-4 h-4" />

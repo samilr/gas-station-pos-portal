@@ -78,3 +78,68 @@ export enum PaymentType {
   ZATACA = 4,
   OTHER = 5
 }
+
+// Interfaces para paginación y estadísticas del servidor
+export interface IPaginationMeta {
+  page: number;           // Página actual
+  limit: number;          // Resultados por página
+  total: number;          // Total de registros
+  totalPages: number;     // Total de páginas
+  hasNext: boolean;       // ¿Hay página siguiente?
+  hasPrev: boolean;       // ¿Hay página anterior?
+}
+
+export interface ITransactionStatistics {
+  totalTransactions: number;           // Total de transacciones
+  totalSalesTransactions: number;      // Cantidad de ventas (isReturn = false)
+  totalReturnTransactions: number;     // Cantidad de retornos (isReturn = true)
+  totalSales: number;                  // Suma total de ventas
+  totalReturn: number;                  // Suma total de retornos
+  dgiiAcceptedTransactions: number;     // Transacciones aceptadas por DGII (cfStatus: 2, 3)
+  dgiiRejectedTransactions: number;     // Transacciones rechazadas por DGII (cfStatus: 4)
+  dgiiPendingTransactions: number;      // Transacciones pendientes (cfStatus: 0, 1, 5, 6, 7, 8 o NULL)
+}
+
+export interface IPaginatedTransactionsResponse {
+  successful: boolean;
+  data: ITransactionResume[];
+  pagination: IPaginationMeta;
+  statistics: ITransactionStatistics;
+}
+
+// Interfaces para el Dashboard
+export interface ISalesAndReturnsSummary {
+  totalSales: number;        // Total de ventas
+  totalReturn: number;        // Total de retornos
+  countSales: number;         // Cantidad de transacciones de ventas
+  countReturns: number;       // Cantidad de transacciones de retornos
+}
+
+export interface IDailySales {
+  dayOfMonth: string;         // Fecha en formato DATE (YYYY-MM-DD)
+  totalSales: number;         // Total de ventas del día
+}
+
+export interface ITopTransaction {
+  transNumber: string;         // Número de transacción
+  cfNumber: string;            // Número de e-NCF
+  transType: number;           // Tipo de transacción
+  total: number;               // Monto total
+  taxpayerId: string;          // RNC/Cédula del contribuyente
+  taxpayerName: string | null; // Nombre del contribuyente
+  siteId: string;              // ID de la sucursal
+  siteName: string;            // Nombre de la sucursal
+  date: string;                // Fecha de la transacción
+}
+
+export interface ITopProduct {
+  productName: string;          // Nombre del producto
+  total: number;               // Total vendido (monto)
+  quantity: number;            // Cantidad vendida
+}
+
+export interface ISalesBySite {
+  siteId: string;              // ID de la sucursal
+  siteName: string;            // Nombre de la sucursal
+  total: number;               // Total de ventas de la sucursal
+}

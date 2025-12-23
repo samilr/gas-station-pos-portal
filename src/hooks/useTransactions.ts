@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ITransactionResume, CFStatus } from '../types/transaction';
+import { ITransactionResume, CFStatus, ITransactionStatistics, IPaginationMeta } from '../types/transaction';
 import { getCurrentSantoDomingoDate } from '../utils/transactionUtils';
 import { transactionService } from '../services/transactionService';
 import { mockTransactions } from '../data/mockTransactions';
@@ -19,6 +19,8 @@ export type SortDirection = 'asc' | 'desc';
 interface UseTransactionsReturn {
   transactions: ITransactionResume[];
   stats: TransactionStats;
+  serverStats: ITransactionStatistics | null;
+  pagination: IPaginationMeta | null;
   loading: boolean;
   error: string | null;
   selectedTransaction: ITransactionResume | null;
@@ -36,6 +38,7 @@ interface UseTransactionsReturn {
   currentPage: number;
   totalPages: number;
   itemsPerPage: number;
+  setItemsPerPage: (limit: number) => void;
   sortField: SortField;
   sortDirection: SortDirection;
   setSearchTerm: (term: string) => void;
@@ -80,6 +83,8 @@ interface UseTransactionsReturn {
     shift?: number;
     startDate?: string;
     endDate?: string;
+    page?: number;
+    limit?: number;
   }) => Promise<void>;
   exportTransactions: (format: 'pdf' | 'excel' | 'csv') => Promise<void>;
 }
@@ -93,6 +98,8 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
     rejectedTransactions: 0,
     totalTransactions: 0
   });
+  const [serverStats, setServerStats] = useState<ITransactionStatistics | null>(null);
+  const [pagination, setPagination] = useState<IPaginationMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTransaction, setSelectedTransaction] = useState<ITransactionResume | null>(null);
@@ -113,10 +120,8 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
   const [startDateFilter, setStartDateFilter] = useState<string>(getTodayDate());
   const [endDateFilter, setEndDateFilter] = useState<string>(getTodayDate());
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(12);
+  const [itemsPerPage, setItemsPerPage] = useState(15); // Por defecto 15 items por página
   
-  // Debug: verificar que itemsPerPage se está aplicando
-  console.log('Items per page:', itemsPerPage);
   const [sortField, setSortField] = useState<SortField>('transDate');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   
@@ -353,24 +358,53 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
 
   // Función para cargar transacciones (solo en la carga inicial)
   const loadTransactions = useCallback(async () => {
+    // Solo cargar si no hay datos o si las fechas han cambiado
+    // Esto evita recargar cuando se aplican filtros manualmente
+    if (transactions.length > 0 && currentDataDateRange.startDate === startDateFilter && currentDataDateRange.endDate === endDateFilter) {
+      console.log('⏭️ Saltando carga: ya hay datos para estas fechas');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     
     try {
-      // Enviar fecha de hoy por defecto en la primera carga
+      // Enviar fecha de hoy por defecto en la primera carga con paginación
       const params = {
         startDate: startDateFilter,
-        endDate: endDateFilter
+        endDate: endDateFilter,
+        page: currentPage,
+        limit: itemsPerPage
       };
       
-      const data = await transactionService.getTransactions(params);
+      const response = await transactionService.getTransactions(params);
       
       // Filtrar transacciones según la vista activa
-      const filteredData = filterTransactions(data);
+      const filteredData = filterTransactions(response.data);
       
       const sortedData = sortTransactions(filteredData, sortField, sortDirection);
       setTransactions(sortedData);
-      setStats(calculateStats(sortedData));
+      
+      // SIEMPRE usar estadísticas del servidor cuando estén disponibles
+      if (response.statistics) {
+        setServerStats(response.statistics);
+        // Actualizar stats locales con las estadísticas del servidor (del total de transacciones filtradas)
+        setStats({
+          totalSales: response.statistics.totalSales,
+          acceptedTransactions: response.statistics.dgiiAcceptedTransactions,
+          pendingTransactions: response.statistics.dgiiPendingTransactions,
+          rejectedTransactions: response.statistics.dgiiRejectedTransactions,
+          totalTransactions: response.statistics.totalTransactions
+        });
+      } else {
+        // Solo calcular localmente si NO hay estadísticas del servidor (fallback)
+        console.warn('⚠️ No se recibieron estadísticas del servidor, calculando localmente (puede ser inexacto)');
+        setStats(calculateStats(sortedData));
+        setServerStats(null);
+      }
+      
+      // Guardar paginación del servidor
+      setPagination(response.pagination);
       
       // Actualizar el rango de fechas de los datos actuales
       setCurrentDataDateRange({
@@ -385,10 +419,12 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
       const sortedData = sortTransactions(mockFiltered, sortField, sortDirection);
       setTransactions(sortedData);
       setStats(calculateStats(sortedData));
+      setServerStats(null);
+      setPagination(null);
     } finally {
       setLoading(false);
     }
-  }, [calculateStats, sortField, sortDirection, sortTransactions, filterTransactions, startDateFilter, endDateFilter]);
+  }, [calculateStats, sortField, sortDirection, sortTransactions, filterTransactions, startDateFilter, endDateFilter, currentPage, itemsPerPage, transactions.length, currentDataDateRange]);
 
   // Función para cargar transacciones con fechas específicas (usada por los filtros)
   const loadTransactionsWithDates = useCallback(async (startDate: string, endDate: string) => {
@@ -398,17 +434,26 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
     try {
       const params = {
         startDate,
-        endDate
+        endDate,
+        page: 1, // Resetear a la primera página
+        limit: itemsPerPage
       };
       
-      const data = await transactionService.getTransactions(params);
+      const response = await transactionService.getTransactions(params);
       
       // Filtrar transacciones según la vista activa
-      const filteredData = filterTransactions(data);
+      const filteredData = filterTransactions(response.data);
       
       const sortedData = sortTransactions(filteredData, sortField, sortDirection);
       setTransactions(sortedData);
       setStats(calculateStats(sortedData));
+      
+      // Guardar estadísticas y paginación del servidor
+      setServerStats(response.statistics);
+      setPagination(response.pagination);
+      
+      // Resetear a la primera página
+      setCurrentPage(1);
       
       // Actualizar el rango de fechas de los datos actuales
       setCurrentDataDateRange({
@@ -423,13 +468,15 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
       const sortedData = sortTransactions(mockFiltered, sortField, sortDirection);
       setTransactions(sortedData);
       setStats(calculateStats(sortedData));
+      setServerStats(null);
+      setPagination(null);
     } finally {
       setLoading(false);
     }
-  }, [calculateStats, sortField, sortDirection, sortTransactions, filterTransactions]);
+  }, [calculateStats, sortField, sortDirection, sortTransactions, filterTransactions, itemsPerPage]);
 
-  // Calcular total de páginas
-  const totalPages = Math.ceil(transactions.length / itemsPerPage);
+  // Calcular total de páginas desde la paginación del servidor o localmente
+  const totalPages = pagination?.totalPages || Math.ceil(transactions.length / itemsPerPage);
 
   // Funciones wrapper para resetear página
   const handleSetSearchTerm = (term: string) => {
@@ -487,10 +534,6 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
     setCurrentPage(1);
   };
 
-  // Función para refrescar transacciones
-  const refreshTransactions = useCallback(async () => {
-    await loadTransactions();
-  }, [loadTransactions]);
 
   // Función para filtrar transacciones localmente
   const filterTransactionsLocally = useCallback((params: {
@@ -663,15 +706,24 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
       
       if (needsApiSearch) {
         console.log('🌐 Buscando en la API...');
-        // Buscar en la API
-        const data = await transactionService.getTransactions(params);
+        // Buscar en la API con paginación
+        const apiParams = {
+          ...params,
+          page: currentPage,
+          limit: itemsPerPage
+        };
+        const response = await transactionService.getTransactions(apiParams);
         
         // Filtrar transacciones según la vista activa
-        const filteredData = filterTransactions(data);
+        const filteredData = filterTransactions(response.data);
         
         const sortedData = sortTransactions(filteredData, sortField, sortDirection);
         setTransactions(sortedData);
         setStats(calculateStats(sortedData));
+        
+        // Guardar estadísticas y paginación del servidor
+        setServerStats(response.statistics);
+        setPagination(response.pagination);
         
         // Actualizar el rango de fechas de los datos actuales
         if (params.startDate && params.endDate) {
@@ -693,10 +745,12 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al buscar transacciones');
       console.warn('Error en búsqueda de transacciones:', err);
+      setServerStats(null);
+      setPagination(null);
     } finally {
       setLoading(false);
     }
-  }, [calculateStats, sortField, sortDirection, sortTransactions, filterTransactions, isDateRangeWithinCurrentData, findTransactionByNumber, findTransactionByCfNumber, findTransactionBySiteId, findTransactionByTerminal, findTransactionByCfType, findTransactionByStaftId, findTransactionByTaxpayerId, findTransactionByShift, filterTransactionsLocally, transactions, currentDataDateRange]);
+  }, [calculateStats, sortField, sortDirection, sortTransactions, filterTransactions, isDateRangeWithinCurrentData, findTransactionByNumber, findTransactionByCfNumber, findTransactionBySiteId, findTransactionByTerminal, findTransactionByCfType, findTransactionByStaftId, findTransactionByTaxpayerId, findTransactionByShift, filterTransactionsLocally, transactions, currentDataDateRange, currentPage, itemsPerPage]);
 
   // Función para buscar directamente en la API sin lógica de filtrado local
   const searchTransactionsDirectly = useCallback(async (params: {
@@ -710,6 +764,8 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
     shift?: number;
     startDate?: string;
     endDate?: string;
+    page?: number; // Permitir pasar la página como parámetro
+    limit?: number; // Permitir pasar el límite como parámetro
   }) => {
     setLoading(true);
     setError(null);
@@ -717,15 +773,76 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
     try {
       console.log('🔍 Buscando directamente en la API con parámetros:', params);
       
-      // Buscar directamente en la API
-      const data = await transactionService.getTransactions(params);
+      // Actualizar los estados de filtros para que coincidan con los parámetros
+      if (params.startDate) setStartDateFilter(params.startDate);
+      if (params.endDate) setEndDateFilter(params.endDate);
+      if (params.transNumber !== undefined) setTransNumberFilter(params.transNumber || '');
+      if (params.cfNumber !== undefined) setCfNumberFilter(params.cfNumber || '');
+      if (params.siteId !== undefined) setSiteIdFilter(params.siteId || '');
+      if (params.terminal !== undefined) setTerminalFilter(params.terminal || '');
+      if (params.cfType !== undefined) setCfTypeFilter(params.cfType || '');
+      if (params.staftId !== undefined) setStaftIdFilter(params.staftId || '');
+      if (params.shift !== undefined) setShiftFilter(params.shift || '');
+      if (params.taxpayerId !== undefined) setSearchTerm(params.taxpayerId || '');
+      
+      // Buscar directamente en la API con paginación
+      const apiParams = {
+        ...params,
+        page: params.page ?? currentPage, // Usar la página del parámetro o la actual
+        limit: params.limit ?? itemsPerPage // Usar el límite del parámetro o el actual
+      };
+      
+      // Si se pasó un nuevo límite, actualizar el estado
+      if (params.limit !== undefined && params.limit !== itemsPerPage) {
+        setItemsPerPage(params.limit);
+      }
+      
+      const response = await transactionService.getTransactions(apiParams);
+      
+      console.log('🔍 Respuesta completa de la API:', response);
+      console.log('📄 Paginación recibida:', response.pagination);
+      console.log('📊 Estadísticas recibidas:', response.statistics);
       
       // Filtrar transacciones según la vista activa
-      const filteredData = filterTransactions(data);
+      const filteredData = filterTransactions(response.data);
       
       const sortedData = sortTransactions(filteredData, sortField, sortDirection);
       setTransactions(sortedData);
-      setStats(calculateStats(sortedData));
+      
+      // SIEMPRE usar estadísticas del servidor cuando estén disponibles
+      // Nunca calcular estadísticas localmente basándose en los datos de la página actual
+      if (response.statistics) {
+        console.log('✅ Usando estadísticas del servidor:', response.statistics);
+        setServerStats(response.statistics);
+        // Actualizar stats locales con las estadísticas del servidor (del total de transacciones filtradas)
+        setStats({
+          totalSales: response.statistics.totalSales,
+          acceptedTransactions: response.statistics.dgiiAcceptedTransactions,
+          pendingTransactions: response.statistics.dgiiPendingTransactions,
+          rejectedTransactions: response.statistics.dgiiRejectedTransactions,
+          totalTransactions: response.statistics.totalTransactions
+        });
+      } else {
+        // Solo calcular localmente si NO hay estadísticas del servidor (fallback)
+        // Pero esto solo debería pasar en casos de error
+        console.warn('⚠️ No se recibieron estadísticas del servidor, calculando localmente (puede ser inexacto)');
+        setStats(calculateStats(sortedData));
+        setServerStats(null);
+      }
+      
+      // Guardar paginación del servidor
+      if (response.pagination) {
+        console.log('✅ Guardando paginación del servidor:', response.pagination);
+        setPagination(response.pagination);
+      } else {
+        console.warn('⚠️ No se recibió paginación del servidor');
+        setPagination(null);
+      }
+      
+      // Actualizar la página actual si se pasó como parámetro
+      if (params.page !== undefined) {
+        setCurrentPage(params.page);
+      }
       
       // Actualizar el rango de fechas de los datos actuales
       if (params.startDate && params.endDate) {
@@ -736,13 +853,40 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
       }
       
       console.log('✅ Datos cargados directamente desde API:', sortedData.length);
+      console.log('📊 Estadísticas establecidas:', response.statistics);
+      console.log('📄 Paginación establecida:', response.pagination);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al buscar transacciones');
       console.warn('Error en búsqueda directa de transacciones:', err);
+      setServerStats(null);
+      setPagination(null);
     } finally {
       setLoading(false);
     }
-  }, [calculateStats, sortField, sortDirection, sortTransactions, filterTransactions]);
+  }, [calculateStats, sortField, sortDirection, sortTransactions, filterTransactions, currentPage, itemsPerPage]);
+
+  // Función para refrescar transacciones (definida después de searchTransactionsDirectly)
+  const refreshTransactions = useCallback(async () => {
+    // Usar searchTransactionsDirectly con los filtros actuales para mantener los filtros aplicados
+    const params: any = {
+      startDate: startDateFilter,
+      endDate: endDateFilter,
+      page: currentPage,
+      limit: itemsPerPage
+    };
+    
+    // Agregar otros filtros si están activos
+    if (transNumberFilter) params.transNumber = transNumberFilter;
+    if (cfNumberFilter) params.cfNumber = cfNumberFilter;
+    if (siteIdFilter) params.siteId = siteIdFilter;
+    if (terminalFilter !== '') params.terminal = terminalFilter;
+    if (cfTypeFilter) params.cfType = cfTypeFilter;
+    if (staftIdFilter !== '') params.staftId = staftIdFilter;
+    if (shiftFilter !== '') params.shift = shiftFilter;
+    if (searchTerm) params.taxpayerId = searchTerm;
+    
+    await searchTransactionsDirectly(params);
+  }, [startDateFilter, endDateFilter, currentPage, itemsPerPage, transNumberFilter, cfNumberFilter, siteIdFilter, terminalFilter, cfTypeFilter, staftIdFilter, shiftFilter, searchTerm, searchTransactionsDirectly]);
 
   // Función para exportar transacciones
   const exportTransactions = useCallback(async (format: 'pdf' | 'excel' | 'csv') => {
@@ -773,10 +917,13 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
     }
   }, [transactions, startDateFilter, endDateFilter]);
 
-  // Cargar transacciones al montar el componente
+  // Cargar transacciones al montar el componente (solo una vez)
   useEffect(() => {
-    loadTransactions();
-  }, [loadTransactions]);
+    // Solo cargar si no hay transacciones cargadas
+    if (transactions.length === 0) {
+      loadTransactions();
+    }
+  }, []); // Solo ejecutar una vez al montar
 
   // Reordenar transacciones cuando cambie el ordenamiento
   useEffect(() => {
@@ -789,6 +936,8 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
   return {
     transactions,
     stats,
+    serverStats,
+    pagination,
     loading,
     error,
     selectedTransaction,
@@ -806,6 +955,7 @@ export const useTransactions = (isNCFView: boolean = false, isTiendaView: boolea
     currentPage,
     totalPages,
     itemsPerPage,
+    setItemsPerPage,
     sortField,
     sortDirection,
     setSearchTerm: handleSetSearchTerm,

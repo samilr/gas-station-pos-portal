@@ -2,20 +2,50 @@ import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { formatCurrency } from '../../../../utils/dashboardUtils';
 import { Package } from 'lucide-react';
+import { ITopProduct } from '../../../../types/transaction';
 
 interface TopProductsChartProps {
-  data: any[];
+  data: any[]; // Puede ser transacciones o ITopProduct[]
+  topProducts?: ITopProduct[]; // Datos del endpoint del dashboard
   loading: boolean;
   error: string | null;
 }
 
-const TopProductsChart: React.FC<TopProductsChartProps> = ({ data, loading, error }) => {
+const TopProductsChart: React.FC<TopProductsChartProps> = ({ data, topProducts, loading, error }) => {
   // Procesar datos por producto
   const processData = () => {
+    // Si tenemos topProducts del endpoint, usarlos directamente
+    if (topProducts && topProducts.length > 0) {
+      return topProducts.map((product, index) => ({
+        productId: `product-${index}`,
+        productName: product.productName,
+        sales: product.total,
+        quantity: product.quantity,
+        timesSold: 1, // No disponible en el endpoint
+        realPrice: product.quantity > 0 ? product.total / product.quantity : 0
+      })).slice(0, 5);
+    }
+
+    // Si no, procesar transacciones como antes
     if (!data || data.length === 0) {
       return [];
     }
 
+    // Verificar si el primer elemento es una transacción (tiene prods) o un producto procesado
+    const firstItem = data[0];
+    if (firstItem && !firstItem.prods && firstItem.productName) {
+      // Ya está procesado como ITopProduct
+      return data.map((product: any, index: number) => ({
+        productId: `product-${index}`,
+        productName: product.productName,
+        sales: product.total || product.sales,
+        quantity: product.quantity || 0,
+        timesSold: 1,
+        realPrice: (product.quantity || 0) > 0 ? (product.total || product.sales) / (product.quantity || 1) : 0
+      })).slice(0, 5);
+    }
+
+    // Procesar transacciones completas
     const productMap: { [key: string]: { 
       productId: string; 
       productName: string; 

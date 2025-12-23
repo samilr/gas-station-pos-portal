@@ -1,10 +1,18 @@
-import { ITransactionResume } from '../types/transaction';
+import { 
+  ITransactionResume, 
+  IPaginatedTransactionsResponse,
+  ISalesAndReturnsSummary,
+  IDailySales,
+  ITopTransaction,
+  ITopProduct,
+  ISalesBySite
+} from '../types/transaction';
 import { buildApiUrl } from '../config/api';
 import { apiGet, apiPost } from './apiInterceptor';
 
 class TransactionService {
   /**
-   * Obtiene transacciones desde la API con filtros opcionales
+   * Obtiene transacciones desde la API con filtros opcionales y paginación
    */
   async getTransactions(params?: {
     transNumber?: string;
@@ -17,13 +25,20 @@ class TransactionService {
     shift?: number;
     startDate?: string;
     endDate?: string;
-  }): Promise<ITransactionResume[]> {
+    page?: number;
+    limit?: number;
+  }): Promise<IPaginatedTransactionsResponse> {
     try {
       // Construir URL usando la configuración global
       let url = buildApiUrl('trans');
       if (params) {
         const queryParams = new URLSearchParams();
         
+        // Parámetros de paginación
+        if (params.page !== undefined) queryParams.append('page', params.page.toString());
+        if (params.limit !== undefined) queryParams.append('limit', params.limit.toString());
+        
+        // Filtros existentes
         if (params.transNumber) queryParams.append('transNumber', params.transNumber);
         if (params.cfNumber) queryParams.append('cfNumber', params.cfNumber);
         if (params.siteId) queryParams.append('siteId', params.siteId);
@@ -40,19 +55,91 @@ class TransactionService {
         }
       }
         
-      const response = await apiGet<ITransactionResume[]>(url);
-
-      if (!response.successful) {
-        throw new Error(response.error || 'Error al obtener transacciones');
+      // Usar fetch directamente para obtener la respuesta completa sin que apiGet la modifique
+      // porque apiGet hace data: data.data || data, lo que puede perder pagination y statistics
+      const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-site-ID': 'PORTAL'
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
       
-      // Asegurar que siempre devolvemos un array
-      if (Array.isArray(response.data)) {
-        return response.data;
-      } else {
-        console.warn('La API no devolvió un array de transacciones:', response.data);
-        return [];
+      const fetchResponse = await fetch(url, {
+        method: 'GET',
+        headers
+      });
+      
+      if (fetchResponse.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('adminUser');
+        window.location.href = '/login';
+        throw new Error('Sesión expirada');
       }
+      
+      if (!fetchResponse.ok) {
+        throw new Error(`HTTP error! status: ${fetchResponse.status}`);
+      }
+      
+      const rawData = await fetchResponse.json();
+      console.log('🔍 Respuesta raw de la API:', rawData);
+      
+      // La API devuelve directamente { successful: true, data: [...], pagination: {...}, statistics: {...} }
+      let apiResponse: IPaginatedTransactionsResponse;
+      
+      if (rawData && typeof rawData === 'object') {
+        // Verificar que tenga la estructura esperada
+        if ('data' in rawData && 'pagination' in rawData && 'statistics' in rawData) {
+          apiResponse = {
+            successful: rawData.successful !== false,
+            data: rawData.data,
+            pagination: rawData.pagination,
+            statistics: rawData.statistics
+          };
+        } 
+        // Si es un array (formato antiguo)
+        else if (Array.isArray(rawData)) {
+          console.warn('La API devolvió un array simple, convirtiendo a formato paginado');
+          apiResponse = {
+            successful: true,
+            data: rawData,
+            pagination: {
+              page: 1,
+              limit: rawData.length,
+              total: rawData.length,
+              totalPages: 1,
+              hasNext: false,
+              hasPrev: false
+            },
+            statistics: {
+              totalTransactions: rawData.length,
+              totalSalesTransactions: rawData.filter((t: any) => !t.isReturn).length,
+              totalReturnTransactions: rawData.filter((t: any) => t.isReturn).length,
+              totalSales: rawData.filter((t: any) => !t.isReturn).reduce((sum: number, t: any) => sum + t.total, 0),
+              totalReturn: rawData.filter((t: any) => t.isReturn).reduce((sum: number, t: any) => sum + t.total, 0),
+              dgiiAcceptedTransactions: rawData.filter((t: any) => t.cfStatus === 2 || t.cfStatus === 3).length,
+              dgiiRejectedTransactions: rawData.filter((t: any) => t.cfStatus === 4).length,
+              dgiiPendingTransactions: rawData.filter((t: any) => !t.cfStatus || t.cfStatus === 0 || t.cfStatus === 1 || t.cfStatus === 5 || t.cfStatus === 6 || t.cfStatus === 7 || t.cfStatus === 8).length
+            }
+          };
+        } else {
+          console.error('❌ Formato de respuesta inesperado:', rawData);
+          throw new Error('Formato de respuesta inesperado de la API');
+        }
+      } else {
+        console.error('❌ rawData no es un objeto:', rawData);
+        throw new Error('Formato de respuesta inesperado de la API');
+      }
+      
+      console.log('✅ Respuesta parseada:', apiResponse);
+      console.log('📄 Paginación:', apiResponse.pagination);
+      console.log('📊 Estadísticas:', apiResponse.statistics);
+      
+      return apiResponse;
     } catch (error) {
       console.error('Error al obtener transacciones:', error);
       throw error;
@@ -196,6 +283,122 @@ class TransactionService {
       };
     } catch (error) {
       console.error('Error al reversar transacción:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene un resumen de ventas y retornos desde una fecha específica
+   */
+  async getSalesAndReturnsSummary(startDate: string): Promise<ISalesAndReturnsSummary> {
+    try {
+      const queryParams = new URLSearchParams();
+      queryParams.append('startDate', startDate);
+      
+      const url = buildApiUrl(`trans/dashboard/sales-returns-summary?${queryParams.toString()}`);
+      const response = await apiGet<ISalesAndReturnsSummary>(url);
+
+      if (!response.successful) {
+        throw new Error(response.error || 'Error al obtener resumen de ventas y retornos');
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener resumen de ventas y retornos:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene las ventas diarias agrupadas por día desde una fecha específica
+   */
+  async getDailySales(startDate: string): Promise<IDailySales[]> {
+    try {
+      const queryParams = new URLSearchParams();
+      queryParams.append('startDate', startDate);
+      
+      const url = buildApiUrl(`trans/dashboard/daily-sales?${queryParams.toString()}`);
+      const response = await apiGet<IDailySales[]>(url);
+
+      if (!response.successful) {
+        throw new Error(response.error || 'Error al obtener ventas diarias');
+      }
+
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      console.error('Error al obtener ventas diarias:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene las transacciones más recientes ordenadas por fecha y número de transacción
+   */
+  async getTopTransactions(startDate: string, limit: number = 4): Promise<ITopTransaction[]> {
+    try {
+      const queryParams = new URLSearchParams();
+      queryParams.append('startDate', startDate);
+      queryParams.append('limit', limit.toString());
+      
+      const url = buildApiUrl(`trans/dashboard/top-transactions?${queryParams.toString()}`);
+      const response = await apiGet<ITopTransaction[]>(url);
+
+      if (!response.successful) {
+        throw new Error(response.error || 'Error al obtener top transacciones');
+      }
+
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      console.error('Error al obtener top transacciones:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene los productos más vendidos ordenados por monto total vendido
+   */
+  async getTopProducts(startDate: string, categoryId?: string, limit: number = 5): Promise<ITopProduct[]> {
+    try {
+      const queryParams = new URLSearchParams();
+      queryParams.append('startDate', startDate);
+      queryParams.append('limit', limit.toString());
+      
+      if (categoryId) {
+        queryParams.append('categoryId', categoryId);
+      }
+      
+      const url = buildApiUrl(`trans/dashboard/top-products?${queryParams.toString()}`);
+      const response = await apiGet<ITopProduct[]>(url);
+
+      if (!response.successful) {
+        throw new Error(response.error || 'Error al obtener top productos');
+      }
+
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      console.error('Error al obtener top productos:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene las ventas agrupadas por sucursal ordenadas por monto total descendente
+   */
+  async getSalesBySite(startDate: string): Promise<ISalesBySite[]> {
+    try {
+      const queryParams = new URLSearchParams();
+      queryParams.append('startDate', startDate);
+      
+      const url = buildApiUrl(`trans/dashboard/sales-by-site?${queryParams.toString()}`);
+      const response = await apiGet<ISalesBySite[]>(url);
+
+      if (!response.successful) {
+        throw new Error(response.error || 'Error al obtener ventas por sucursal');
+      }
+
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      console.error('Error al obtener ventas por sucursal:', error);
       throw error;
     }
   }

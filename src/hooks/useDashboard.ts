@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { transactionService } from '../services/transactionService';
 import { getCurrentSantoDomingoDate } from '../utils/transactionUtils';
-import { ITransactionResume } from '../types/transaction';
+import { ITransactionResume, IDailySales, ITopTransaction, ITopProduct, ISalesBySite } from '../types/transaction';
 
 export interface DashboardStats {
   totalTransactions: number;
@@ -129,6 +129,7 @@ export const useDashboard = () => {
   const [cfTypeData, setCfTypeData] = useState<CfTypeData[]>([]);
   const [recentTransactions, setRecentTransactions] = useState<ITransactionResume[]>([]);
   const [allTransactions, setAllTransactions] = useState<ITransactionResume[]>([]);
+  const [topProducts, setTopProducts] = useState<ITopProduct[]>([]);
 
   const loadDashboardData = async () => {
     setStats(prev => ({ ...prev, loading: true, error: null }));
@@ -137,107 +138,150 @@ export const useDashboard = () => {
       // Obtener fecha de hoy en zona horaria de Santo Domingo
       const todayDate = getCurrentSantoDomingoDate();
       
-      // Solo cargar transacciones
-      const transactionsResponse = await transactionService.getTransactions({
-        startDate: todayDate,
-        endDate: todayDate
-      });
+      // Usar el nuevo endpoint del dashboard para obtener resumen de ventas y retornos
+      const salesSummary = await transactionService.getSalesAndReturnsSummary(todayDate);
+      
+      // Obtener top transacciones
+      const topTransactions = await transactionService.getTopTransactions(todayDate, 5);
+      
+      // Convertir topTransactions a ITransactionResume para compatibilidad
+      const recentTrans: ITransactionResume[] = topTransactions.map(trans => ({
+        categoryId: '',
+        transNumber: trans.transNumber,
+        cfNumber: trans.cfNumber,
+        returnCfNumber: '',
+        returnTransNUmber: '',
+        cfValidity: '',
+        cfType: '',
+        transDate: trans.date,
+        siteId: trans.siteId,
+        siteName: trans.siteName,
+        shift: 0,
+        terminalId: 0,
+        status: 1,
+        cfStatus: 0,
+        isReturn: trans.transType === 2,
+        subtotal: trans.total,
+        tax: 0,
+        total: trans.total,
+        taxpayerName: trans.taxpayerName,
+        taxpayerId: trans.taxpayerId,
+        staftId: 0,
+        staftName: '',
+        cfQr: null,
+        cfSecurityCode: null,
+        digitalSignatureDate: null,
+        prods: [],
+        payms: [],
+        zataca: undefined
+      }));
 
-      // Procesar transacciones
-      let totalTransactions = 0;
-      let totalSales = 0;
-      let totalReturns = 0;
-      let totalFuelSales = 0;
-      let totalStoreSales = 0;
+      // Calcular ventas por vendedor desde las transacciones recientes
+      // (esto se puede mejorar cuando haya un endpoint específico)
       let salesByVendor: Array<{
         staftId: string;
         staftName: string;
         totalSales: number;
         transactionCount: number;
       }> = [];
+
+      // Para totalFuelSales y totalStoreSales, necesitamos cargar las transacciones completas
+      // o usar los datos del resumen. Por ahora, usamos valores del resumen
+      const totalTransactions = salesSummary.countSales + salesSummary.countReturns;
+      const totalSales = salesSummary.totalSales;
+      const totalReturns = salesSummary.totalReturn;
       
-      if (transactionsResponse && transactionsResponse.length > 0) {
-        const transactions = transactionsResponse;
-        totalTransactions = transactions.length;
-        
-        // Separar ventas y retornos
-        const sales = transactions.filter(trans => (trans.total || 0) > 0);
-        const returns = transactions.filter(trans => (trans.total || 0) < 0);
-        
-        totalSales = sales.reduce((sum, trans) => sum + (trans.total || 0), 0);
-        totalReturns = Math.abs(returns.reduce((sum, trans) => sum + (trans.total || 0), 0));
-        
-        // Separar ventas de combustible y tienda
-        const fuelSales = sales.filter(transaction => {
-          // Verificar si tiene productos y si el primer producto es combustible
-          if (transaction.prods && transaction.prods.length > 0) {
-            const firstProduct = transaction.prods[0];
-            // Los productos de combustible tienen categoryId "COMB"
-            return firstProduct.categoryId === 'COMB';
-          }
-          return false;
+      // Estos valores necesitarían endpoints adicionales o procesamiento local
+      // Por ahora los dejamos en 0 o calculamos desde las transacciones recientes
+      let totalFuelSales = 0;
+      let totalStoreSales = 0;
+      
+      // Intentar obtener más datos si es necesario
+      try {
+        const transactionsResponse = await transactionService.getTransactions({
+          startDate: todayDate,
+          endDate: todayDate,
+          limit: 100 // Obtener más transacciones para calcular fuel/store
         });
         
-        const storeSales = sales.filter(transaction => {
-          // Excluir transacciones de combustible y zataca
-          if (transaction.prods && transaction.prods.length > 0) {
-            const firstProduct = transaction.prods[0];
-            // Excluir combustibles (categoryId "COMB")
-            if (firstProduct.categoryId === 'COMB') {
-              return false;
-            }
-            // Excluir zataca (si tiene zataca data)
-            if (transaction.zataca) {
-              return false;
-            }
-          }
-          return true;
-        });
-        
-        totalFuelSales = fuelSales.reduce((sum, trans) => sum + (trans.total || 0), 0);
-        totalStoreSales = storeSales.reduce((sum, trans) => sum + (trans.total || 0), 0);
-        
-        // Calcular ventas por vendedor (solo ventas, no retornos)
-        const vendorSalesMap = new Map<string, { staftName: string; totalSales: number; transactionCount: number }>();
-        
-        sales.forEach(transaction => {
-          const staftId = transaction.staftId?.toString() || 'N/A';
-          const staftName = transaction.staftName || 'Vendedor Desconocido';
-          const total = transaction.total || 0;
+        if (transactionsResponse && transactionsResponse.data && transactionsResponse.data.length > 0) {
+          const transactions = transactionsResponse.data;
           
-          if (vendorSalesMap.has(staftId)) {
-            const existing = vendorSalesMap.get(staftId)!;
-            existing.totalSales += total;
-            existing.transactionCount += 1;
-          } else {
-            vendorSalesMap.set(staftId, {
-              staftName,
-              totalSales: total,
-              transactionCount: 1
-            });
-          }
-        });
-        
-        // Convertir a array y ordenar por ventas totales
-        salesByVendor = Array.from(vendorSalesMap.entries())
-          .map(([staftId, data]) => ({
-            staftId,
-            staftName: data.staftName,
-            totalSales: data.totalSales,
-            transactionCount: data.transactionCount
-          }))
-          .sort((a, b) => b.totalSales - a.totalSales)
-          .slice(0, 5); // Top 5 vendedores
+          // Separar ventas de combustible y tienda
+          const fuelSales = transactions.filter(transaction => {
+            if (transaction.prods && transaction.prods.length > 0) {
+              const firstProduct = transaction.prods[0];
+              return firstProduct.categoryId === 'COMB';
+            }
+            return false;
+          });
+          
+          const storeSales = transactions.filter(transaction => {
+            if (transaction.prods && transaction.prods.length > 0) {
+              const firstProduct = transaction.prods[0];
+              if (firstProduct.categoryId === 'COMB') {
+                return false;
+              }
+              if (transaction.zataca) {
+                return false;
+              }
+            }
+            return true;
+          });
+          
+          totalFuelSales = fuelSales.reduce((sum, trans) => sum + (trans.total || 0), 0);
+          totalStoreSales = storeSales.reduce((sum, trans) => sum + (trans.total || 0), 0);
+          
+          // Calcular ventas por vendedor
+          const vendorSalesMap = new Map<string, { staftName: string; totalSales: number; transactionCount: number }>();
+          
+          transactions.filter(t => (t.total || 0) > 0).forEach(transaction => {
+            const staftId = transaction.staftId?.toString() || 'N/A';
+            const staftName = transaction.staftName || 'Vendedor Desconocido';
+            const total = transaction.total || 0;
+            
+            if (vendorSalesMap.has(staftId)) {
+              const existing = vendorSalesMap.get(staftId)!;
+              existing.totalSales += total;
+              existing.transactionCount += 1;
+            } else {
+              vendorSalesMap.set(staftId, {
+                staftName,
+                totalSales: total,
+                transactionCount: 1
+              });
+            }
+          });
+          
+          salesByVendor = Array.from(vendorSalesMap.entries())
+            .map(([staftId, data]) => ({
+              staftId,
+              staftName: data.staftName,
+              totalSales: data.totalSales,
+              transactionCount: data.transactionCount
+            }))
+            .sort((a, b) => b.totalSales - a.totalSales)
+            .slice(0, 5);
+          
+          // Procesar datos por tipo de CF
+          const cfData = getCfTypeData(transactions);
+          setCfTypeData(cfData);
+          
+          // Guardar todas las transacciones para el gráfico de productos
+          setAllTransactions(transactions);
+        }
+      } catch (err) {
+        console.warn('No se pudieron cargar transacciones completas, usando solo resumen:', err);
       }
-
-      // Procesar datos por tipo de CF
-      const cfData = getCfTypeData(transactionsResponse);
-      setCfTypeData(cfData);
-
-      // Obtener transacciones recientes (últimas 5, ordenadas por fecha descendente)
-      const recentTrans = transactionsResponse
-        .sort((a: any, b: any) => new Date(b.transDate).getTime() - new Date(a.transDate).getTime())
-        .slice(0, 5);
+      
+      // Cargar top productos usando el nuevo endpoint
+      try {
+        const topProductsData = await transactionService.getTopProducts(todayDate, undefined, 10);
+        setTopProducts(topProductsData);
+      } catch (err) {
+        console.warn('No se pudieron cargar top productos:', err);
+        setTopProducts([]);
+      }
 
       setStats({
         totalTransactions,
@@ -252,9 +296,6 @@ export const useDashboard = () => {
 
       // Actualizar transacciones recientes
       setRecentTransactions(recentTrans);
-      
-      // Guardar todas las transacciones para el gráfico de productos
-      setAllTransactions(transactionsResponse);
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -302,75 +343,19 @@ export const useDashboard = () => {
       
       console.log('📊 Cargando datos del gráfico para el mes:', { startDate, endDate });
       
-      // Debug: mostrar cálculo de fechas
-      if (!filters) {
-        const santoDomingoDate = getSantoDomingoDate();
-        console.log('📅 Debug de fechas:');
-        console.log('  - Fecha actual en Santo Domingo:', santoDomingoDate);
-        console.log('  - Año:', santoDomingoDate.getFullYear());
-        console.log('  - Mes:', santoDomingoDate.getMonth() + 1);
-        console.log('  - Día:', santoDomingoDate.getDate());
-      }
-      
-      // Cargar todas las transacciones del mes
-      console.log('📡 Enviando a API:', { startDate, endDate });
-      const transactionsResponse = await transactionService.getTransactions({
-        startDate,
-        endDate
-      });
+      // Usar el nuevo endpoint del dashboard para obtener ventas diarias
+      const dailySalesResponse = await transactionService.getDailySales(startDate);
 
-      console.log('📊 Transacciones recibidas:', transactionsResponse?.length || 0);
-
-      if (transactionsResponse && transactionsResponse.length > 0) {
-        // Agrupar transacciones por día
-        const dailySalesMap = new Map<string, { sales: number; transactions: number }>();
-        
-        transactionsResponse.forEach((transaction, index) => {
-          if (transaction.transDate) {
-            // La fecha ya viene en hora local de Santo Domingo, no convertir a UTC
-            const date = new Date(transaction.transDate);
-            // Usar métodos locales para obtener la fecha sin conversión UTC
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const dateKey = `${year}-${month}-${day}`;
-            const total = transaction.total || 0;
-            
-            // Debug: mostrar las primeras 5 transacciones
-            if (index < 5) {
-              console.log(`📅 Transacción ${index + 1}:`, {
-                originalDate: transaction.transDate,
-                parsedDate: date,
-                dateKey,
-                total
-              });
-            }
-            
-            if (dailySalesMap.has(dateKey)) {
-              const existing = dailySalesMap.get(dateKey)!;
-              existing.sales += total;
-              existing.transactions += 1;
-            } else {
-              dailySalesMap.set(dateKey, {
-                sales: total,
-                transactions: 1
-              });
-            }
-          }
-        });
-        
-        // Convertir a array y ordenar por fecha
-        const dailySales = Array.from(dailySalesMap.entries())
-          .map(([date, data]) => ({
-            date,
-            sales: data.sales,
-            transactions: data.transactions
-          }))
-          .sort((a, b) => a.date.localeCompare(b.date));
+      if (dailySalesResponse && dailySalesResponse.length > 0) {
+        // Convertir IDailySales[] a DailySalesData[]
+        const dailySales = dailySalesResponse.map(item => ({
+          date: item.dayOfMonth,
+          sales: item.totalSales,
+          transactions: 0 // El endpoint no proporciona cantidad de transacciones, se puede calcular si es necesario
+        })).sort((a, b) => a.date.localeCompare(b.date));
         
         console.log('📈 Datos del gráfico procesados:', dailySales);
         console.log('📊 Total de días con transacciones:', dailySales.length);
-        console.log('📊 Total de transacciones procesadas:', dailySales.reduce((sum, day) => sum + day.transactions, 0));
         
         setChartData({
           dailySales,
@@ -473,49 +458,20 @@ export const useDashboard = () => {
         }
       }
       
-      console.log('🏢 Cargando datos de ventas por sucursal:', { startDate, endDate });
+      console.log('🏢 Cargando datos de ventas por sucursal:', { startDate });
       
-      const transactionsResponse = await transactionService.getTransactions({
-        startDate,
-        endDate
-      });
+      // Usar el nuevo endpoint del dashboard para obtener ventas por sucursal
+      const salesBySiteResponse = await transactionService.getSalesBySite(startDate);
 
-      if (transactionsResponse && transactionsResponse.length > 0) {
-        // Agrupar transacciones por sucursal
-        const siteSalesMap = new Map<string, { 
-          siteName: string; 
-          totalSales: number; 
-          transactionCount: number; 
-        }>();
-        
-        transactionsResponse.forEach(transaction => {
-          const siteId = transaction.siteId?.toString() || 'N/A';
-          const siteName = transaction.siteName || `Sucursal ${siteId}`;
-          const total = transaction.total || 0;
-          
-          if (siteSalesMap.has(siteId)) {
-            const existing = siteSalesMap.get(siteId)!;
-            existing.totalSales += total;
-            existing.transactionCount += 1;
-          } else {
-            siteSalesMap.set(siteId, {
-              siteName,
-              totalSales: total,
-              transactionCount: 1
-            });
-          }
-        });
-        
-        // Convertir a array y calcular promedio por ticket
-        const siteSales = Array.from(siteSalesMap.entries())
-          .map(([siteId, data]) => ({
-            siteId,
-            siteName: data.siteName,
-            totalSales: data.totalSales,
-            transactionCount: data.transactionCount,
-            averageTicket: data.transactionCount > 0 ? data.totalSales / data.transactionCount : 0
-          }))
-          .sort((a, b) => b.totalSales - a.totalSales); // Ordenar por ventas descendente
+      if (salesBySiteResponse && salesBySiteResponse.length > 0) {
+        // Convertir ISalesBySite[] a SiteSalesData[]
+        const siteSales = salesBySiteResponse.map(item => ({
+          siteId: item.siteId,
+          siteName: item.siteName,
+          totalSales: item.total,
+          transactionCount: 0, // El endpoint no proporciona cantidad, se puede calcular si es necesario
+          averageTicket: 0 // Se puede calcular si tenemos transactionCount
+        })).sort((a, b) => b.totalSales - a.totalSales);
         
         console.log('🏢 Datos de sucursales procesados:', siteSales);
         
@@ -684,6 +640,7 @@ export const useDashboard = () => {
     cfTypeData,
     recentTransactions,
     allTransactions,
+    topProducts,
     refresh: loadDashboardData,
     loadChartData,
     updateChartFilters,

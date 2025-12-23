@@ -52,6 +52,7 @@ const DashboardHome: React.FC = () => {
     cfTypeData,
     recentTransactions,
     allTransactions,
+    topProducts,
     loading,
     error,
     refresh,
@@ -420,6 +421,7 @@ const DashboardHome: React.FC = () => {
         >
           <TopProductsChart
             data={allTransactions}
+            topProducts={topProducts}
             loading={loading}
             error={error}
           />
