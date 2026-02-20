@@ -79,6 +79,16 @@ const menuItems: MenuItem[] = [
     ]
   },
   { 
+    id: 'dispensers', 
+    label: 'Dispensadoras', 
+    icon: FuelIcon,
+    permission: 'dispensers.view',
+    subItems: [
+      { id: 'dispensers.monitor', label: 'Monitoreo', icon: FuelIcon, permission: 'dispensers.view' },
+      { id: 'dispensers.transactions', label: 'Transacciones', icon: Receipt, permission: 'dispensers.view' },
+    ]
+  },
+  { 
     id: 'users', 
     label: 'Usuarios', 
     icon: Users,

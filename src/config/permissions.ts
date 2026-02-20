@@ -23,6 +23,9 @@ export type Permission =
   // Dispositivos
   | 'devices.view' | 'devices.create' | 'devices.edit' | 'devices.delete'
   
+  // Dispensadoras
+  | 'dispensers.view'
+  
   // Analytics
   | 'analytics.view' | 'analytics.export'
   
@@ -71,6 +74,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'sites.view', 'sites.create', 'sites.edit', 'sites.delete',
     'terminals.view', 'terminals.create', 'terminals.edit', 'terminals.delete',
     'devices.view', 'devices.create', 'devices.edit', 'devices.delete',
+    'dispensers.view',
     'analytics.view', 'analytics.export',
     'reports.view', 'reports.create', 'reports.export',
     'logs.view', 'logs.export',
@@ -106,6 +110,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'sites.view', 'sites.create', 'sites.edit',
     'terminals.view', 'terminals.create', 'terminals.edit',
     'devices.view', 'devices.create', 'devices.edit',
+    'dispensers.view',
     'analytics.view',
     'reports.view', 'reports.create',
     // Categorías restringidas para SUPERVISOR
@@ -171,6 +176,9 @@ export const COMPONENT_PERMISSIONS: Record<string, Permission[]> = {
   'DevicesSection': ['devices.view'],
   'DeviceModal': ['devices.create', 'devices.edit'],
   'DeleteDeviceDialog': ['devices.delete'],
+  
+  // Dispensadoras
+  'DispensersSection': ['dispensers.view'],
   
   // Analytics
   'AnalyticsSection': ['analytics.view'],

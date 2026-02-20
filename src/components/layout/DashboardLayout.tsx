@@ -36,6 +36,12 @@ const DashboardLayout: React.FC = () => {
       if (section === 'logs' && subsection === 'errors') {
         return 'logs.errors';
       }
+      if (section === 'dispensers' && subsection) {
+        return `dispensers.${subsection}`;
+      }
+      if (section === 'dispensers') {
+        return 'dispensers.monitor';
+      }
       
       return `${section}${subsection ? `.${subsection}` : ''}`;
     }

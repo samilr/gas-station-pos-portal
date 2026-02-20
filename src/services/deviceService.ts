@@ -17,6 +17,7 @@ interface CreateHostRequest {
   connectedLastTime?: Date;
   connectedLastUserId?: number;
   active: boolean;
+  hostTypeId?: number;
 }
 
 interface UpdateHostRequest {
@@ -30,6 +31,7 @@ interface UpdateHostRequest {
   connectedLastTime?: Date;
   connectedLastUserId?: number;
   active?: boolean;
+  hostTypeId?: number;
 }
 
 export interface IHost {
@@ -43,6 +45,7 @@ export interface IHost {
   connected_last_time?: Date;
   connected_last_user_id?: number;
   active: boolean;
+  host_type_id?: number;
 }
 
 export const hostService = {

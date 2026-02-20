@@ -30,6 +30,12 @@ export const useNavigation = () => {
       if (section === 'logs' && subsection === 'errors') {
         return 'logs.errors';
       }
+      if (section === 'dispensers' && subsection) {
+        return `dispensers.${subsection}`;
+      }
+      if (section === 'dispensers') {
+        return 'dispensers.monitor';
+      }
       
       return `${section}${subsection ? `.${subsection}` : ''}`;
     }
@@ -68,6 +74,9 @@ export const useNavigation = () => {
     'sites.create': '/dashboard/sites/create',
     'sites.active': '/dashboard/sites/active',
     'sites.inactive': '/dashboard/sites/inactive',
+    'dispensers': '/dashboard/dispensers',
+    'dispensers.monitor': '/dashboard/dispensers/monitor',
+    'dispensers.transactions': '/dashboard/dispensers/transactions',
     'logs': '/dashboard/logs',
     'logs.actions': '/dashboard/logs/actions',
     'logs.errors': '/dashboard/logs/errors',

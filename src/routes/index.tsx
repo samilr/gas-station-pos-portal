@@ -11,10 +11,13 @@ import TerminalsSection from '../components/sections/pos/TerminalsSection';
 import DevicesSection from '../components/sections/pos/DevicesSection';
 import SitesSection from '../components/sections/sites/SitesSection';
 import GenericSection from '../components/sections/GenericSection';
+import SettingsGeneralSection from '../components/sections/settings/SettingsGeneralSection';
 import ProductsSection from '../components/sections/products/ProductsSection';
 import ActionsLogSection from '../components/sections/audit/ActionsLogSection';
 import ErrorLogSection from '../components/sections/audit/ErrorLogSection';
 import AnalyticsSection from '../components/sections/analytics/AnalyticsSection';
+import DispensersSection from '../components/sections/dispensers/DispensersSection';
+import FuelTransactionsSection from '../components/sections/dispensers/FuelTransactionsSection';
 import { 
   Database, 
   Shield, 
@@ -346,6 +349,26 @@ export const router = createBrowserRouter([
           }
         ]
       },
+      // Rutas de Dispensadoras
+      {
+        path: 'dispensers',
+        children: [
+          {
+            index: true,
+            element: <PermissionRoute permission="dispensers.view" fallback={<Navigate to="/dashboard" replace />}>
+              <Navigate to="monitor" replace />
+            </PermissionRoute>
+          },
+          {
+            path: 'monitor',
+            element: <PermissionRoute permission="dispensers.view"><DispensersSection /></PermissionRoute>
+          },
+          {
+            path: 'transactions',
+            element: <PermissionRoute permission="dispensers.view"><FuelTransactionsSection /></PermissionRoute>
+          }
+        ]
+      },
       // Rutas de Logs
       {
         path: 'logs',
@@ -560,11 +583,7 @@ export const router = createBrowserRouter([
             path: 'general',
             element: (
               <PermissionRoute permission="settings.view">
-                <GenericSection
-                  title="Configuración General"
-                  description="Configuración general del sistema"
-                  icon={Settings}
-                />
+                <SettingsGeneralSection />
               </PermissionRoute>
             )
           },

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Smartphone, Save, X, Edit, Plus, Clock, Globe } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { hostService, IHost } from '../../../services/deviceService';
+import { HostType } from '../../../types/host_type.enum';
 
 interface HostFormData {
   hostId: number;
@@ -14,6 +15,7 @@ interface HostFormData {
   connectedLastTime?: Date;
   connectedLastUserId?: number;
   active: boolean;
+  hostTypeId?: number;
 }
 
 interface DeviceModalProps {
@@ -49,7 +51,8 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
     connected: false,
     connectedLastTime: undefined,
     connectedLastUserId: undefined,
-    active: true
+    active: true,
+    hostTypeId: undefined
   });
 
   const isEditing = mode === 'edit';
@@ -69,7 +72,8 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
         connected: device.connected || false,
         connectedLastTime: device.connected_last_time,
         connectedLastUserId: device.connected_last_user_id,
-        active: device.active || true
+        active: device.active || true,
+        hostTypeId: device.host_type_id
       });
     } else if (isCreating && isOpen) {
       setFormData({
@@ -82,17 +86,29 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
         connected: false,
         connectedLastTime: undefined,
         connectedLastUserId: undefined,
-        active: true
+        active: true,
+        hostTypeId: undefined
       });
     }
   }, [device, isOpen, isEditing, isViewing, isCreating]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
+    
+    // Manejar hostTypeId específicamente
+    if (name === 'hostTypeId') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value === '' ? undefined : parseInt(value, 10)
+      }));
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : 
-              type === 'number' ? parseInt(value) || 0 : value
+              type === 'number' ? (value === '' ? undefined : parseInt(value, 10) || 0) : 
+              value === '' ? undefined : value
     }));
   };
 
@@ -258,6 +274,26 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
                     placeholder="Ingresa el ID del dispositivo"
                   />
                 </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tipo de Dispositivo
+                  </label>
+                  <select
+                    name="hostTypeId"
+                    value={formData.hostTypeId || ''}
+                    onChange={handleInputChange}
+                    disabled={isViewing}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      isViewing ? 'bg-gray-100 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    <option value="">Seleccione un tipo</option>
+                    <option value={HostType.DATAPHONE}>Datáfono</option>
+                    <option value={HostType.ANDROID_SCANNER}>Escáner Android</option>
+                    <option value={HostType.ANDROID_SMARTPHONE}>Smartphone Android</option>
+                  </select>
+                </div>
               </div>
 
               {/* Switches */}
@@ -364,6 +400,15 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
                         <span className="text-blue-700">Estado:</span>
                         <span className={`font-medium ${device.active ? 'text-green-600' : 'text-red-600'}`}>
                           {device.active ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-blue-700">Tipo de Dispositivo:</span>
+                        <span className="font-medium text-blue-900">
+                          {device.host_type_id === HostType.DATAPHONE ? 'Datáfono' :
+                           device.host_type_id === HostType.ANDROID_SCANNER ? 'Escáner Android' :
+                           device.host_type_id === HostType.ANDROID_SMARTPHONE ? 'Smartphone Android' :
+                           'No especificado'}
                         </span>
                       </div>
                     </div>

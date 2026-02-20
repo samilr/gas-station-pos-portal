@@ -9,6 +9,7 @@ import { PermissionGate } from '../../common';
 import { useDevices } from '../../../hooks/useDevices';
 import { IHost } from '../../../services/deviceService';
 import { formatDateDMY } from '../../../utils/dateUtils';
+import { HostType } from '../../../types/host_type.enum';
 
 // Función para formatear fecha de conexión
 const formatConnectionDate = (dateString: string | Date | undefined): { date: string; time: string } | null => {
@@ -61,6 +62,20 @@ const DevicesSection: React.FC = () => {
   const getStatusColor = (status: boolean) => status ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
   const getConnectionText = (connected: boolean) => connected ? 'Conectado' : 'Desconectado';
   const getConnectionColor = (connected: boolean) => connected ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800';
+  
+  const getHostTypeText = (hostTypeId?: number): string => {
+    if (!hostTypeId) return 'N/A';
+    switch (hostTypeId) {
+      case HostType.DATAPHONE:
+        return 'Datáfono';
+      case HostType.ANDROID_SCANNER:
+        return 'Escáner Android';
+      case HostType.ANDROID_SMARTPHONE:
+        return 'Smartphone Android';
+      default:
+        return 'Desconocido';
+    }
+  };
 
   // Calcular estadísticas
   const totalDevices = devices.length;
@@ -351,8 +366,7 @@ const DevicesSection: React.FC = () => {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Dispositivo</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Host ID</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">IP</th>
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo de Dispositivo</th>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Sitio</th>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Conexión</th>
@@ -385,18 +399,7 @@ const DevicesSection: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm text-gray-900">{device.host_id}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-gray-900">
-                      {device.ip_address ? 
-                        (device.ip_address.length > 16 ? 
-                          `${device.ip_address.substring(0, 16)}...` : 
-                          device.ip_address
-                        ) : 
-                        'N/A'
-                      }
-                    </span>
+                    <span className="text-sm text-gray-900">{getHostTypeText(device.host_type_id)}</span>
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-sm text-gray-900">{device.site_id || 'N/A'}</span>
