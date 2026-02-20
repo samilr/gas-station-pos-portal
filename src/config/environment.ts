@@ -20,7 +20,7 @@ export const ENV_CONFIG = {
   },
   
   PRODUCTION: {
-    API_BASE_URL: 'https://isla-test.azurewebsites.net/api',
+    API_BASE_URL: 'https://isladominicana-pos-mobile-api.azurewebsites.net/api',
     LOG_LEVEL: 'error',
     ENABLE_MOCK_DATA: false,
   },
