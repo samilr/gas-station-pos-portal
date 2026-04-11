@@ -29,15 +29,15 @@ const ErrorLogSection: React.FC = () => {
     setStartDateFilter,
     setEndDateFilter,
     refreshErrorLogs,
-    loadErrorLogsWithDates
+    loadErrorLogsWithDates,
+    pagination,
+    currentPage,
+    goToPage,
   } = useErrorLogs();
   const [searchTerm, setSearchTerm] = useState("");
   const [severityFilter, setSeverityFilter] = useState("");
-  const [resolvedFilter] = useState("");
   const [environmentFilter, setEnvironmentFilter] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
   const [selectedError, setSelectedError] = useState<IErrorLog | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showLocationMap, setShowLocationMap] = useState(false);
@@ -54,12 +54,13 @@ const ErrorLogSection: React.FC = () => {
 
   // Función para limpiar filtros y volver al día actual
   const handleClearFilters = async () => {
-    const today = getCurrentSantoDomingoDate(); // Usar la función de fecha de Santo Domingo
+    const today = getCurrentSantoDomingoDate();
     setStartDateFilter(today);
     setEndDateFilter(today);
     await loadErrorLogsWithDates(today, today);
   };
 
+  // Filtros locales (solo sobre la página actual)
   const filteredLogs = (Array.isArray(errorLogs) ? errorLogs : []).filter(
     (log) => {
       const matchesSearch =
@@ -70,50 +71,41 @@ const ErrorLogSection: React.FC = () => {
         (log.context || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
         (log.staft_id?.toString() || "").includes(searchTerm);
 
-      const matchesSeverity = severityFilter === "" || true; // No hay severity en la nueva estructura
-      const matchesResolved = resolvedFilter === "" || true; // No hay resolved en la nueva estructura
-      const matchesEnvironment = environmentFilter === "" || true; // No hay environment en la nueva estructura
+      const matchesSeverity =
+        severityFilter === "" || log.error_code === severityFilter;
+      const matchesEnvironment =
+        environmentFilter === "" || log.site_id === environmentFilter;
 
-      return (
-        matchesSearch &&
-        matchesSeverity &&
-        matchesResolved &&
-        matchesEnvironment
-      );
+      return matchesSearch && matchesSeverity && matchesEnvironment;
     }
   );
 
+  // Paginación del servidor
+  const totalPages = pagination.totalPages;
+  const startIndex = (currentPage - 1) * pagination.limit;
 
-  // Paginación
-  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentLogs = filteredLogs.slice(startIndex, endIndex);
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
+  const handleNextPage = async () => {
+    if (pagination.hasNext) {
+      await goToPage(currentPage + 1);
     }
   };
 
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
+  const handlePrevPage = async () => {
+    if (pagination.hasPrev) {
+      await goToPage(currentPage - 1);
     }
+  };
+
+  const handlePageChange = async (page: number) => {
+    await goToPage(page);
   };
 
   const handleRefresh = () => {
     refreshErrorLogs();
-    setCurrentPage(1);
   };
 
   const handleExport = async () => {
     try {
-      // Aquí implementarías la lógica de exportación
       console.log('Exportando logs de errores...');
       toast.success('Exportación iniciada');
     } catch (error) {
@@ -148,7 +140,7 @@ const ErrorLogSection: React.FC = () => {
     setSelectedLocation(null);
   };
 
-  // Obtener valores únicos para filtros
+  // Obtener valores únicos para filtros (de la página actual)
   const uniqueSeverities = Array.from(
     new Set(errorLogs.map((log) => log.error_code).filter(Boolean))
   );
@@ -192,8 +184,8 @@ const ErrorLogSection: React.FC = () => {
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setShowFilters(!showFilters)}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                  showFilters 
-                    ? 'bg-blue-100 text-blue-700 border border-blue-300' 
+                  showFilters
+                    ? 'bg-blue-100 text-blue-700 border border-blue-300'
                     : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
                 }`}
               >
@@ -252,7 +244,7 @@ const ErrorLogSection: React.FC = () => {
                 />
               </div>
             </div>
-            
+
             {/* Botones de acción para filtros de fecha */}
             <div className="flex items-center space-x-3 mb-4">
               <motion.button
@@ -352,7 +344,7 @@ const ErrorLogSection: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {currentLogs.map((log, index) => {
+              {filteredLogs.map((log, index) => {
                 const { date, time } = formatDateToSantoDomingo(log.created_at);
                 return (
                   <motion.tr
@@ -396,7 +388,7 @@ const ErrorLogSection: React.FC = () => {
                       <div className="flex items-center">
                         {log.latitude && log.longitude ? (
                           <button
-                            onClick={() => handleShowLocation(log)}
+                            onClick={(e) => { e.stopPropagation(); handleShowLocation(log); }}
                             className="flex items-center space-x-2 text-blue-600 hover:text-blue-900 transition-colors"
                             title="Ver ubicación en mapa"
                           >
@@ -419,19 +411,22 @@ const ErrorLogSection: React.FC = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-2">
-                      </div>
-                    </td>
                   </motion.tr>
                 );
               })}
+              {filteredLogs.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-6 py-10 text-center text-sm text-gray-500">
+                    No hay registros para mostrar
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </motion.div>
 
-      {/* Paginación */}
+      {/* Paginación del servidor */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -439,42 +434,42 @@ const ErrorLogSection: React.FC = () => {
         className="flex items-center justify-between bg-white px-6 py-3 border border-gray-200 rounded-lg"
       >
         <div className="text-sm text-gray-700">
-          Mostrando <span className="font-medium">{startIndex + 1}</span> a{' '}
-          <span className="font-medium">{Math.min(endIndex, filteredLogs.length)}</span> de{' '}
-          <span className="font-medium">{filteredLogs.length}</span> errores
-          {filteredLogs.length !== errorLogs.length && (
-            <span className="text-gray-500"> (filtrados de {errorLogs.length} total)</span>
-          )}
+          Mostrando{' '}
+          <span className="font-medium">{pagination.total === 0 ? 0 : startIndex + 1}</span> a{' '}
+          <span className="font-medium">{Math.min(startIndex + pagination.limit, pagination.total)}</span> de{' '}
+          <span className="font-medium">{pagination.total}</span> errores
         </div>
         <div className="flex items-center space-x-2">
           <motion.button
-            whileHover={{ scale: currentPage === 1 ? 1 : 1.05 }}
-            whileTap={{ scale: currentPage === 1 ? 1 : 0.95 }}
+            whileHover={{ scale: !pagination.hasPrev ? 1 : 1.05 }}
+            whileTap={{ scale: !pagination.hasPrev ? 1 : 0.95 }}
             onClick={handlePrevPage}
-            disabled={currentPage === 1}
+            disabled={!pagination.hasPrev || loading}
             className={`px-3 py-1 text-sm rounded transition-colors ${
-              currentPage === 1 
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+              !pagination.hasPrev || loading
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
             }`}
           >
             Anterior
           </motion.button>
-          
+
           {/* Números de página */}
           <div className="flex items-center space-x-1">
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
-              // Mostrar solo algunas páginas para evitar demasiados botones
-              if (totalPages <= 7 || 
-                  page === 1 || 
-                  page === totalPages || 
-                  (page >= currentPage - 1 && page <= currentPage + 1)) {
+              if (
+                totalPages <= 7 ||
+                page === 1 ||
+                page === totalPages ||
+                (page >= currentPage - 1 && page <= currentPage + 1)
+              ) {
                 return (
                   <motion.button
                     key={page}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => handlePageChange(page)}
+                    disabled={loading}
                     className={`px-3 py-1 text-sm rounded transition-colors ${
                       page === currentPage
                         ? 'bg-blue-600 text-white'
@@ -490,15 +485,15 @@ const ErrorLogSection: React.FC = () => {
               return null;
             })}
           </div>
-          
+
           <motion.button
-            whileHover={{ scale: currentPage === totalPages ? 1 : 1.05 }}
-            whileTap={{ scale: currentPage === totalPages ? 1 : 0.95 }}
+            whileHover={{ scale: !pagination.hasNext ? 1 : 1.05 }}
+            whileTap={{ scale: !pagination.hasNext ? 1 : 0.95 }}
             onClick={handleNextPage}
-            disabled={currentPage === totalPages}
+            disabled={!pagination.hasNext || loading}
             className={`px-3 py-1 text-sm rounded transition-colors ${
-              currentPage === totalPages 
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+              !pagination.hasNext || loading
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
             }`}
           >
@@ -555,7 +550,6 @@ const ErrorLogSection: React.FC = () => {
                       <span className="text-sm text-gray-600">Terminal:</span>
                       <span className="text-sm font-medium">{selectedError.terminal_id || 'N/A'}</span>
                     </div>
-                    
                   </div>
                 </div>
 
@@ -633,7 +627,6 @@ const ErrorLogSection: React.FC = () => {
                 >
                   Cerrar
                 </button>
-               
               </div>
             </div>
           </div>

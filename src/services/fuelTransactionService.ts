@@ -62,7 +62,7 @@ class FuelTransactionService {
     sortOrder?: 'asc' | 'desc';
   }): Promise<FuelTransactionsResponse> {
     try {
-      let url = buildApiUrl('pts-controllers/fuel-transactions');
+      let url = buildApiUrl('pts-controllers/pump-transactions');
       
       if (params) {
         const queryParams = new URLSearchParams();

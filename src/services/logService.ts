@@ -2,6 +2,21 @@ import { buildApiUrl } from '../config/api';
 import { apiGet, apiPost, ApiResponse } from './apiInterceptor';
 import { IActionLog, IErrorLog } from '../types/logs';
 
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export interface PaginatedLogsResponse<T> {
+  successful: boolean;
+  data: T[];
+  pagination: PaginationMeta;
+}
+
 export interface LogsResponse {
   actionLogs: IActionLog[];
   errorLogs: IErrorLog[];
@@ -10,38 +25,42 @@ export interface LogsResponse {
 export const logService = {
   // Obtener logs de acciones
   async getActionLogs(params?: {
-    startDate?: string;
-    endDate?: string;
-  }): Promise<ApiResponse<IActionLog[]>> {
-    let url = buildApiUrl('action-log');
-    if (params) {
-      const queryParams = new URLSearchParams();
-      if (params.startDate) queryParams.append('startDate', params.startDate);
-      if (params.endDate) queryParams.append('endDate', params.endDate);
-      
-      if (queryParams.toString()) {
-        url += `?${queryParams.toString()}`;
-      }
-    }
-    return await apiGet<IActionLog[]>(url);
+    fromDate?: string;
+    toDate?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedLogsResponse<IActionLog>> {
+    const queryParams = new URLSearchParams();
+    if (params?.fromDate) queryParams.append('fromDate', params.fromDate);
+    if (params?.toDate) queryParams.append('toDate', params.toDate);
+    if (params?.page) queryParams.append('page', String(params.page));
+    if (params?.limit) queryParams.append('limit', String(params.limit));
+
+    const query = queryParams.toString();
+    const url = `${buildApiUrl('action-log')}${query ? `?${query}` : ''}`;
+
+    const response = await apiGet<IActionLog[]>(url) as any;
+    return response;
   },
 
   // Obtener logs de errores
   async getErrorLogs(params?: {
-    startDate?: string;
-    endDate?: string;
-  }): Promise<ApiResponse<IErrorLog[]>> {
-    let url = buildApiUrl('error-log');
-    if (params) {
-      const queryParams = new URLSearchParams();
-      if (params.startDate) queryParams.append('startDate', params.startDate);
-      if (params.endDate) queryParams.append('endDate', params.endDate);
-      
-      if (queryParams.toString()) {
-        url += `?${queryParams.toString()}`;
-      }
-    }
-    return await apiGet<IErrorLog[]>(url);
+    fromDate?: string;
+    toDate?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedLogsResponse<IErrorLog>> {
+    const queryParams = new URLSearchParams();
+    if (params?.fromDate) queryParams.append('fromDate', params.fromDate);
+    if (params?.toDate) queryParams.append('toDate', params.toDate);
+    if (params?.page) queryParams.append('page', String(params.page));
+    if (params?.limit) queryParams.append('limit', String(params.limit));
+
+    const query = queryParams.toString();
+    const url = `${buildApiUrl('error-log')}${query ? `?${query}` : ''}`;
+
+    const response = await apiGet<IErrorLog[]>(url) as any;
+    return response;
   },
 
   // Marcar error como resuelto
@@ -55,14 +74,14 @@ export const logService = {
   // Exportar logs
   async exportLogs(type: 'actions' | 'errors', params?: {
     format?: 'csv' | 'json' | 'excel';
-    startDate?: string;
-    endDate?: string;
+    fromDate?: string;
+    toDate?: string;
   }): Promise<ApiResponse<string>> {
     try {
       const queryParams = new URLSearchParams();
       if (params?.format) queryParams.append('format', params.format);
-      if (params?.startDate) queryParams.append('startDate', params.startDate);
-      if (params?.endDate) queryParams.append('endDate', params.endDate);
+      if (params?.fromDate) queryParams.append('fromDate', params.fromDate);
+      if (params?.toDate) queryParams.append('toDate', params.toDate);
 
       const response = await fetch(`${buildApiUrl('logs')}/${type}/export?${queryParams}`, {
         method: 'GET',

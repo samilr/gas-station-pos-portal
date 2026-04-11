@@ -87,7 +87,7 @@ export type PumpStatus = PumpIdleStatus | PumpFillingStatus | PumpOfflineStatus;
 export type PumpStatusType = 'idle' | 'filling' | 'offline';
 
 // Configuración de la API
-const DISPENSER_API_URL = 'https://192.168.1.117/jsonPTS';
+const DISPENSER_API_URL = 'https://192.168.125.55/jsonPTS';
 const DIGEST_AUTH_HEADER = 'Digest username="admin", realm="Pts2WebServer", nonce="251229095521388", uri="/jsonPTS", response="0d9b010285b1229b12a756a7edf094c9", qop=auth, nc=00004988, cnonce="0ea67bf67c3f7736"';
 
 class DispenserService {

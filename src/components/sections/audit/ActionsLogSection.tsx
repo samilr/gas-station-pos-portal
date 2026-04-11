@@ -17,15 +17,15 @@ const ActionsLogSection: React.FC = () => {
     setStartDateFilter,
     setEndDateFilter,
     refreshActionLogs,
-    loadActionLogsWithDates
+    loadActionLogsWithDates,
+    pagination,
+    currentPage,
+    goToPage,
   } = useActionLogs();
   const [searchTerm, setSearchTerm] = useState('');
   const [userFilter, setUserFilter] = useState('');
   const [actionFilter, setActionFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
   const [selectedAction, setSelectedAction] = useState<IActionLog | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showLocationMap, setShowLocationMap] = useState(false);
@@ -38,53 +38,48 @@ const ActionsLogSection: React.FC = () => {
 
   // Función para limpiar filtros y volver al día actual
   const handleClearFilters = async () => {
-    const today = getCurrentSantoDomingoDate(); // Usar la función de fecha de Santo Domingo
+    const today = getCurrentSantoDomingoDate();
     setStartDateFilter(today);
     setEndDateFilter(today);
     await loadActionLogsWithDates(today, today);
   };
 
+  // Filtros locales (solo sobre la página actual)
   const filteredLogs = (Array.isArray(actionLogs) ? actionLogs : []).filter(log => {
-    const matchesSearch = 
+    const matchesSearch =
       (log.staft_id?.toString() || '').includes(searchTerm) ||
       (log.site_id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (log.action || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (log.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (log.ip_address || '').includes(searchTerm);
-    
+
     const matchesUser = userFilter === '' || log.staft_id?.toString() === userFilter;
     const matchesAction = actionFilter === '' || log.action === actionFilter;
-    const matchesStatus = statusFilter === '' || true; // No hay status en la nueva estructura
 
-    return matchesSearch && matchesUser && matchesAction && matchesStatus;
+    return matchesSearch && matchesUser && matchesAction;
   });
 
+  // Paginación del servidor
+  const totalPages = pagination.totalPages;
 
-  // Paginación
-  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentLogs = filteredLogs.slice(startIndex, endIndex);
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
+  const handleNextPage = async () => {
+    if (pagination.hasNext) {
+      await goToPage(currentPage + 1);
     }
   };
 
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
+  const handlePrevPage = async () => {
+    if (pagination.hasPrev) {
+      await goToPage(currentPage - 1);
     }
+  };
+
+  const handlePageChange = async (page: number) => {
+    await goToPage(page);
   };
 
   const handleRefresh = () => {
     refreshActionLogs();
-    setCurrentPage(1);
   };
 
   const handleExport = async () => {
@@ -120,9 +115,12 @@ const ActionsLogSection: React.FC = () => {
     setSelectedAction(null);
   };
 
-  // Obtener usuarios únicos para el filtro
+  // Obtener valores únicos para filtros (de la página actual)
   const uniqueUsers = Array.from(new Set(actionLogs.map(log => log.staft_id?.toString()).filter(Boolean)));
   const uniqueActions = Array.from(new Set(actionLogs.map(log => log.action).filter(Boolean)));
+
+  // Índices para el texto "Mostrando X a Y de Z"
+  const startIndex = (currentPage - 1) * pagination.limit;
 
   if (loading) {
     return (
@@ -160,8 +158,8 @@ const ActionsLogSection: React.FC = () => {
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setShowFilters(!showFilters)}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                  showFilters 
-                    ? 'bg-blue-100 text-blue-700 border border-blue-300' 
+                  showFilters
+                    ? 'bg-blue-100 text-blue-700 border border-blue-300'
                     : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
                 }`}
               >
@@ -220,7 +218,7 @@ const ActionsLogSection: React.FC = () => {
                 />
               </div>
             </div>
-            
+
             {/* Botones de acción para filtros de fecha */}
             <div className="flex items-center space-x-3 mb-4">
               <motion.button
@@ -245,7 +243,7 @@ const ActionsLogSection: React.FC = () => {
               </motion.button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Staff ID</label>
                 <select
@@ -270,18 +268,6 @@ const ActionsLogSection: React.FC = () => {
                   {uniqueActions.map(action => (
                     <option key={action} value={action}>{action}</option>
                   ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Todos los estados</option>
-                  <option value="success">Exitoso</option>
-                  <option value="failed">Fallido</option>
                 </select>
               </div>
             </div>
@@ -324,7 +310,7 @@ const ActionsLogSection: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {currentLogs.map((log, index) => {
+              {filteredLogs.map((log, index) => {
                 const { date, time } = formatDateToSantoDomingo(log.created_at);
                 return (
                   <motion.tr
@@ -362,7 +348,7 @@ const ActionsLogSection: React.FC = () => {
                       <div className="flex items-center">
                         {log.latitude && log.longitude ? (
                           <button
-                            onClick={() => handleShowLocation(log)}
+                            onClick={(e) => { e.stopPropagation(); handleShowLocation(log); }}
                             className="flex items-center space-x-2 text-blue-600 hover:text-blue-900 transition-colors"
                             title="Ver ubicación en mapa"
                           >
@@ -385,19 +371,22 @@ const ActionsLogSection: React.FC = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-2">
-                      </div>
-                    </td>
                   </motion.tr>
                 );
               })}
+              {filteredLogs.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-6 py-10 text-center text-sm text-gray-500">
+                    No hay registros para mostrar
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </motion.div>
 
-      {/* Paginación */}
+      {/* Paginación del servidor */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -405,42 +394,42 @@ const ActionsLogSection: React.FC = () => {
         className="flex items-center justify-between bg-white px-6 py-3 border border-gray-200 rounded-lg"
       >
         <div className="text-sm text-gray-700">
-          Mostrando <span className="font-medium">{startIndex + 1}</span> a{' '}
-          <span className="font-medium">{Math.min(endIndex, filteredLogs.length)}</span> de{' '}
-          <span className="font-medium">{filteredLogs.length}</span> acciones
-          {filteredLogs.length !== actionLogs.length && (
-            <span className="text-gray-500"> (filtradas de {actionLogs.length} total)</span>
-          )}
+          Mostrando{' '}
+          <span className="font-medium">{pagination.total === 0 ? 0 : startIndex + 1}</span> a{' '}
+          <span className="font-medium">{Math.min(startIndex + pagination.limit, pagination.total)}</span> de{' '}
+          <span className="font-medium">{pagination.total}</span> acciones
         </div>
         <div className="flex items-center space-x-2">
           <motion.button
-            whileHover={{ scale: currentPage === 1 ? 1 : 1.05 }}
-            whileTap={{ scale: currentPage === 1 ? 1 : 0.95 }}
+            whileHover={{ scale: !pagination.hasPrev ? 1 : 1.05 }}
+            whileTap={{ scale: !pagination.hasPrev ? 1 : 0.95 }}
             onClick={handlePrevPage}
-            disabled={currentPage === 1}
+            disabled={!pagination.hasPrev || loading}
             className={`px-3 py-1 text-sm rounded transition-colors ${
-              currentPage === 1 
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+              !pagination.hasPrev || loading
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
             }`}
           >
             Anterior
           </motion.button>
-          
+
           {/* Números de página */}
           <div className="flex items-center space-x-1">
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
-              // Mostrar solo algunas páginas para evitar demasiados botones
-              if (totalPages <= 7 || 
-                  page === 1 || 
-                  page === totalPages || 
-                  (page >= currentPage - 1 && page <= currentPage + 1)) {
+              if (
+                totalPages <= 7 ||
+                page === 1 ||
+                page === totalPages ||
+                (page >= currentPage - 1 && page <= currentPage + 1)
+              ) {
                 return (
                   <motion.button
                     key={page}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => handlePageChange(page)}
+                    disabled={loading}
                     className={`px-3 py-1 text-sm rounded transition-colors ${
                       page === currentPage
                         ? 'bg-blue-600 text-white'
@@ -456,15 +445,15 @@ const ActionsLogSection: React.FC = () => {
               return null;
             })}
           </div>
-          
+
           <motion.button
-            whileHover={{ scale: currentPage === totalPages ? 1 : 1.05 }}
-            whileTap={{ scale: currentPage === totalPages ? 1 : 0.95 }}
+            whileHover={{ scale: !pagination.hasNext ? 1 : 1.05 }}
+            whileTap={{ scale: !pagination.hasNext ? 1 : 0.95 }}
             onClick={handleNextPage}
-            disabled={currentPage === totalPages}
+            disabled={!pagination.hasNext || loading}
             className={`px-3 py-1 text-sm rounded transition-colors ${
-              currentPage === totalPages 
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+              !pagination.hasNext || loading
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
             }`}
           >
@@ -587,7 +576,7 @@ const ActionsLogSection: React.FC = () => {
                   Cerrar
                 </button>
                 {selectedAction.latitude && selectedAction.longitude && (
-                  <button 
+                  <button
                     onClick={() => handleShowLocation(selectedAction)}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2"
                   >

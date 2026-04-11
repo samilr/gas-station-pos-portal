@@ -37,8 +37,8 @@ const FuelTransactionsSection: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const pageToUse = overridePage !== undefined ? overridePage : currentPage;
-      const limitToUse = overrideLimit !== undefined ? overrideLimit : itemsPerPage;
+      const pageToUse = typeof overridePage === 'number' ? overridePage : currentPage;
+      const limitToUse = typeof overrideLimit === 'number' ? overrideLimit : itemsPerPage;
 
       const params: any = {
         page: pageToUse,
@@ -181,7 +181,7 @@ const FuelTransactionsSection: React.FC = () => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={fetchTransactions}
+            onClick={() => fetchTransactions()}
             disabled={loading}
             className="flex items-center space-x-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
           >
