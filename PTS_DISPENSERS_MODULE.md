@@ -12,6 +12,7 @@
 
 Copia y pega este prompt en tu agente de frontend (Claude, Cursor, etc.) junto con este archivo completo para que construya todas las pantallas:
 
+
 ```
 Necesito que modifiques el modulo llamado "Dispensadoras" en mi aplicacion.
 
