@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  PieChart, 
-  Activity, 
+import {
+  BarChart3,
+  TrendingUp,
+  PieChart,
+  Activity,
   Filter,
   Download,
   Eye,
   EyeOff
 } from 'lucide-react';
 
-// Componentes de gráficos
+// Componentes de graficos
 import SalesTrendChart from './charts/SalesTrendChart';
 import SalesByCategoryChart from './charts/SalesByCategoryChart';
 import HourlySalesChart from './charts/HourlySalesChart';
@@ -25,6 +24,8 @@ import ProductCategoryAnalysisChart from './charts/ProductCategoryAnalysisChart'
 import { formatCurrency } from '../../../utils/transactionUtils';
 import { formatNumber } from '../../../utils/dashboardUtils';
 import { useTransactions } from '../../../hooks/useTransactions';
+import { CompactButton } from '../../ui';
+import Toolbar from '../../ui/Toolbar';
 
 interface AnalyticsSectionProps {
   // Props si es necesario
@@ -47,7 +48,7 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = () => {
     productCategoryAnalysis: true
   });
 
-  // Calcular métricas principales
+  // Calcular metricas principales
   const calculateMetrics = () => {
     if (!transactions || transactions.length === 0) {
       return {
@@ -64,7 +65,7 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = () => {
     const totalTransactions = transactions.length;
     const averageTicket = totalTransactions > 0 ? totalSales / totalTransactions : 0;
 
-    // Top categoría
+    // Top categoria
     const categorySales = transactions.reduce((acc, t) => {
       const category = t.categoryId || 'Otros';
       acc[category] = (acc[category] || 0) + (t.total || 0);
@@ -86,7 +87,7 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = () => {
       averageTicket,
       topCategory,
       topSite,
-      growthRate: 0 // Se calcularía comparando con período anterior
+      growthRate: 0
     };
   };
 
@@ -102,9 +103,9 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = () => {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+      <div className="bg-white rounded-sm p-3 border border-gray-200">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
       </div>
     );
@@ -112,371 +113,171 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = () => {
 
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+      <div className="bg-white rounded-sm p-3 border border-gray-200">
         <div className="text-center py-8">
-          <div className="text-red-500 mb-2">
-            <BarChart3 className="w-12 h-12 mx-auto" />
-          </div>
-          <p className="text-red-600 font-medium">Error al cargar datos de Analytics</p>
-          <p className="text-gray-500 text-sm">{error}</p>
+          <BarChart3 className="w-8 h-8 mx-auto text-red-500 mb-2" />
+          <p className="text-red-600 text-sm font-medium">Error al cargar datos de Analytics</p>
+          <p className="text-gray-500 text-xs">{error}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
+    <div className="space-y-1">
+      {/* Toolbar */}
+      <Toolbar
+        chips={[
+          { label: "Ventas", value: formatCurrency(metrics.totalSales), color: "blue" },
+          { label: "Trans.", value: formatNumber(metrics.totalTransactions), color: "green" },
+          { label: "Ticket", value: formatCurrency(metrics.averageTicket), color: "purple" },
+          { label: "Top Cat.", value: metrics.topCategory, color: "orange" },
+        ]}
       >
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-              <BarChart3 className="w-8 h-8 mr-3 text-blue-600" />
-              Analytics & Reportes
-            </h2>
-            <p className="text-gray-600 mt-1">Análisis detallado de ventas y rendimiento</p>
-          </div>
-          
-          <div className="flex items-center space-x-3">
-            {/* Selector de período */}
-            <select
-              value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value as any)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="today">Hoy</option>
-              <option value="week">Esta Semana</option>
-              <option value="month">Este Mes</option>
-              <option value="quarter">Este Trimestre</option>
-              <option value="year">Este Año</option>
-            </select>
-
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-            >
-              <Filter className="w-4 h-4 mr-2" />
-              Filtros
-            </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Exportar
-            </motion.button>
-          </div>
-        </div>
-
-        {/* Métricas principales */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            {
-              title: "Ventas Totales",
-              value: formatCurrency(metrics.totalSales),
-              icon: TrendingUp,
-              gradient: "from-blue-500 to-blue-600",
-              textColor: "text-blue-100",
-              iconColor: "text-blue-200"
-            },
-            {
-              title: "Transacciones",
-              value: formatNumber(metrics.totalTransactions),
-              icon: Activity,
-              gradient: "from-green-500 to-green-600",
-              textColor: "text-green-100",
-              iconColor: "text-green-200"
-            },
-            {
-              title: "Ticket Promedio",
-              value: formatCurrency(metrics.averageTicket),
-              icon: PieChart,
-              gradient: "from-purple-500 to-purple-600",
-              textColor: "text-purple-100",
-              iconColor: "text-purple-200"
-            },
-            {
-              title: "Categoría Top",
-              value: metrics.topCategory,
-              icon: BarChart3,
-              gradient: "from-orange-500 to-orange-600",
-              textColor: "text-orange-100",
-              iconColor: "text-orange-200"
-            }
-          ].map((metric, index) => (
-            <motion.div
-              key={metric.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
-              whileHover={{ scale: 1.02, y: -2 }}
-              className={`bg-gradient-to-r ${metric.gradient} p-4 rounded-lg text-white`}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={`${metric.textColor} text-sm`}>{metric.title}</p>
-                  <p className="text-2xl font-bold">{metric.value}</p>
-                </div>
-                <metric.icon className={`w-8 h-8 ${metric.iconColor}`} />
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
+        <select
+          value={selectedPeriod}
+          onChange={(e) => setSelectedPeriod(e.target.value as any)}
+          className="h-7 px-2 text-sm border border-gray-300 rounded-sm"
+        >
+          <option value="today">Hoy</option>
+          <option value="week">Semana</option>
+          <option value="month">Mes</option>
+          <option value="quarter">Trimestre</option>
+          <option value="year">Ano</option>
+        </select>
+        <CompactButton variant="ghost" onClick={() => setShowFilters(!showFilters)}>
+          <Filter className="w-3.5 h-3.5" />
+          Filtros
+        </CompactButton>
+        <CompactButton variant="primary">
+          <Download className="w-3.5 h-3.5" />
+          Exportar
+        </CompactButton>
+      </Toolbar>
 
       {/* Filtros expandibles */}
       {showFilters && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.3 }}
-          className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
-        >
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Filtros Avanzados</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white rounded-sm p-2 border border-gray-200">
+          <h3 className="text-sm font-semibold text-gray-900 mb-2">Filtros Avanzados</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Fecha Inicio</label>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Fecha Inicio</label>
               <input
                 type="date"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Fecha Fin</label>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Fecha Fin</label>
               <input
                 type="date"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Sitio</label>
-              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Sitio</label>
+              <select className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm">
                 <option value="">Todos los sitios</option>
-                {/* Opciones de sitios */}
               </select>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
 
-      {/* Controles de visualización */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="bg-white rounded-lg shadow-sm p-4 border border-gray-200"
-      >
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Gráficos Visibles</h3>
-          <div className="flex items-center space-x-2">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+      {/* Controles de visualizacion */}
+      <div className="bg-white rounded-sm p-2 border border-gray-200">
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="text-sm font-semibold text-gray-900">Graficos Visibles</h3>
+          <div className="flex items-center gap-2 text-xs">
+            <button
               onClick={() => setVisibleCharts(Object.fromEntries(
                 Object.keys(visibleCharts).map(key => [key, true])
               ) as typeof visibleCharts)}
-              className="text-sm text-blue-600 hover:text-blue-800"
+              className="text-blue-600 hover:text-blue-800"
             >
-              Mostrar Todos
-            </motion.button>
+              Todos
+            </button>
             <span className="text-gray-300">|</span>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <button
               onClick={() => setVisibleCharts(Object.fromEntries(
                 Object.keys(visibleCharts).map(key => [key, false])
               ) as typeof visibleCharts)}
-              className="text-sm text-gray-600 hover:text-gray-800"
+              className="text-gray-600 hover:text-gray-800"
             >
-              Ocultar Todos
-            </motion.button>
+              Ninguno
+            </button>
           </div>
         </div>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
-          {Object.entries(visibleCharts).map(([key, visible], index) => (
-            <motion.button
+
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
+          {Object.entries(visibleCharts).map(([key, visible]) => (
+            <button
               key={key}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.2, delay: index * 0.05 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
               onClick={() => toggleChart(key as keyof typeof visibleCharts)}
-              className={`flex items-center px-3 py-2 rounded-lg text-sm transition-colors ${
-                visible 
-                  ? 'bg-blue-100 text-blue-800' 
+              className={`flex items-center px-2 py-1 rounded-sm text-xs transition-colors ${
+                visible
+                  ? 'bg-blue-100 text-blue-800'
                   : 'bg-gray-100 text-gray-600'
               }`}
             >
-              {visible ? <Eye className="w-4 h-4 mr-2" /> : <EyeOff className="w-4 h-4 mr-2" />}
+              {visible ? <Eye className="w-3 h-3 mr-1" /> : <EyeOff className="w-3 h-3 mr-1" />}
               {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-            </motion.button>
+            </button>
           ))}
         </div>
-      </motion.div>
+      </div>
 
-      {/* Gráficos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Tendencia de Ventas */}
+      {/* Graficos */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
         {visibleCharts.salesTrend && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
-          >
-            <SalesTrendChart 
-              data={transactions} 
-              period={selectedPeriod}
-              title="Tendencia de Ventas"
-            />
-          </motion.div>
+          <div className="bg-white rounded-sm p-3 border border-gray-200">
+            <SalesTrendChart data={transactions} period={selectedPeriod} title="Tendencia de Ventas" />
+          </div>
         )}
-
-        {/* Ventas por Categoría */}
         {visibleCharts.salesByCategory && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
-          >
-            <SalesByCategoryChart 
-              data={transactions}
-              title="Ventas por Categoría"
-            />
-          </motion.div>
+          <div className="bg-white rounded-sm p-3 border border-gray-200">
+            <SalesByCategoryChart data={transactions} title="Ventas por Categoria" />
+          </div>
         )}
-
-        {/* Ventas por Hora */}
         {visibleCharts.hourlySales && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
-          >
-            <HourlySalesChart 
-              data={transactions}
-              title="Ventas por Hora del Día"
-            />
-          </motion.div>
+          <div className="bg-white rounded-sm p-3 border border-gray-200">
+            <HourlySalesChart data={transactions} title="Ventas por Hora del Dia" />
+          </div>
         )}
-
-        {/* Ventas Mensuales */}
         {visibleCharts.monthlySales && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
-          >
-            <MonthlySalesChart 
-              data={transactions}
-              title="Ventas Mensuales"
-            />
-          </motion.div>
+          <div className="bg-white rounded-sm p-3 border border-gray-200">
+            <MonthlySalesChart data={transactions} title="Ventas Mensuales" />
+          </div>
         )}
-
-        {/* Rendimiento por Sitio */}
         {visibleCharts.sitePerformance && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.7 }}
-            className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
-          >
-            <SitePerformanceChart 
-              data={transactions}
-              title="Rendimiento por Sitio"
-            />
-          </motion.div>
+          <div className="bg-white rounded-sm p-3 border border-gray-200">
+            <SitePerformanceChart data={transactions} title="Rendimiento por Sitio" />
+          </div>
         )}
-
-        {/* Volumen de Transacciones */}
         {visibleCharts.transactionVolume && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.8 }}
-            className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
-          >
-            <TransactionVolumeChart 
-              data={transactions}
-              title="Volumen de Transacciones"
-            />
-          </motion.div>
+          <div className="bg-white rounded-sm p-3 border border-gray-200">
+            <TransactionVolumeChart data={transactions} title="Volumen de Transacciones" />
+          </div>
         )}
-
-        {/* Ticket Promedio */}
         {visibleCharts.averageTicket && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.9 }}
-            className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
-          >
-            <AverageTicketChart 
-              data={transactions}
-              title="Evolución del Ticket Promedio"
-            />
-          </motion.div>
+          <div className="bg-white rounded-sm p-3 border border-gray-200">
+            <AverageTicketChart data={transactions} title="Evolucion del Ticket Promedio" />
+          </div>
         )}
-
-        {/* Métodos de Pago */}
         {visibleCharts.paymentMethod && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 1.0 }}
-            className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
-          >
-            <PaymentMethodChart 
-              data={transactions}
-              title="Distribución por Método de Pago"
-            />
-          </motion.div>
+          <div className="bg-white rounded-sm p-3 border border-gray-200">
+            <PaymentMethodChart data={transactions} title="Distribucion por Metodo de Pago" />
+          </div>
         )}
-
-        {/* Productos Más Vendidos */}
         {visibleCharts.topProducts && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 1.1 }}
-            className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
-          >
-            <TopProductsChart 
-              data={transactions}
-              title="Productos Más Vendidos"
-            />
-          </motion.div>
+          <div className="bg-white rounded-sm p-3 border border-gray-200">
+            <TopProductsChart data={transactions} title="Productos Mas Vendidos" />
+          </div>
         )}
-
-        {/* Análisis de Categorías de Productos */}
         {visibleCharts.productCategoryAnalysis && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 1.2 }}
-            className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
-          >
-            <ProductCategoryAnalysisChart 
-              data={transactions}
-              title="Análisis por Categorías de Productos"
-            />
-          </motion.div>
+          <div className="bg-white rounded-sm p-3 border border-gray-200">
+            <ProductCategoryAnalysisChart data={transactions} title="Analisis por Categorias de Productos" />
+          </div>
         )}
       </div>
     </div>

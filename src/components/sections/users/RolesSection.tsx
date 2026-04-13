@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ShieldCheck, Plus, Edit2, Trash2, RefreshCw } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Plus, Edit2, Trash2, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { roleService } from '../../../services/roleService';
 import { IRole } from '../../../types/role';
 import RoleModal from './RoleModal';
+import { CompactButton } from '../../ui';
+import Toolbar from '../../ui/Toolbar';
 
 const RolesSection: React.FC = () => {
   const [roles, setRoles] = useState<IRole[]>([]);
@@ -27,55 +28,77 @@ const RolesSection: React.FC = () => {
   };
 
   const roleColors: Record<string, string> = {
-    ADMIN: 'bg-red-100 text-red-700',
-    CONFIGURATION: 'bg-purple-100 text-purple-700',
-    SUPERVISOR: 'bg-blue-100 text-blue-700',
-    MANAGER: 'bg-indigo-100 text-indigo-700',
-    SELLER: 'bg-green-100 text-green-700',
-    AUDIT: 'bg-amber-100 text-amber-700',
-    ACCOUNTANT: 'bg-teal-100 text-teal-700',
+    ADMIN: 'red',
+    CONFIGURATION: 'purple',
+    SUPERVISOR: 'blue',
+    MANAGER: 'blue',
+    SELLER: 'green',
+    AUDIT: 'yellow',
+    ACCOUNTANT: 'green',
   };
 
   return (
-    <div className="space-y-6">
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5 text-indigo-600" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Roles</h1>
-              <p className="text-sm text-gray-500">{roles.length} roles definidos</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={() => setModal({ show: true, role: null })}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm"><Plus className="w-4 h-4" />Nuevo Rol</button>
-            <button onClick={load} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg"><RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /></button>
-          </div>
-        </div>
-      </motion.div>
+    <div className="space-y-1">
+      <Toolbar
+        chips={[
+          { label: "Roles", value: roles.length, color: "blue" },
+        ]}
+      >
+        <CompactButton variant="primary" onClick={() => setModal({ show: true, role: null })}
+          className="!bg-indigo-600 hover:!bg-indigo-700">
+          <Plus className="w-3.5 h-3.5" />Nuevo Rol
+        </CompactButton>
+        <CompactButton variant="icon" onClick={load}>
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+        </CompactButton>
+      </Toolbar>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="bg-white rounded-sm border border-gray-200 overflow-hidden">
         {loading ? (
-          Array.from({ length: 6 }).map((_, i) => <div key={i} className="bg-white rounded-xl border border-gray-200 p-6 animate-pulse h-24" />)
-        ) : roles.map((r, i) => (
-          <motion.div key={r.roleId} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: i * 0.05 }}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex items-center justify-between hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-3">
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${roleColors[r.name] || 'bg-gray-100 text-gray-600'}`}>{r.name}</span>
-              <span className="text-xs text-gray-400">ID: {r.roleId}</span>
-            </div>
-            <div className="flex gap-1">
-              <button onClick={() => setModal({ show: true, role: r })} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg"><Edit2 className="w-4 h-4" /></button>
-              <button onClick={() => handleDelete(r.roleId)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
-            </div>
-          </motion.div>
-        ))}
-        {!loading && roles.length === 0 && <p className="text-sm text-gray-400 col-span-3 text-center py-10">Sin roles</p>}
+          <div className="flex items-center justify-center h-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr className="h-8 text-xs uppercase tracking-wide bg-table-header border-b border-table-border">
+                  {['ID', 'Nombre', 'Acciones'].map(h => (
+                    <th key={h} className="px-2 text-left text-xs font-medium text-gray-500">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {roles.map((r) => (
+                  <tr key={r.roleId} className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover transition-colors">
+                    <td className="px-2 text-sm whitespace-nowrap text-gray-400">{r.roleId}</td>
+                    <td className="px-2 text-sm whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1">
+                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                          roleColors[r.name] === 'red' ? 'bg-red-500' :
+                          roleColors[r.name] === 'purple' ? 'bg-purple-500' :
+                          roleColors[r.name] === 'blue' ? 'bg-blue-500' :
+                          roleColors[r.name] === 'green' ? 'bg-green-500' :
+                          roleColors[r.name] === 'yellow' ? 'bg-amber-500' : 'bg-gray-400'
+                        }`} />
+                        <span className="font-medium text-gray-900">{r.name}</span>
+                      </span>
+                    </td>
+                    <td className="px-2 text-sm whitespace-nowrap">
+                      <div className="flex gap-1">
+                        <button onClick={() => setModal({ show: true, role: r })} className="p-0.5 text-blue-600 hover:bg-blue-50 rounded-sm"><Edit2 className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => handleDelete(r.roleId)} className="p-0.5 text-red-600 hover:bg-red-50 rounded-sm"><Trash2 className="w-3.5 h-3.5" /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {roles.length === 0 && (
+                  <tr><td colSpan={3} className="px-2 py-6 text-center text-sm text-gray-400">Sin roles</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {modal.show && <RoleModal role={modal.role} onClose={() => setModal({ show: false, role: null })} onSaved={() => { setModal({ show: false, role: null }); load(); }} />}

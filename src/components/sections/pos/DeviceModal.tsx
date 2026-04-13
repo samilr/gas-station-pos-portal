@@ -94,7 +94,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
-    
+
     // Manejar hostTypeId específicamente
     if (name === 'hostTypeId') {
       setFormData(prev => ({
@@ -103,11 +103,11 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
       }));
       return;
     }
-    
+
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : 
-              type === 'number' ? (value === '' ? undefined : parseInt(value, 10) || 0) : 
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked :
+              type === 'number' ? (value === '' ? undefined : parseInt(value, 10) || 0) :
               value === '' ? undefined : value
     }));
   };
@@ -115,7 +115,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isViewing) return;
-    
+
     setLoading(true);
     try {
       if (isEditing) {
@@ -169,45 +169,45 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-sm max-w-lg w-full max-h-[90vh] overflow-y-auto">
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+          <div className="flex items-center space-x-2">
             {isEditing ? (
-              <Edit className="w-6 h-6 text-green-600" />
+              <Edit className="w-4 h-4 text-green-600" />
             ) : (
-              <Plus className="w-6 h-6 text-blue-600" />
+              <Plus className="w-4 h-4 text-blue-600" />
             )}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-base font-semibold text-gray-900">
                 {isViewing ? 'Ver Dispositivo' : isEditing ? 'Editar Dispositivo' : 'Crear Nuevo Dispositivo'}
               </h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-xs text-text-muted">
                 {isViewing ? `Viendo: ${device?.name}` : isEditing ? `Editando: ${device?.name}` : 'Completa el formulario para crear un nuevo dispositivo'}
               </p>
             </div>
           </div>
           <button
             onClick={handleClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-1 hover:bg-gray-100 rounded-sm transition-colors"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-4 h-4 text-gray-500" />
           </button>
         </div>
 
         {/* Modal Content */}
-        <div className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="p-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             {/* Basic Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900 flex items-center space-x-2">
-                <Smartphone className="w-5 h-5 text-gray-600" />
+            <div className="space-y-3">
+              <h3 className="text-base font-semibold text-gray-900 flex items-center space-x-2">
+                <Smartphone className="w-4 h-4 text-gray-600" />
                 <span>Información del Dispositivo</span>
               </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                     Nombre del Dispositivo *
                   </label>
                   <input
@@ -217,15 +217,15 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
                     onChange={handleInputChange}
                     required
                     disabled={isViewing}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
                       isViewing ? 'bg-gray-100 cursor-not-allowed' : ''
                     }`}
                     placeholder="Ingresa el nombre del dispositivo"
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                     Descripción
                   </label>
                   <input
@@ -234,15 +234,15 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
                     value={formData.description}
                     onChange={handleInputChange}
                     disabled={isViewing}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
                       isViewing ? 'bg-gray-100 cursor-not-allowed' : ''
                     }`}
                     placeholder="Ingresa una descripción del dispositivo"
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                     ID del Sitio
                   </label>
                   <input
@@ -251,15 +251,15 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
                     value={formData.siteId}
                     onChange={handleInputChange}
                     disabled={isViewing}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
                       isViewing ? 'bg-gray-100 cursor-not-allowed' : ''
                     }`}
                     placeholder="Ingresa el ID del sitio"
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                     ID del Dispositivo
                   </label>
                   <input
@@ -268,15 +268,15 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
                     value={formData.deviceId}
                     onChange={handleInputChange}
                     disabled={isViewing}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
                       isViewing ? 'bg-gray-100 cursor-not-allowed' : ''
                     }`}
                     placeholder="Ingresa el ID del dispositivo"
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                     Tipo de Dispositivo
                   </label>
                   <select
@@ -284,7 +284,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
                     value={formData.hostTypeId || ''}
                     onChange={handleInputChange}
                     disabled={isViewing}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
                       isViewing ? 'bg-gray-100 cursor-not-allowed' : ''
                     }`}
                   >
@@ -297,11 +297,11 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
               </div>
 
               {/* Switches */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                <div className="flex items-center justify-between p-2 bg-gray-50 rounded-sm">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Conectado</label>
-                    <p className="text-xs text-gray-500">Indica si el dispositivo está conectado</p>
+                    <label className="text-2xs uppercase tracking-wide text-gray-500">Conectado</label>
+                    <p className="text-xs text-text-muted">Indica si el dispositivo está conectado</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -313,8 +313,8 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
                       className="sr-only peer"
                     />
                     <div className={`relative w-12 h-7 rounded-full transition-all duration-300 ease-in-out ${
-                      formData.connected 
-                        ? 'bg-blue-600' 
+                      formData.connected
+                        ? 'bg-blue-600'
                         : 'bg-gray-200 border-2 border-gray-300'
                     } ${isViewing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg'}`}>
                       <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-all duration-300 ease-in-out transform shadow-sm ${
@@ -329,10 +329,10 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
                   </label>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between p-2 bg-gray-50 rounded-sm">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Activo</label>
-                    <p className="text-xs text-gray-500">Indica si el dispositivo está activo</p>
+                    <label className="text-2xs uppercase tracking-wide text-gray-500">Activo</label>
+                    <p className="text-xs text-text-muted">Indica si el dispositivo está activo</p>
                   </div>
                   <label className={`relative inline-flex items-center ${isCreating ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                     <input
@@ -344,8 +344,8 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
                       className="sr-only peer"
                     />
                     <div className={`relative w-12 h-7 rounded-full transition-all duration-300 ease-in-out ${
-                      formData.active 
-                        ? 'bg-blue-600' 
+                      formData.active
+                        ? 'bg-blue-600'
                         : 'bg-gray-200 border-2 border-gray-300'
                     } ${(isViewing || isCreating) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg'}`}>
                       <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-all duration-300 ease-in-out transform shadow-sm ${
@@ -364,20 +364,20 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
 
             {/* System Information - Solo lectura */}
             {device && isViewing && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900 flex items-center space-x-2">
-                  <Globe className="w-5 h-5 text-gray-600" />
+              <div className="space-y-3">
+                <h3 className="text-base font-semibold text-gray-900 flex items-center space-x-2">
+                  <Globe className="w-4 h-4 text-gray-600" />
                   <span>Información del Sistema</span>
                 </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {/* Información del Host */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-blue-900 mb-3 flex items-center space-x-2">
+                  <div className="bg-blue-50 border border-blue-200 rounded-sm p-3">
+                    <h4 className="text-xs font-medium text-blue-900 mb-2 flex items-center space-x-2">
                       <Smartphone className="w-4 h-4" />
                       <span>Información del Host</span>
                     </h4>
-                    <div className="space-y-2 text-sm">
+                    <div className="space-y-1 text-xs">
                       <div className="flex justify-between">
                         <span className="text-blue-700">Host ID:</span>
                         <span className="font-medium text-blue-900">
@@ -387,11 +387,11 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
                       <div className="flex justify-between">
                         <span className="text-blue-700">Dirección IP:</span>
                         <span className="font-medium text-blue-900">
-                          {device.ip_address ? 
-                            (device.ip_address.length > 16 ? 
-                              `${device.ip_address.substring(0, 16)}...` : 
+                          {device.ip_address ?
+                            (device.ip_address.length > 16 ?
+                              `${device.ip_address.substring(0, 16)}...` :
                               device.ip_address
-                            ) : 
+                            ) :
                             'No disponible'
                           }
                         </span>
@@ -415,12 +415,12 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
                   </div>
 
                   {/* Información de Conexión */}
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center space-x-2">
+                  <div className="bg-gray-50 border border-gray-200 rounded-sm p-3">
+                    <h4 className="text-xs font-medium text-gray-900 mb-2 flex items-center space-x-2">
                       <Clock className="w-4 h-4" />
                       <span>Información de Conexión</span>
                     </h4>
-                    <div className="space-y-2 text-sm">
+                    <div className="space-y-1 text-xs">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Estado:</span>
                         <span className={`font-medium ${device.connected ? 'text-green-600' : 'text-red-600'}`}>
@@ -446,11 +446,11 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
             )}
 
             {/* Form Actions */}
-            <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
+            <div className="flex items-center justify-end space-x-3 pt-3 border-t border-gray-200">
               <button
                 type="button"
                 onClick={handleClose}
-                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="h-7 px-3 text-sm rounded-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 {isViewing ? 'Cerrar' : 'Cancelar'}
               </button>
@@ -458,7 +458,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors"
+                  className="flex items-center space-x-2 h-7 px-3 text-sm rounded-sm font-medium bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white transition-colors"
                 >
                   {loading ? (
                     <>

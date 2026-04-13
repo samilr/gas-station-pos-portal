@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, Lock, Unlock, LayoutGrid, List } from 'lucide-react';
 import toast from 'react-hot-toast';
 import DispenserCard from './DispenserCard';
@@ -23,6 +22,9 @@ import type {
 } from '../../../types/dispenser';
 import { useHeader } from '../../../context/HeaderContext';
 import { mapFuelProductName } from '../../../utils/fuelProductMapping';
+import { CompactButton } from '../../ui';
+import StatusDot from '../../ui/StatusDot';
+import Toolbar from '../../ui/Toolbar';
 
 const POLLING_INTERVAL = 2000;
 
@@ -31,15 +33,15 @@ const STATE_TEXT: Record<PumpVisualState, string> = {
   dispensing: 'Dispensando',
   locked: 'Bloqueada',
   offline: 'Offline',
-  'end-of-transaction': 'Fin Transacción',
+  'end-of-transaction': 'Fin Transaccion',
 };
 
-const STATE_COLOR: Record<PumpVisualState, string> = {
-  available: 'text-green-600 bg-green-50',
-  dispensing: 'text-orange-600 bg-orange-50',
-  locked: 'text-red-600 bg-red-50',
-  offline: 'text-gray-600 bg-gray-50',
-  'end-of-transaction': 'text-blue-600 bg-blue-50',
+const STATE_DOT_COLOR: Record<PumpVisualState, string> = {
+  available: 'green',
+  dispensing: 'orange',
+  locked: 'red',
+  offline: 'gray',
+  'end-of-transaction': 'blue',
 };
 
 const DispensersSection: React.FC = () => {
@@ -83,7 +85,7 @@ const DispensersSection: React.FC = () => {
     }
   }, []);
 
-  // Polling: solo dispara si la llamada anterior ya terminó
+  // Polling: solo dispara si la llamada anterior ya termino
   useEffect(() => {
     fetchPumpStatuses();
     const interval = setInterval(fetchPumpStatuses, POLLING_INTERVAL);
@@ -189,14 +191,14 @@ const DispensersSection: React.FC = () => {
 
   if (loading && pumpStatuses.size === 0) {
     return (
-      <div className="space-y-6">
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="h-8 bg-gray-200 rounded w-64 mb-2 animate-pulse" />
+      <div className="space-y-1">
+        <div className="bg-white rounded-sm p-3">
+          <div className="h-6 bg-gray-200 rounded w-64 mb-1 animate-pulse" />
           <div className="h-4 bg-gray-100 rounded w-96 animate-pulse" />
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="rounded-lg p-4 bg-gray-200 animate-pulse h-32" />
+            <div key={i} className="rounded-sm p-3 bg-gray-200 animate-pulse h-24" />
           ))}
         </div>
       </div>
@@ -204,227 +206,170 @@ const DispensersSection: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Monitoreo de Dispensadoras</h1>
-            <p className="text-gray-600 text-sm mt-1">Monitoreo en tiempo real del estado de las dispensadoras</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setViewMode('table')}
-              className={`p-2 rounded-lg transition-colors ${viewMode === 'table' ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
-            >
-              <List className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setViewMode('cards')}
-              className={`p-2 rounded-lg transition-colors ${viewMode === 'cards' ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
-            >
-              <LayoutGrid className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
+    <div className="space-y-1">
+      {/* Toolbar */}
+      <Toolbar>
+        <CompactButton
+          variant="danger"
+          onClick={handleLockAll}
+          disabled={isLockingAll || isUnlockingAll}
+        >
+          {isLockingAll ? (
+            <><div className="w-3 h-3 border-2 border-red-400 border-t-transparent rounded-full animate-spin" /> Bloqueando...</>
+          ) : (
+            <><Lock className="w-3.5 h-3.5" /> Bloquear Todas</>
+          )}
+        </CompactButton>
 
-        {/* Controles */}
-        <div className="flex flex-wrap items-center gap-3">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={handleLockAll}
-            disabled={isLockingAll || isUnlockingAll}
-            className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm font-medium"
-          >
-            {isLockingAll ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Bloqueando...</span>
-              </>
-            ) : (
-              <>
-                <Lock className="w-4 h-4" />
-                <span>Bloquear Todas</span>
-              </>
-            )}
-          </motion.button>
+        <CompactButton
+          variant="ghost"
+          onClick={handleUnlockAll}
+          disabled={isLockingAll || isUnlockingAll}
+          className="border-green-300 text-green-600 hover:bg-green-50"
+        >
+          {isUnlockingAll ? (
+            <><div className="w-3 h-3 border-2 border-green-400 border-t-transparent rounded-full animate-spin" /> Desbloqueando...</>
+          ) : (
+            <><Unlock className="w-3.5 h-3.5" /> Desbloquear Todas</>
+          )}
+        </CompactButton>
 
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={handleUnlockAll}
-            disabled={isLockingAll || isUnlockingAll}
-            className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm font-medium"
-          >
-            {isUnlockingAll ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Desbloqueando...</span>
-              </>
-            ) : (
-              <>
-                <Unlock className="w-4 h-4" />
-                <span>Desbloquear Todas</span>
-              </>
-            )}
-          </motion.button>
+        <select
+          value={filterState}
+          onChange={(e) => setFilterState(e.target.value)}
+          className="h-7 px-2 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+        >
+          <option value="all">Todos los estados</option>
+          <option value="available">Disponibles</option>
+          <option value="dispensing">Dispensando</option>
+          <option value="locked">Bloqueadas</option>
+          <option value="offline">Offline</option>
+          <option value="end-of-transaction">Fin de transaccion</option>
+        </select>
 
-          <select
-            value={filterState}
-            onChange={(e) => setFilterState(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-          >
-            <option value="all">Todos los estados</option>
-            <option value="available">Disponibles</option>
-            <option value="dispensing">Dispensando</option>
-            <option value="locked">Bloqueadas</option>
-            <option value="offline">Offline</option>
-            <option value="end-of-transaction">Fin de transacción</option>
-          </select>
-        </div>
-      </div>
+        <CompactButton
+          variant="icon"
+          onClick={() => setViewMode('table')}
+          className={viewMode === 'table' ? 'bg-blue-100 text-blue-600' : ''}
+        >
+          <List className="w-4 h-4" />
+        </CompactButton>
+        <CompactButton
+          variant="icon"
+          onClick={() => setViewMode('cards')}
+          className={viewMode === 'cards' ? 'bg-blue-100 text-blue-600' : ''}
+        >
+          <LayoutGrid className="w-4 h-4" />
+        </CompactButton>
+      </Toolbar>
 
       {/* Error */}
       {error && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-3"
-        >
-          <AlertCircle className="w-5 h-5 text-red-500" />
+        <div className="bg-red-50 border border-red-200 rounded-sm p-2 flex items-center space-x-2">
+          <AlertCircle className="w-4 h-4 text-red-500" />
           <div>
-            <p className="text-red-700 font-medium">Error de conexión</p>
-            <p className="text-red-600 text-sm">{error}</p>
+            <p className="text-red-700 text-sm font-medium">Error de conexion</p>
+            <p className="text-red-600 text-xs">{error}</p>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Contenido */}
-      <AnimatePresence mode="wait">
-        {viewMode === 'table' ? (
-          <motion.div
-            key="table"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="bg-white rounded-lg shadow-sm overflow-hidden"
-          >
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Combustible</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Volumen</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Última Transacción</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredPumps.map(([number, packet]) => {
-                    const state = getPumpVisualState(packet);
-                    const pumpData = getPumpData(packet);
-                    const locked = isPumpLocked(packet);
+      {viewMode === 'table' ? (
+        <div className="bg-white rounded-sm shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="h-8 text-xs uppercase tracking-wide bg-table-header">
+                  <th className="px-2 text-left font-medium text-gray-500">#</th>
+                  <th className="px-2 text-left font-medium text-gray-500">Estado</th>
+                  <th className="px-2 text-left font-medium text-gray-500">Combustible</th>
+                  <th className="px-2 text-left font-medium text-gray-500">Volumen</th>
+                  <th className="px-2 text-left font-medium text-gray-500">Monto</th>
+                  <th className="px-2 text-left font-medium text-gray-500">Ultima Transaccion</th>
+                  <th className="px-2 text-left font-medium text-gray-500">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredPumps.map(([number, packet]) => {
+                  const state = getPumpVisualState(packet);
+                  const pumpData = getPumpData(packet);
+                  const locked = isPumpLocked(packet);
 
-                    return (
-                      <tr key={number} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm font-bold text-gray-900">#{number}</span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATE_COLOR[state]}`}>
-                            {STATE_TEXT[state]}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-900">{pumpData.fuel}</span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-900">{pumpData.volume.toFixed(3)} G.</span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm font-medium text-gray-900">{formatCurrency(pumpData.amount)}</span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-900">
-                            {pumpData.lastDateTime ? formatDateTime(pumpData.lastDateTime) : '-'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          {state === 'locked' ? (
-                            <button
-                              onClick={() => handlePumpLockToggle(number, true)}
-                              className="text-green-600 hover:text-green-700 font-medium"
-                            >
-                              Desbloquear
-                            </button>
-                          ) : state === 'available' ? (
-                            <button
-                              onClick={() => handlePumpLockToggle(number, false)}
-                              className="text-red-600 hover:text-red-700 font-medium"
-                            >
-                              Bloquear
-                            </button>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="cards"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
-          >
-            {filteredPumps.map(([number, packet]) => (
-              <DispenserCard
-                key={number}
-                pumpNumber={number}
-                packet={packet}
-                isLoading={loading && packet === null}
-                error={error && packet === null ? error : undefined}
-                onStatusChange={fetchPumpStatuses}
-              />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+                  return (
+                    <tr key={number} className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover">
+                      <td className="px-2 text-sm whitespace-nowrap">
+                        <span className="font-bold text-gray-900">#{number}</span>
+                      </td>
+                      <td className="px-2 text-sm whitespace-nowrap">
+                        <StatusDot color={STATE_DOT_COLOR[state]} label={STATE_TEXT[state]} />
+                      </td>
+                      <td className="px-2 text-sm whitespace-nowrap text-gray-900">{pumpData.fuel}</td>
+                      <td className="px-2 text-sm whitespace-nowrap text-gray-900">{pumpData.volume.toFixed(3)} G.</td>
+                      <td className="px-2 text-sm whitespace-nowrap font-medium text-gray-900">{formatCurrency(pumpData.amount)}</td>
+                      <td className="px-2 text-sm whitespace-nowrap text-gray-900">
+                        {pumpData.lastDateTime ? formatDateTime(pumpData.lastDateTime) : '-'}
+                      </td>
+                      <td className="px-2 text-sm whitespace-nowrap">
+                        {state === 'locked' ? (
+                          <button
+                            onClick={() => handlePumpLockToggle(number, true)}
+                            className="text-green-600 hover:text-green-700 text-xs font-medium"
+                          >
+                            Desbloquear
+                          </button>
+                        ) : state === 'available' ? (
+                          <button
+                            onClick={() => handlePumpLockToggle(number, false)}
+                            className="text-red-600 hover:text-red-700 text-xs font-medium"
+                          >
+                            Bloquear
+                          </button>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+          {filteredPumps.map(([number, packet]) => (
+            <DispenserCard
+              key={number}
+              pumpNumber={number}
+              packet={packet}
+              isLoading={loading && packet === null}
+              error={error && packet === null ? error : undefined}
+              onStatusChange={fetchPumpStatuses}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Leyenda */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="bg-blue-50 border border-blue-200 rounded-lg p-4"
-      >
-        <div className="flex items-start space-x-3">
-          <AlertCircle className="w-5 h-5 text-blue-500 mt-0.5" />
-          <div className="text-sm text-blue-700">
-            <p className="font-medium mb-1">Leyenda de Estados:</p>
-            <ul className="list-disc list-inside space-y-1 ml-2">
+      <div className="bg-blue-50 border border-blue-200 rounded-sm p-2">
+        <div className="flex items-start space-x-2">
+          <AlertCircle className="w-4 h-4 text-blue-500 mt-0.5" />
+          <div className="text-xs text-blue-700">
+            <p className="font-medium mb-0.5">Leyenda de Estados:</p>
+            <ul className="list-disc list-inside space-y-0.5 ml-2">
               <li><span className="font-semibold text-green-600">Verde:</span> Dispensadora disponible</li>
-              <li><span className="font-semibold text-orange-600">Naranja:</span> Dispensadora dispensando (con animación)</li>
+              <li><span className="font-semibold text-orange-600">Naranja:</span> Dispensadora dispensando</li>
               <li><span className="font-semibold text-red-600">Rojo:</span> Dispensadora bloqueada</li>
               <li><span className="font-semibold text-gray-600">Gris:</span> Dispensadora offline</li>
-              <li><span className="font-semibold text-blue-600">Azul:</span> Fin de transacción (estado transiente)</li>
+              <li><span className="font-semibold text-blue-600">Azul:</span> Fin de transaccion</li>
             </ul>
-            <p className="mt-2 text-xs opacity-75">
-              Los datos se actualizan automáticamente cada 2 segundos
+            <p className="mt-1 text-xs opacity-75">
+              Los datos se actualizan automaticamente cada 2 segundos
             </p>
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };

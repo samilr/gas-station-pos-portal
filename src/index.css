@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+body {
+  font-size: 13px;
+}
+
 /* Ocultar barra de scroll pero mantener funcionalidad */
 .scrollbar-hide {
   -ms-overflow-style: none;  /* Internet Explorer 10+ */
@@ -33,5 +37,5 @@
 
 /* Fondo global de la aplicación usando la paleta */
 html, body, #root {
-  @apply bg-app-bg;
+  @apply bg-white;
 }

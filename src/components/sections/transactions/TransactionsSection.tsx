@@ -1,28 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  Filter, 
-  DollarSign, 
-  User, 
-  CheckCircle, 
-  Clock, 
+import {
+  Filter,
+  DollarSign,
+  CheckCircle,
+  Clock,
   AlertCircle,
   Download,
   ArrowLeft,
   ArrowRight,
   RefreshCw,
-  Building2,
   FileX,
   ChevronUp,
   ChevronDown,
-  Smartphone,
-  Clock9Icon,
   X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Dialog } from '@headlessui/react';
 import TransactionModal from './TransactionModal';
-import { 
+import {
   formatDateOnly,
   formatTimeOnly,
   formatCurrency,
@@ -35,8 +30,9 @@ import { SortField, useTransactions } from '../../../hooks/useTransactions';
 import transactionService from '../../../services/transactionService';
 import { CFStatus } from '../../../types/transaction';
 import { useHeader } from '../../../context/HeaderContext';
-
-
+import { CompactButton } from '../../ui';
+import StatusDot from '../../ui/StatusDot';
+import Toolbar from '../../ui/Toolbar';
 
 interface TransactionsSectionProps {
   isNCFView?: boolean;
@@ -49,8 +45,7 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
   const [showReverseDialog, setShowReverseDialog] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [transactionToReverse, setTransactionToReverse] = useState<string | null>(null);
-  
-  // Estados temporales para el modal de filtros (no afectan la búsqueda hasta aplicar)
+
   const [tempSearchTerm, setTempSearchTerm] = useState('');
   const [tempTransNumberFilter, setTempTransNumberFilter] = useState('');
   const [tempCfNumberFilter, setTempCfNumberFilter] = useState('');
@@ -62,13 +57,12 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
   const [tempShiftFilter, setTempShiftFilter] = useState<number | ''>('');
   const [tempStartDateFilter, setTempStartDateFilter] = useState('');
   const [tempEndDateFilter, setTempEndDateFilter] = useState('');
-  
+
   const { user } = useAuth();
   const { setSubtitle } = useHeader();
-  
-  // Verificar si el usuario puede reversar transacciones (solo ADMIN o AUDIT)
+
   const canReverseTransaction = user?.role === 'ADMIN' || user?.role === 'AUDIT';
-  
+
   const {
     transactions,
     stats,
@@ -114,59 +108,39 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
     loadTransactionsWithDates
   } = useTransactions(isNCFView, isTiendaView);
 
-  // Función para renderizar el icono de ordenamiento
   const renderSortIcon = (field: SortField) => {
     if (sortField !== field) {
       return (
-        <div className="flex flex-col ml-1">
-          <ChevronUp className="w-3 h-3 text-gray-300" />
-          <ChevronDown className="w-3 h-3 text-gray-300 -mt-1" />
+        <div className="flex flex-col ml-0.5">
+          <ChevronUp className="w-2.5 h-2.5 text-gray-300" />
+          <ChevronDown className="w-2.5 h-2.5 text-gray-300 -mt-0.5" />
         </div>
       );
     }
-    
     if (sortDirection === 'asc') {
-      return <ChevronUp className="w-4 h-4 text-blue-600 ml-1" />;
-    } else {
-      return <ChevronDown className="w-4 h-4 text-blue-600 ml-1" />;
+      return <ChevronUp className="w-3 h-3 text-blue-600 ml-0.5" />;
     }
+    return <ChevronDown className="w-3 h-3 text-blue-600 ml-0.5" />;
   };
 
-  // Función para renderizar el encabezado ordenable
-  const renderSortableHeader = (field: SortField, label: string, className: string = "") => (
-    <th 
-      className={`text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-all duration-200 select-none ${className}`}
+  const renderSortableHeader = (field: SortField, label: string) => (
+    <th
+      className="text-left px-2 h-8 text-xs font-medium text-text-secondary uppercase tracking-wide cursor-pointer hover:bg-gray-100 select-none"
       onClick={() => handleSort(field)}
-      title={`Haz clic para ordenar por ${label.toLowerCase()}`}
     >
-      <div className="flex items-center group">
-        <span className="group-hover:text-gray-700 transition-colors">{label}</span>
-        <div className="ml-1 opacity-60 group-hover:opacity-100 transition-opacity">
-          {renderSortIcon(field)}
-        </div>
+      <div className="flex items-center">
+        <span>{label}</span>
+        {renderSortIcon(field)}
       </div>
     </th>
   );
 
-  // Debug: Log cuando cambian los estados del servidor
-  React.useEffect(() => {
-    console.log('🔄 serverStats cambió:', serverStats);
-  }, [serverStats]);
-  
-  React.useEffect(() => {
-    console.log('🔄 pagination cambió:', pagination);
-  }, [pagination]);
-
-  // Filtrar transacciones localmente (solo para búsqueda de texto y estado)
   const filteredTransactions = filterTransactionsByStatus(
     filterTransactionsBySearch(transactions, searchTerm),
     statusFilter
   );
 
-  // Usar las transacciones filtradas directamente (la paginación viene del servidor)
   const paginatedTransactions = filteredTransactions;
-  
-  // Calcular índices para mostrar en la paginación
   const startIndex = pagination ? (pagination.page - 1) * pagination.limit : (currentPage - 1) * itemsPerPage;
   const endIndex = pagination ? Math.min(startIndex + pagination.limit, pagination.total) : Math.min(startIndex + itemsPerPage, filteredTransactions.length);
 
@@ -175,29 +149,18 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
       setIsExporting(true);
       try {
         await exportTransactions(format);
-        toast.success('Exportación a Excel completada exitosamente', {
-          duration: 4000,
-          icon: '✅',
-        });
+        toast.success('Exportación a Excel completada', { duration: 4000, icon: '✅' });
       } catch (error) {
         console.error('Error al exportar:', error);
-        toast.error('Error al exportar a Excel', {
-          duration: 4000,
-          icon: '❌',
-        });
+        toast.error('Error al exportar a Excel', { duration: 4000, icon: '❌' });
       } finally {
         setIsExporting(false);
       }
     } else {
-      try {
-        await exportTransactions(format);
-      } catch (error) {
-        console.error('Error al exportar:', error);
-      }
+      try { await exportTransactions(format); } catch (error) { console.error('Error al exportar:', error); }
     }
   };
 
-  // Función para inicializar los filtros temporales con los valores actuales
   const initializeTempFilters = () => {
     setTempSearchTerm(searchTerm);
     setTempTransNumberFilter(transNumberFilter);
@@ -212,50 +175,32 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
     setTempEndDateFilter(endDateFilter);
   };
 
-  // Función para abrir el modal y inicializar filtros temporales
   const handleOpenFilters = () => {
     initializeTempFilters();
     setShowFilters(true);
   };
 
   const handleApplyFilters = async () => {
-    // Resetear a la primera página
     setCurrentPage(1);
-    
-    // Siempre buscar en la API cuando se aplican filtros desde el modal
-    const params: any = {
-      page: 1, // Siempre empezar en la primera página
-      limit: itemsPerPage
-    };
-    
-    // Verificar si hay filtros específicos (no fechas) completados
-    const hasSpecificFilters = 
-      tempTransNumberFilter !== '' || 
-      tempCfNumberFilter !== '' || 
-      tempSiteIdFilter !== '' || 
-      tempTerminalFilter !== '' || 
-      tempCfTypeFilter !== '' || 
-      tempStaftIdFilter !== '' || 
-      tempShiftFilter !== '' || 
-      tempSearchTerm.trim() !== '';
-    
-    // Filtros de fecha
+    const params: any = { page: 1, limit: itemsPerPage };
+
+    const hasSpecificFilters =
+      tempTransNumberFilter !== '' || tempCfNumberFilter !== '' || tempSiteIdFilter !== '' ||
+      tempTerminalFilter !== '' || tempCfTypeFilter !== '' || tempStaftIdFilter !== '' ||
+      tempShiftFilter !== '' || tempSearchTerm.trim() !== '';
+
     if (tempStartDateFilter !== '' && tempEndDateFilter !== '') {
-      // Si el usuario especificó fechas, usarlas
       params.startDate = tempStartDateFilter;
       params.endDate = tempEndDateFilter;
     } else if (hasSpecificFilters) {
-      // Si hay filtros específicos pero no fechas, usar el día actual
       const todayDate = getCurrentSantoDomingoDate();
       params.startDate = todayDate;
       params.endDate = todayDate;
     } else {
-      // Si no hay filtros específicos ni fechas, usar las fechas actuales del estado
       params.startDate = tempStartDateFilter;
       params.endDate = tempEndDateFilter;
     }
-    
-    // Filtros específicos - asegurando que coincidan con los query params de la API
+
     if (tempTransNumberFilter !== '') params.transNumber = tempTransNumberFilter;
     if (tempCfNumberFilter !== '') params.cfNumber = tempCfNumberFilter;
     if (tempSiteIdFilter !== '') params.siteId = tempSiteIdFilter;
@@ -263,13 +208,8 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
     if (tempCfTypeFilter !== '') params.cfType = tempCfTypeFilter;
     if (tempStaftIdFilter !== '') params.staftId = tempStaftIdFilter;
     if (tempShiftFilter !== '') params.shift = tempShiftFilter;
-    
-    // Taxpayer ID (RNC/Cédula)
-    if (tempSearchTerm.trim() !== '') {
-      params.taxpayerId = tempSearchTerm.trim();
-    }
-    
-    // Actualizar los estados de filtros antes de buscar
+    if (tempSearchTerm.trim() !== '') params.taxpayerId = tempSearchTerm.trim();
+
     setTransNumberFilter(tempTransNumberFilter);
     setCfNumberFilter(tempCfNumberFilter);
     setStatusFilter(tempStatusFilter);
@@ -280,17 +220,12 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
     setShiftFilter(tempShiftFilter);
     setStartDateFilter(params.startDate || tempStartDateFilter);
     setEndDateFilter(params.endDate || tempEndDateFilter);
-    if (tempSearchTerm.trim() !== '') {
-      setSearchTerm(tempSearchTerm.trim());
-    }
-    
-    // Buscar directamente en la API con los filtros aplicados
+    if (tempSearchTerm.trim() !== '') setSearchTerm(tempSearchTerm.trim());
+
     await searchTransactionsDirectlyWrapper(params);
-    
-    // Actualizar subtítulo del Header con resumen de filtros
+
     const readable = (d: string) => {
       if (!d) return '';
-      // Evitar desfases de zona horaria: formatear YYYY-MM-DD manualmente a M/D/YYYY
       const [year, month, day] = d.split('-');
       return `${Number(month)}/${Number(day)}/${year}`;
     };
@@ -298,29 +233,22 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
     if (params.startDate && params.endDate) {
       const startText = readable(params.startDate);
       const endText = readable(params.endDate);
-      parts.push(
-        startText === endText
-          ? `Estás viendo transacciones del ${startText}`
-          : `Estás viendo transacciones del ${startText} al ${endText}`
-      );
+      parts.push(startText === endText ? `Transacciones del ${startText}` : `Transacciones del ${startText} al ${endText}`);
     }
     const extra: string[] = [];
-    if (params.transNumber) extra.push(`Transacción: ${params.transNumber}`);
+    if (params.transNumber) extra.push(`Trans: ${params.transNumber}`);
     if (params.cfNumber) extra.push(`e-NCF: ${params.cfNumber}`);
     if (params.siteId) extra.push(`Sucursal: ${params.siteId}`);
     if (params.terminal !== undefined) extra.push(`Terminal: ${params.terminal}`);
-    if (params.cfType) extra.push(`Tipo NCF: ${params.cfType}`);
+    if (params.cfType) extra.push(`Tipo: ${params.cfType}`);
     if (params.staftId !== undefined) extra.push(`Vendedor: ${params.staftId}`);
-    if (params.taxpayerId) extra.push(`RNC/Cédula: ${params.taxpayerId}`);
+    if (params.taxpayerId) extra.push(`RNC: ${params.taxpayerId}`);
     if (params.shift !== undefined) extra.push(`Turno: ${params.shift}`);
-    if (extra.length) parts.push(`Filtros: ${extra.join(' · ')}`);
+    if (extra.length) parts.push(extra.join(' · '));
     setSubtitle(parts.join(' — '));
-
-    // Ocultar la sección de filtros después de aplicarlos
     setShowFilters(false);
   };
 
-  // Mostrar rango por defecto (fecha actual) al cargar la página de transacciones
   useEffect(() => {
     const readable = (d: string) => {
       if (!d) return '';
@@ -330,85 +258,31 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
     if (startDateFilter && endDateFilter) {
       const startText = readable(startDateFilter);
       const endText = readable(endDateFilter);
-      const base = startText === endText
-        ? `Estás viendo transacciones del ${startText}`
-        : `Estás viendo transacciones del ${startText} al ${endText}`;
-      setSubtitle(base);
+      setSubtitle(startText === endText ? `Transacciones del ${startText}` : `Transacciones del ${startText} al ${endText}`);
     }
-    // Limpiar el subtítulo al salir de esta pantalla
-    return () => {
-      setSubtitle('');
-    };
+    return () => { setSubtitle(''); };
   }, [startDateFilter, endDateFilter, setSubtitle]);
 
-  // Función para buscar directamente en la API sin lógica de filtrado local
-  const searchTransactionsDirectlyWrapper = async (params: {
-    transNumber?: string;
-    cfNumber?: string;
-    siteId?: string;
-    terminal?: number;
-    cfType?: string;
-    staftId?: number;
-    taxpayerId?: string;
-    shift?: number;
-    startDate?: string;
-    endDate?: string;
-    page?: number;
-    limit?: number;
-  }) => {
+  const searchTransactionsDirectlyWrapper = async (params: any) => {
     try {
-      console.log('🔍 Buscando directamente en la API con parámetros:', params);
-      
-      // Usar la nueva función del hook que siempre busca en la API
       await searchTransactionsDirectly(params);
-      
-      console.log('✅ Búsqueda directa completada');
     } catch (err) {
-      console.warn('Error en búsqueda directa de transacciones:', err);
+      console.warn('Error en búsqueda directa:', err);
     }
   };
 
   const handleClearFilters = async () => {
-    // Obtener fecha de hoy en zona horaria de Santo Domingo
-    const getTodayDate = () => {
-      return getCurrentSantoDomingoDate();
-    };
-    
-    const todayDate = getTodayDate();
-    
-    // Limpiar todos los filtros globales
-    setSearchTerm('');
-    setTransNumberFilter('');
-    setCfNumberFilter('');
-    setStatusFilter('');
-    setCfTypeFilter('');
-    setSiteIdFilter('');
-    setTerminalFilter('');
-    setStaftIdFilter('');
-    setShiftFilter('');
-    setStartDateFilter(todayDate);
-    setEndDateFilter(todayDate);
-    
-    // Limpiar también los filtros temporales
-    setTempSearchTerm('');
-    setTempTransNumberFilter('');
-    setTempCfNumberFilter('');
-    setTempStatusFilter('');
-    setTempCfTypeFilter('');
-    setTempSiteIdFilter('');
-    setTempTerminalFilter('');
-    setTempStaftIdFilter('');
-    setTempShiftFilter('');
-    setTempStartDateFilter(todayDate);
-    setTempEndDateFilter(todayDate);
-    
-    // Resetear a la primera página
+    const todayDate = getCurrentSantoDomingoDate();
+    setSearchTerm(''); setTransNumberFilter(''); setCfNumberFilter('');
+    setStatusFilter(''); setCfTypeFilter(''); setSiteIdFilter('');
+    setTerminalFilter(''); setStaftIdFilter(''); setShiftFilter('');
+    setStartDateFilter(todayDate); setEndDateFilter(todayDate);
+    setTempSearchTerm(''); setTempTransNumberFilter(''); setTempCfNumberFilter('');
+    setTempStatusFilter(''); setTempCfTypeFilter(''); setTempSiteIdFilter('');
+    setTempTerminalFilter(''); setTempStaftIdFilter(''); setTempShiftFilter('');
+    setTempStartDateFilter(todayDate); setTempEndDateFilter(todayDate);
     setCurrentPage(1);
-    
-    // Ocultar la sección de filtros
     setShowFilters(false);
-    
-    // Recargar con filtros limpios (solo fechas de hoy)
     await loadTransactionsWithDates(todayDate, todayDate);
   };
 
@@ -419,35 +293,19 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
 
   const confirmReverseTransaction = async () => {
     if (!transactionToReverse) return;
-    
     try {
       setIsReversing(true);
       const result = await transactionService.reverseTransaction(transactionToReverse);
-      
-      // Verificar si la API respondió con successful: true
       if (result.successful) {
-        // Mostrar notificación de éxito
-        toast.success(`Transacción reversada exitosamente \n #${result.data.transNumber} \n e-NCF: ${result.data.encf}`, {
-          duration: 10000,
-          icon: '✅',
-        });
-        
-        // Cerrar el modal y refrescar las transacciones
+        toast.success(`Reversada: #${result.data.transNumber} · e-NCF: ${result.data.encf}`, { duration: 10000, icon: '✅' });
         setSelectedTransaction(null);
         await refreshTransactions();
       } else {
-        // Si la API no respondió con successful: true
-        toast.error(`Error: ${result.message || 'No se pudo reversar la transacción'}`, {
-          duration: 5000,
-          icon: '❌',
-        });
+        toast.error(`Error: ${result.message || 'No se pudo reversar'}`, { duration: 5000, icon: '❌' });
       }
     } catch (error) {
-      console.error('Error al reversar transacción:', error);
-      toast.error('Error al reversar la transacción. Por favor, inténtalo de nuevo.', {
-        duration: 5000,
-        icon: '❌',
-      });
+      console.error('Error al reversar:', error);
+      toast.error('Error al reversar la transacción', { duration: 5000, icon: '❌' });
     } finally {
       setIsReversing(false);
       setShowReverseDialog(false);
@@ -460,419 +318,223 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
     setTransactionToReverse(null);
   };
 
-
-  const getStatusIcon = (cfStatus: number) => {
+  const getStatusDot = (cfStatus: number) => {
     switch (cfStatus) {
       case CFStatus.ACCEPTED:
       case CFStatus.ACCEPTED_ALT:
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
+        return 'green';
       case CFStatus.PENDING:
-      case 0:
-      case 1:
-      case 5:
-      case 6:
-      case 7:
-      case 8:
-        return <Clock className="w-4 h-4 text-yellow-500" />;
+      case 0: case 1: case 5: case 6: case 7: case 8:
+        return 'yellow';
       case CFStatus.REJECTED:
-        return <AlertCircle className="w-4 h-4 text-red-500" />;
+        return 'red';
       default:
-        return <AlertCircle className="w-4 h-4 text-gray-500" />;
+        return 'gray';
     }
   };
 
+  const getStatusLabel = (cfStatus: number) => {
+    switch (cfStatus) {
+      case CFStatus.ACCEPTED:
+      case CFStatus.ACCEPTED_ALT:
+        return 'Aceptada';
+      case CFStatus.PENDING:
+      case 0: case 1: case 5: case 6: case 7: case 8:
+        return 'Pendiente';
+      case CFStatus.REJECTED:
+        return 'Rechazada';
+      default:
+        return 'Desconocido';
+    }
+  };
+
+  // Build search params helper for pagination
+  const buildSearchParams = (page: number, limit?: number) => ({
+    transNumber: transNumberFilter || undefined,
+    cfNumber: cfNumberFilter || undefined,
+    siteId: siteIdFilter || undefined,
+    terminal: terminalFilter || undefined,
+    cfType: cfTypeFilter || undefined,
+    staftId: staftIdFilter || undefined,
+    taxpayerId: searchTerm || undefined,
+    shift: shiftFilter || undefined,
+    startDate: startDateFilter,
+    endDate: endDateFilter,
+    page,
+    limit: limit || itemsPerPage,
+  });
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center h-32">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <div className="flex items-center">
-          <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
-          <span className="text-red-700">Error: {error}</span>
+      <div className="bg-red-50 border border-red-200 rounded-sm p-3">
+        <div className="flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-red-500" />
+          <span className="text-sm text-red-700">Error: {error}</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-1">
+      {/* Toolbar with stats + actions */}
+      <Toolbar
+        chips={[
+          { label: 'Ventas', value: formatCurrency(serverStats?.totalSales ?? stats.totalSales) },
+          { label: 'Retornos', value: formatCurrency(serverStats?.totalReturn ?? 0), color: 'red' },
+          { label: 'Aceptadas', value: serverStats?.dgiiAcceptedTransactions ?? stats.acceptedTransactions, color: 'green' },
+          { label: 'Rechazadas', value: serverStats?.dgiiRejectedTransactions ?? stats.rejectedTransactions, color: 'red' },
+          { label: 'Pendientes', value: serverStats?.dgiiPendingTransactions ?? stats.pendingTransactions, color: 'yellow' },
+        ]}
+      >
+        <CompactButton variant="icon" onClick={showFilters ? () => setShowFilters(false) : handleOpenFilters} title="Filtros">
+          <Filter className={`w-[13px] h-[13px] ${showFilters ? 'text-blue-600' : ''}`} />
+        </CompactButton>
+        <CompactButton variant="icon" onClick={refreshTransactions} disabled={loading} title="Actualizar">
+          <RefreshCw className={`w-[13px] h-[13px] ${loading ? 'animate-spin' : ''}`} />
+        </CompactButton>
+        <CompactButton variant="icon" onClick={() => handleExport('excel')} disabled={isExporting} title="Exportar Excel">
+          {isExporting ? (
+            <div className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <Download className="w-[13px] h-[13px]" />
+          )}
+        </CompactButton>
+      </Toolbar>
 
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-        {/* Botones de Acción */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.6 }}
-          className="flex items-center justify-center space-x-2 bg-white p-4 rounded-lg border border-gray-200"
-        >
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={showFilters ? () => setShowFilters(false) : handleOpenFilters}
-            className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
-              showFilters 
-                ? 'bg-blue-100 text-blue-700 border border-blue-300' 
-                : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
-            }`}
-            title={showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
-          >
-            <Filter className="w-4 h-4" />
-          </motion.button>
-          <motion.button 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={refreshTransactions}
-            disabled={loading}
-            className="flex items-center justify-center w-8 h-8 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
-            title="Actualizar"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </motion.button>
-          <motion.button 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => handleExport('excel')}
-            disabled={isExporting}
-            className="flex items-center justify-center w-8 h-8 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg transition-colors"
-            title="Exportar a Excel con 3 hojas: Transacciones, Productos y Pagos"
-          >
-            {isExporting ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            ) : (
-              <Download className="w-4 h-4" />
-            )}
-          </motion.button>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-          className="bg-white p-4 rounded-lg border border-gray-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Total Ventas</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {formatCurrency(serverStats?.totalSales ?? stats.totalSales)}
-              </p>
-            </div>
-            <DollarSign className="w-8 h-8 text-green-500" />
-          </div>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-          className="bg-white p-4 rounded-lg border border-gray-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Total Retornos</p>
-              <p className="text-2xl font-bold text-red-600">
-                {formatCurrency(serverStats?.totalReturn ?? 0)}
-              </p>
-            </div>
-            <RefreshCw className="w-8 h-8 text-red-500" />
-          </div>
-        </motion.div>
-
-        {/* Aceptadas */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.3 }}
-          className="bg-white p-4 rounded-lg border border-gray-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Aceptadas</p>
-              <p className="text-2xl font-bold text-green-600">
-                {serverStats?.dgiiAcceptedTransactions ?? stats.acceptedTransactions}
-              </p>
-            </div>
-            <CheckCircle className="w-8 h-8 text-green-500" />
-          </div>
-        </motion.div>
-        
-        {/* Rechazadas */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.4 }}
-          className="bg-white p-4 rounded-lg border border-gray-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Rechazadas</p>
-              <p className="text-2xl font-bold text-red-600">
-                {serverStats?.dgiiRejectedTransactions ?? stats.rejectedTransactions}
-              </p>
-            </div>
-            <AlertCircle className="w-8 h-8 text-red-500" />
-          </div>
-        </motion.div>
-        
-        {/* Pendientes */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.5 }}
-          className="bg-white p-4 rounded-lg border border-gray-200"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Pendientes</p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {serverStats?.dgiiPendingTransactions ?? stats.pendingTransactions}
-              </p>
-            </div>
-            <Clock className="w-8 h-8 text-yellow-500" />
-          </div>
-        </motion.div>
-      </div>
-
-
-      {/* Modal de Filtros */}
+      {/* Filter Modal */}
       {showFilters && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div className="flex items-center space-x-3">
-                <Filter className="w-6 h-6 text-blue-600" />
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Filtros de Búsqueda
-                  </h3>
-                  <p className="text-sm text-gray-600">Configura los filtros para buscar transacciones</p>
-                </div>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-sm max-w-3xl w-full max-h-[85vh] overflow-y-auto shadow-xl">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-blue-600" />
+                <span className="text-base font-semibold text-text-primary">Filtros de Búsqueda</span>
               </div>
-              <button
-                onClick={() => setShowFilters(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5" />
+              <button onClick={() => setShowFilters(false)} className="h-6 w-6 flex items-center justify-center rounded-sm hover:bg-gray-100">
+                <X className="w-4 h-4" />
               </button>
             </div>
-
-            {/* Modal Content */}
-            <div className="p-6">
-              <div className="space-y-6">
-                {/* Fechas */}
-                <div className="space-y-4">
-                  <h4 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Rango de Fechas</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio</label>
-                      <input
-                        type="date"
-                        value={tempStartDateFilter}
-                        onChange={(e) => setTempStartDateFilter(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Fin</label>
-                      <input
-                        type="date"
-                        value={tempEndDateFilter}
-                        onChange={(e) => setTempEndDateFilter(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
+            <div className="p-4 space-y-4">
+              {/* Dates */}
+              <div>
+                <h4 className="text-2xs font-semibold uppercase tracking-wide text-text-secondary mb-2">Rango de Fechas</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Fecha Inicio</label>
+                    <input type="date" value={tempStartDateFilter} onChange={(e) => setTempStartDateFilter(e.target.value)}
+                      className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
                   </div>
-                </div>
-
-                {/* Filtros de Transacción */}
-                <div className="space-y-4">
-                  <h4 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Transacción</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Número de Transacción</label>
-                      <input
-                        type="text"
-                        placeholder="Ej: CO0017P"
-                        value={tempTransNumberFilter}
-                        onChange={(e) => setTempTransNumberFilter(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Número de e-NCF</label>
-                      <input
-                        type="text"
-                        placeholder="Ej: E310000000001"
-                        value={tempCfNumberFilter}
-                        onChange={(e) => setTempCfNumberFilter(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                      <select 
-                        value={tempStatusFilter}
-                        onChange={(e) => setTempStatusFilter(e.target.value === '' ? '' : Number(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
-                        <option value="">Todos los estados</option>
-                        <option value={CFStatus.ACCEPTED}>Aceptadas</option>
-                        <option value={CFStatus.PENDING}>Pendientes</option>
-                        <option value={CFStatus.REJECTED}>Rechazadas</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de comprobante</label>
-                      <select 
-                        value={tempCfTypeFilter}
-                        onChange={(e) => setTempCfTypeFilter(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
-                        <option value="">Todos los tipos</option>
-                        <option value="31">31 - Crédito Fiscal</option>
-                        <option value="32">32 - Consumidor Final</option>
-                        <option value="34">34 - Nota de Credito</option>
-                        <option value="44">44 - Regimen Especial</option>
-                        <option value="45">45 - Gubernamental</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Filtros de Ubicación y Personal */}
-                <div className="space-y-4">
-                  <h4 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Ubicación y Personal</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Sucursal</label>
-                      <input
-                        type="text"
-                        placeholder="CO-0017"
-                        value={tempSiteIdFilter}
-                        onChange={(e) => setTempSiteIdFilter(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Terminal</label>
-                      <input
-                        type="number"
-                        placeholder="Ej: 1, 2, 3"
-                        value={tempTerminalFilter}
-                        onChange={(e) => setTempTerminalFilter(e.target.value === '' ? '' : Number(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Código vendedor</label>
-                      <input
-                        type="number"
-                        placeholder="0000"
-                        value={tempStaftIdFilter}
-                        onChange={(e) => setTempStaftIdFilter(e.target.value === '' ? '' : Number(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Turno</label>
-                      <input
-                        type="number"
-                        placeholder="1, 2 o 3"
-                        value={tempShiftFilter}
-                        onChange={(e) => setTempShiftFilter(e.target.value === '' ? '' : Number(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Filtros de Cliente */}
-                <div className="space-y-4">
-                  <h4 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Cliente</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">RNC/Cédula</label>
-                      <input
-                        type="text"
-                        placeholder="RNC o Cédula"
-                        value={tempSearchTerm}
-                        onChange={(e) => setTempSearchTerm(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Fecha Fin</label>
+                    <input type="date" value={tempEndDateFilter} onChange={(e) => setTempEndDateFilter(e.target.value)}
+                      className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
                   </div>
                 </div>
               </div>
-
-              {/* Botones de Acción */}
-              <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200 mt-6">
-                <button 
-                  onClick={handleClearFilters}
-                  disabled={loading}
-                  className={`flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg transition-colors ${
-                    loading 
-                      ? 'bg-gray-100 cursor-not-allowed text-gray-400' 
-                      : 'hover:bg-gray-50 text-gray-700'
-                  }`}
-                >
-                  {loading ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-4 h-4" />
-                  )}
-                  <span>{loading ? 'Limpiando...' : 'Limpiar'}</span>
-                </button>
-                <button 
-                  onClick={handleApplyFilters}
-                  disabled={loading}
-                  className={`flex items-center space-x-2 px-6 py-2 rounded-lg transition-colors font-medium ${
-                    loading 
-                      ? 'bg-blue-400 cursor-not-allowed' 
-                      : 'bg-blue-600 hover:bg-blue-700'
-                  } text-white`}
-                >
-                  {loading ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Filter className="w-4 h-4" />
-                  )}
-                  <span>{loading ? 'Aplicando...' : 'Aplicar Filtros'}</span>
-                </button>
+              {/* Transaction filters */}
+              <div>
+                <h4 className="text-2xs font-semibold uppercase tracking-wide text-text-secondary mb-2">Transacción</h4>
+                <div className="grid grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Nro. Trans.</label>
+                    <input type="text" placeholder="CO0017P" value={tempTransNumberFilter} onChange={(e) => setTempTransNumberFilter(e.target.value)}
+                      className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                  </div>
+                  <div>
+                    <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">e-NCF</label>
+                    <input type="text" placeholder="E310000" value={tempCfNumberFilter} onChange={(e) => setTempCfNumberFilter(e.target.value)}
+                      className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                  </div>
+                  <div>
+                    <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Estado</label>
+                    <select value={tempStatusFilter} onChange={(e) => setTempStatusFilter(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white">
+                      <option value="">Todos</option>
+                      <option value={CFStatus.ACCEPTED}>Aceptadas</option>
+                      <option value={CFStatus.PENDING}>Pendientes</option>
+                      <option value={CFStatus.REJECTED}>Rechazadas</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Tipo NCF</label>
+                    <select value={tempCfTypeFilter} onChange={(e) => setTempCfTypeFilter(e.target.value)}
+                      className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white">
+                      <option value="">Todos</option>
+                      <option value="31">31 - Crédito Fiscal</option>
+                      <option value="32">32 - Consumidor Final</option>
+                      <option value="34">34 - Nota de Credito</option>
+                      <option value="44">44 - Regimen Especial</option>
+                      <option value="45">45 - Gubernamental</option>
+                    </select>
+                  </div>
+                </div>
               </div>
+              {/* Location & staff */}
+              <div>
+                <h4 className="text-2xs font-semibold uppercase tracking-wide text-text-secondary mb-2">Ubicación y Personal</h4>
+                <div className="grid grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Sucursal</label>
+                    <input type="text" placeholder="CO-0017" value={tempSiteIdFilter} onChange={(e) => setTempSiteIdFilter(e.target.value)}
+                      className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                  </div>
+                  <div>
+                    <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Terminal</label>
+                    <input type="number" placeholder="1, 2, 3" value={tempTerminalFilter} onChange={(e) => setTempTerminalFilter(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                  </div>
+                  <div>
+                    <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Vendedor</label>
+                    <input type="number" placeholder="0000" value={tempStaftIdFilter} onChange={(e) => setTempStaftIdFilter(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                  </div>
+                  <div>
+                    <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Turno</label>
+                    <input type="number" placeholder="1, 2 o 3" value={tempShiftFilter} onChange={(e) => setTempShiftFilter(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                  </div>
+                </div>
+              </div>
+              {/* Customer */}
+              <div>
+                <h4 className="text-2xs font-semibold uppercase tracking-wide text-text-secondary mb-2">Cliente</h4>
+                <div className="w-1/4">
+                  <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">RNC/Cédula</label>
+                  <input type="text" placeholder="RNC o Cédula" value={tempSearchTerm} onChange={(e) => setTempSearchTerm(e.target.value)}
+                    className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                </div>
+              </div>
+            </div>
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-gray-200">
+              <CompactButton variant="ghost" onClick={handleClearFilters} disabled={loading}>
+                <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+                {loading ? 'Limpiando...' : 'Limpiar'}
+              </CompactButton>
+              <CompactButton variant="primary" onClick={handleApplyFilters} disabled={loading}>
+                <Filter className="w-3 h-3" />
+                {loading ? 'Aplicando...' : 'Aplicar'}
+              </CompactButton>
             </div>
           </div>
         </div>
       )}
 
-
-
       {/* Transactions Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.7 }}
-        className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
-      >
-
-        
+      <div className="bg-white rounded-sm border border-table-border overflow-hidden">
         {paginatedTransactions.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-table-header border-b border-table-border">
                 <tr>
                   {renderSortableHeader('transNumber', 'Transacción')}
                   {renderSortableHeader('transDate', 'Fecha')}
@@ -882,135 +544,73 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                   {renderSortableHeader('total', 'Total')}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
-                {paginatedTransactions.map((transaction, index) => (
-                  <motion.tr 
+              <tbody>
+                {paginatedTransactions.map((transaction) => (
+                  <tr
                     key={transaction.transNumber}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className={`hover:bg-gray-50 cursor-pointer transition-colors ${transaction.isReturn ? 'text-red-600' : ''} ${transaction.status === 0 ? 'opacity-50' : ''}`}
+                    className={`h-8 max-h-8 border-b border-table-border hover:bg-row-hover cursor-pointer transition-colors ${transaction.isReturn ? 'text-red-600' : ''} ${transaction.status === 0 ? 'opacity-50' : ''}`}
                     onClick={() => setSelectedTransaction(transaction)}
                   >
-                    <td className="px-6 py-2">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-lg">{getStatusIcon(transaction.cfStatus)}</span>
-                        <div>
-                          <div className={`text-sm font-medium ${transaction.isReturn ? 'text-red-600' : 'text-gray-900'}`}>{transaction.transNumber}</div>
-                          <div className={`text-sm ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`}>{transaction.cfNumber}</div>
-
-                          {transaction.status === 0 && (
-                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">
-                              Anulada
-                            </span>
-                          )}
-                        </div>
+                    <td className="px-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[180px]">
+                      <div className="flex items-center gap-1.5">
+                        <StatusDot color={getStatusDot(transaction.cfStatus)} label="" />
+                        <span className={`font-mono text-sm ${transaction.isReturn ? 'text-red-600' : 'text-text-primary'}`}>
+                          {transaction.transNumber}
+                        </span>
+                        <span className="text-text-muted">·</span>
+                        <span className={`text-sm ${transaction.isReturn ? 'text-red-500' : 'text-text-muted'}`}>
+                          {transaction.cfNumber}
+                        </span>
+                        {transaction.status === 0 && (
+                          <StatusDot color="gray" label="Anulada" />
+                        )}
                       </div>
                     </td>
-                    <td className="px-6 py-2">
-                      <div>
-                        <div className={`text-sm ${transaction.isReturn ? 'text-red-600' : 'text-gray-900'}`}>{formatDateOnly(transaction.transDate)}</div>
-                        <div className={`text-sm ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`}>{formatTimeOnly(transaction.transDate)}</div>
-                      </div>
+                    <td className="px-2 text-sm whitespace-nowrap">
+                      <span className={transaction.isReturn ? 'text-red-600' : 'text-text-primary'}>
+                        {formatDateOnly(transaction.transDate)} {formatTimeOnly(transaction.transDate)}
+                      </span>
                     </td>
-                    <td className="px-4 py-2">
-                      <div>
-                        <div className={`text-sm font-medium ${transaction.isReturn ? 'text-red-600' : 'text-gray-900'}`}>{transaction.siteId} {transaction.siteName}</div>
-                        <div className={`flex items-center space-x-1 text-sm ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`}>
-                          <Smartphone className={`w-3 h-3 ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`} />
-                          <span>Terminal {transaction.terminalId}</span>
-                        </div>
-                      </div>
+                    <td className="px-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[140px]">
+                      <span className={transaction.isReturn ? 'text-red-600' : 'text-text-primary'}>
+                        {transaction.siteId}
+                      </span>
+                      <span className="text-text-muted"> · T{transaction.terminalId}</span>
                     </td>
-                    <td className="px-6 py-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedTransaction(transaction);
-                        }}
-                        className="flex items-center space-x-1 text-blue-600 hover:text-blue-900 transition-colors"
-                      >
-
-                      </button>
-                      <div className={`text-sm font-medium ${transaction.isReturn ? 'text-red-600' : 'text-gray-900'}`}>{transaction.staftName}</div>
-                      <div className='flex items-center space-x-4 text-sm'>
-                        <div className={`flex items-center space-x-1 ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`}>
-                          <User className={`w-3 h-3 ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`} />
-                          <span>{transaction.staftId}</span>
-                        </div>
-                        <div className={`flex items-center space-x-1 ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`}>
-                          <Clock9Icon className={`w-3 h-3 ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`} />
-                          <span>{transaction.shift}</span>
-                        </div>
-                      </div>
-
+                    <td className="px-2 text-sm whitespace-nowrap">
+                      <span className={transaction.isReturn ? 'text-red-600' : 'text-text-primary'}>
+                        {transaction.staftName}
+                      </span>
+                      <span className="text-text-muted"> · {transaction.staftId} · T{transaction.shift}</span>
                     </td>
-
-
-                    <td className="px-6 py-2">
-                      <div className="flex items-center">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                          transaction.taxpayerName && transaction.taxpayerName !== 'Consumidor Final' 
-                            ? 'bg-green-100' 
-                            : 'bg-blue-100'
-                        }`}>
-                          {transaction.taxpayerName && transaction.taxpayerName !== 'Consumidor Final' ? (
-                            <Building2 className="w-4 h-4 text-green-600" />
-                          ) : (
-                            <User className="w-4 h-4 text-blue-600" />
-                          )}
-                        </div>
-                        <div className="ml-3">
-                          <div className={`text-sm font-medium ${transaction.isReturn ? 'text-red-600' : 'text-gray-900'}`}>
-                            {transaction.taxpayerName || 'Consumidor Final'}
-                          </div>
-                          <div className={`text-sm ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`}>{transaction.taxpayerId}</div>
-                        </div>
-                      </div>
+                    <td className="px-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[160px]">
+                      <span className={transaction.isReturn ? 'text-red-600' : 'text-text-primary'}>
+                        {transaction.taxpayerName || 'Consumidor Final'}
+                      </span>
+                      {transaction.taxpayerId && (
+                        <span className="text-text-muted"> · {transaction.taxpayerId}</span>
+                      )}
                     </td>
-                    <td className="px-6 py-2">
-                      <div>
-                        <div className={`text-sm font-medium ${transaction.isReturn ? 'text-red-600' : 'text-gray-900'}`}>
-                          {transaction.isReturn ? `-${formatCurrency(transaction.total)}` : formatCurrency(transaction.total)}
-                        </div>
-                        <div className={`text-xs ${transaction.isReturn ? 'text-red-500' : 'text-gray-500'}`}>
-                          {isNCFView ? (
-                            // Para vista NCF, mostrar el nombre del primer producto
-                            transaction.prods.length > 0 ? transaction.prods[0].productName : 'Sin producto'
-                          ) : (
-                            // Para vista normal, mostrar cantidad de productos
-                            `${transaction.prods.length} productos`
-                          )}
-                        </div>
-                      </div>
+                    <td className="px-2 text-sm whitespace-nowrap text-right font-mono font-semibold">
+                      <span className={transaction.isReturn ? 'text-red-600' : 'text-text-primary'}>
+                        {transaction.isReturn ? `-${formatCurrency(transaction.total)}` : formatCurrency(transaction.total)}
+                      </span>
                     </td>
-                    
-                  </motion.tr>
+                  </tr>
                 ))}
-              </tbody>                                                                                        
+              </tbody>
             </table>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-12 px-6">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <FileX className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No se encontraron transacciones</h3>
-            <p className="text-gray-500 text-center max-w-md">
-              No hay transacciones que coincidan con los filtros aplicados. 
-              Intenta ajustar los criterios de búsqueda o cambiar las fechas.
-            </p>
-            <button
-              onClick={handleClearFilters}
-              className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-            >
-              Limpiar filtros
-            </button>
+          <div className="flex flex-col items-center justify-center py-8 px-4">
+            <FileX className="w-8 h-8 text-text-muted mb-2" />
+            <p className="text-sm text-text-secondary mb-1">No se encontraron transacciones</p>
+            <CompactButton variant="primary" onClick={handleClearFilters}>Limpiar filtros</CompactButton>
           </div>
         )}
-      </motion.div>
+      </div>
 
-      {/* Transaction Details Modal */}
+      {/* Transaction Detail Modal */}
       {selectedTransaction && (
         <TransactionModal
           transaction={selectedTransaction}
@@ -1023,222 +623,94 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
       )}
 
       {/* Pagination */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.8 }}
-        className="flex items-center justify-between bg-white px-6 py-3 border border-gray-200 rounded-xl"
-      >
-        <div className="flex items-center space-x-4">
-          <div className="text-sm text-gray-700">
+      <div className="flex items-center justify-between px-2 py-1.5 bg-white border border-table-border rounded-sm">
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-text-muted">
             {pagination ? (
-              <>
-                Mostrando <span className="font-medium">{((pagination.page - 1) * pagination.limit) + 1}</span> a{' '}
-                <span className="font-medium">{Math.min(pagination.page * pagination.limit, pagination.total)}</span> de{' '}
-                <span className="font-medium">{pagination.total}</span> transacciones
-              </>
+              <>{((pagination.page - 1) * pagination.limit) + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total}</>
             ) : (
-              <>
-                Mostrando <span className="font-medium">{startIndex + 1}</span> a <span className="font-medium">{endIndex}</span> de{' '}
-                <span className="font-medium">{filteredTransactions.length}</span> transacciones
-              </>
+              <>{startIndex + 1}–{endIndex} de {filteredTransactions.length}</>
             )}
-          </div>
-          <div className="flex items-center space-x-2">
-            <label htmlFor="itemsPerPage" className="text-sm text-gray-700">
-              Items por página:
-            </label>
+          </span>
+          <div className="flex items-center gap-1">
+            <label className="text-xs text-text-muted">Items:</label>
             <select
-              id="itemsPerPage"
               value={itemsPerPage}
               onChange={async (e) => {
                 const newLimit = parseInt(e.target.value, 10);
                 setItemsPerPage(newLimit);
-                setCurrentPage(1); // Resetear a la primera página
-                
-                // Recargar transacciones con el nuevo límite
+                setCurrentPage(1);
                 if (startDateFilter && endDateFilter) {
-                  await searchTransactionsDirectly({
-                    transNumber: transNumberFilter || undefined,
-                    cfNumber: cfNumberFilter || undefined,
-                    siteId: siteIdFilter || undefined,
-                    terminal: terminalFilter || undefined,
-                    cfType: cfTypeFilter || undefined,
-                    staftId: staftIdFilter || undefined,
-                    taxpayerId: searchTerm || undefined,
-                    shift: shiftFilter || undefined,
-                    startDate: startDateFilter,
-                    endDate: endDateFilter,
-                    page: 1,
-                    limit: newLimit
-                  });
+                  await searchTransactionsDirectly(buildSearchParams(1, newLimit));
                 }
               }}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              className="h-6 px-1 text-xs border border-gray-300 rounded-sm bg-white"
             >
               <option value={10}>10</option>
               <option value={15}>15</option>
               <option value={20}>20</option>
               <option value={30}>30</option>
-              <option value={40}>40</option>
               <option value={50}>50</option>
             </select>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <button 
-            onClick={() => {
-              const newPage = Math.max(1, currentPage - 1);
-              // Recargar transacciones con la nueva página
-              if (startDateFilter && endDateFilter) {
-                searchTransactionsDirectly({
-                  transNumber: transNumberFilter || undefined,
-                  cfNumber: cfNumberFilter || undefined,
-                  siteId: siteIdFilter || undefined,
-                  terminal: terminalFilter || undefined,
-                  cfType: cfTypeFilter || undefined,
-                  staftId: staftIdFilter || undefined,
-                  taxpayerId: searchTerm || undefined,
-                  shift: shiftFilter || undefined,
-                  startDate: startDateFilter,
-                  endDate: endDateFilter,
-                  page: newPage
-                });
-              }
-            }}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => { if (startDateFilter && endDateFilter) searchTransactionsDirectly(buildSearchParams(Math.max(1, currentPage - 1))); }}
             disabled={!pagination?.hasPrev && currentPage === 1}
-            className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 rounded transition-colors"
+            className="h-6 w-6 flex items-center justify-center rounded-sm hover:bg-gray-100 disabled:opacity-30"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-3.5 h-3.5 text-text-secondary" />
           </button>
-          
-          {/* Mostrar números de página */}
           {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
             let pageNumber;
-            if (totalPages <= 5) {
-              pageNumber = i + 1;
-            } else if (currentPage <= 3) {
-              pageNumber = i + 1;
-            } else if (currentPage >= totalPages - 2) {
-              pageNumber = totalPages - 4 + i;
-            } else {
-              pageNumber = currentPage - 2 + i;
-            }
-            
+            if (totalPages <= 5) pageNumber = i + 1;
+            else if (currentPage <= 3) pageNumber = i + 1;
+            else if (currentPage >= totalPages - 2) pageNumber = totalPages - 4 + i;
+            else pageNumber = currentPage - 2 + i;
             return (
-              <button
-                key={pageNumber}
-                onClick={() => {
-                  // Recargar transacciones con la nueva página
-                  if (startDateFilter && endDateFilter) {
-                    searchTransactionsDirectly({
-                      transNumber: transNumberFilter || undefined,
-                      cfNumber: cfNumberFilter || undefined,
-                      siteId: siteIdFilter || undefined,
-                      terminal: terminalFilter || undefined,
-                      cfType: cfTypeFilter || undefined,
-                      staftId: staftIdFilter || undefined,
-                      taxpayerId: searchTerm || undefined,
-                      shift: shiftFilter || undefined,
-                      startDate: startDateFilter,
-                      endDate: endDateFilter,
-                      page: pageNumber
-                    });
-                  }
-                }}
-                className={`px-3 py-1 text-sm rounded transition-colors ${
-                  currentPage === pageNumber
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 hover:bg-gray-200'
-                }`}
+              <button key={pageNumber}
+                onClick={() => { if (startDateFilter && endDateFilter) searchTransactionsDirectly(buildSearchParams(pageNumber)); }}
+                className={`h-6 min-w-[24px] px-1 text-xs rounded-sm transition-colors ${currentPage === pageNumber ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-text-secondary'}`}
               >
                 {pageNumber}
               </button>
             );
           })}
-          
-          <button 
-            onClick={() => {
-              const newPage = Math.min(totalPages, currentPage + 1);
-              // Recargar transacciones con la nueva página
-              if (startDateFilter && endDateFilter) {
-                searchTransactionsDirectly({
-                  transNumber: transNumberFilter || undefined,
-                  cfNumber: cfNumberFilter || undefined,
-                  siteId: siteIdFilter || undefined,
-                  terminal: terminalFilter || undefined,
-                  cfType: cfTypeFilter || undefined,
-                  staftId: staftIdFilter || undefined,
-                  taxpayerId: searchTerm || undefined,
-                  shift: shiftFilter || undefined,
-                  startDate: startDateFilter,
-                  endDate: endDateFilter,
-                  page: newPage
-                });
-              }
-            }}
+          <button
+            onClick={() => { if (startDateFilter && endDateFilter) searchTransactionsDirectly(buildSearchParams(Math.min(totalPages, currentPage + 1))); }}
             disabled={!pagination?.hasNext && currentPage === totalPages}
-            className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 rounded transition-colors"
+            className="h-6 w-6 flex items-center justify-center rounded-sm hover:bg-gray-100 disabled:opacity-30"
           >
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-3.5 h-3.5 text-text-secondary" />
           </button>
         </div>
-      </motion.div>
+      </div>
 
-      {/* Diálogo de Confirmación para Reversar Transacción */}
-      <Dialog
-        open={showReverseDialog}
-        onClose={cancelReverseTransaction}
-        className="relative z-50"
-      >
-        {/* Backdrop */}
+      {/* Reverse Confirmation Dialog */}
+      <Dialog open={showReverseDialog} onClose={cancelReverseTransaction} className="relative z-50">
         <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-
-        {/* Contenedor del diálogo */}
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className="mx-auto max-w-sm rounded-lg bg-white shadow-xl">
-            <div className="p-6">
-              {/* Icono de advertencia */}
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mb-4">
-                <AlertCircle className="h-6 w-6 text-red-600" />
+          <Dialog.Panel className="mx-auto max-w-sm rounded-sm bg-white shadow-xl">
+            <div className="p-4">
+              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-red-100 mb-3">
+                <AlertCircle className="h-5 w-5 text-red-600" />
               </div>
-
-              {/* Título */}
-              <Dialog.Title className="text-lg font-medium text-gray-900 text-center mb-2">
-                Reversar Transacción {selectedTransaction?.transNumber}
+              <Dialog.Title className="text-base font-semibold text-text-primary text-center mb-1">
+                Reversar {selectedTransaction?.transNumber}
               </Dialog.Title>
-
-              {/* Mensaje */}
-              <Dialog.Description className="text-sm text-gray-500 text-center mb-6">
-                ¿Estás seguro de que quieres aplicar nota de credito a esta transacción? 
-                <br />
+              <Dialog.Description className="text-sm text-text-secondary text-center mb-4">
+                ¿Aplicar nota de crédito?
                 <br />
                 <span className="font-medium text-red-600">Esta acción no se puede deshacer.</span>
               </Dialog.Description>
-
-              {/* Botones */}
-              <div className="flex space-x-3">
-                <button
-                  onClick={cancelReverseTransaction}
-                  disabled={isReversing}
-                  className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 rounded-lg transition-colors"
-                >
+              <div className="flex gap-2">
+                <CompactButton variant="ghost" onClick={cancelReverseTransaction} disabled={isReversing} className="flex-1">
                   Cancelar
-                </button>
-                <button
-                  onClick={confirmReverseTransaction}
-                  disabled={isReversing}
-                  className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:bg-red-400 rounded-lg transition-colors flex items-center justify-center space-x-2"
-                >
-                  {isReversing ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Reversando...</span>
-                    </>
-                  ) : (
-                    <span>Reversar</span>
-                  )}
-                </button>
+                </CompactButton>
+                <CompactButton variant="danger" onClick={confirmReverseTransaction} disabled={isReversing} className="flex-1">
+                  {isReversing ? <><RefreshCw className="w-3 h-3 animate-spin" /> Reversando...</> : 'Reversar'}
+                </CompactButton>
               </div>
             </div>
           </Dialog.Panel>

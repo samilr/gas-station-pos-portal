@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Receipt, Plus, Edit2, Trash2, RefreshCw, X, Save, ChevronDown, ChevronRight, Percent, Calendar } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, Edit2, Trash2, RefreshCw, X, Save, ChevronDown, ChevronRight, Percent, Calendar } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { taxService } from '../../../services/taxService';
 import { ITax, ITaxType, ITaxLine } from '../../../types/tax';
+import { CompactButton } from '../../ui';
+import StatusDot from '../../ui/StatusDot';
+import Toolbar from '../../ui/Toolbar';
 
-// ─── Tax Modal ────────────────────────────────────────────────
+// --- Tax Modal ---
 const TaxModal: React.FC<{ tax: ITax | null; taxTypes: ITaxType[]; onClose: () => void; onSaved: () => void }> = ({ tax, taxTypes, onClose, onSaved }) => {
   const [form, setForm] = useState({ taxId: tax?.taxId || '', name: tax?.name || '', taxTypeId: tax?.taxTypeId ?? 1, active: tax?.active ?? true });
   const [saving, setSaving] = useState(false);
@@ -20,28 +23,28 @@ const TaxModal: React.FC<{ tax: ITax | null; taxTypes: ITaxType[]; onClose: () =
   };
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between p-5 border-b">
-          <h2 className="font-semibold text-gray-900">{tax ? 'Editar Impuesto' : 'Nuevo Impuesto'}</h2>
-          <button onClick={onClose}><X className="w-5 h-5 text-gray-500" /></button>
+      <div className="bg-white rounded-sm shadow-2xl w-full max-w-md">
+        <div className="flex items-center justify-between p-3 border-b">
+          <h2 className="text-sm font-semibold text-gray-900">{tax ? 'Editar Impuesto' : 'Nuevo Impuesto'}</h2>
+          <button onClick={onClose}><X className="w-4 h-4 text-gray-500" /></button>
         </div>
-        <form onSubmit={handleSubmit} className="p-5 space-y-3">
-          <div><label className="text-sm font-medium text-gray-700">Tax ID</label>
-            <input value={form.taxId} onChange={e => setForm(f => ({ ...f, taxId: e.target.value }))} disabled={!!tax} required className="w-full mt-1 px-3 py-2 border rounded-lg text-sm disabled:bg-gray-50" /></div>
-          <div><label className="text-sm font-medium text-gray-700">Nombre</label>
-            <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required className="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>
-          <div><label className="text-sm font-medium text-gray-700">Tipo de Impuesto</label>
-            <select value={form.taxTypeId} onChange={e => setForm(f => ({ ...f, taxTypeId: Number(e.target.value) }))} className="w-full mt-1 px-3 py-2 border rounded-lg text-sm">
+        <form onSubmit={handleSubmit} className="p-3 space-y-2">
+          <div><label className="text-xs font-medium text-gray-700">Tax ID</label>
+            <input value={form.taxId} onChange={e => setForm(f => ({ ...f, taxId: e.target.value }))} disabled={!!tax} required className="w-full mt-1 h-7 px-2 text-sm border border-gray-300 rounded-sm disabled:bg-gray-50" /></div>
+          <div><label className="text-xs font-medium text-gray-700">Nombre</label>
+            <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required className="w-full mt-1 h-7 px-2 text-sm border border-gray-300 rounded-sm" /></div>
+          <div><label className="text-xs font-medium text-gray-700">Tipo de Impuesto</label>
+            <select value={form.taxTypeId} onChange={e => setForm(f => ({ ...f, taxTypeId: Number(e.target.value) }))} className="w-full mt-1 h-7 px-2 text-sm border border-gray-300 rounded-sm">
               {taxTypes.map(t => <option key={t.taxTypeId} value={t.taxTypeId}>{t.name}</option>)}
             </select></div>
-          <label className="flex items-center gap-2 cursor-pointer text-sm">
+          <label className="flex items-center gap-2 cursor-pointer text-xs">
             <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="rounded" />Activo
           </label>
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg">Cancelar</button>
-            <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-60">
-              <Save className="w-4 h-4" />{saving ? 'Guardando...' : 'Guardar'}
-            </button>
+          <div className="flex justify-end gap-2 pt-1">
+            <CompactButton type="button" variant="ghost" onClick={onClose}>Cancelar</CompactButton>
+            <CompactButton type="submit" variant="primary" disabled={saving}>
+              <Save className="w-3.5 h-3.5" />{saving ? 'Guardando...' : 'Guardar'}
+            </CompactButton>
           </div>
         </form>
       </div>
@@ -49,7 +52,7 @@ const TaxModal: React.FC<{ tax: ITax | null; taxTypes: ITaxType[]; onClose: () =
   );
 };
 
-// ─── Tax Type Modal ────────────────────────────────────────────
+// --- Tax Type Modal ---
 const TaxTypeModal: React.FC<{ taxType: ITaxType | null; onClose: () => void; onSaved: () => void }> = ({ taxType, onClose, onSaved }) => {
   const [form, setForm] = useState({ taxTypeId: taxType?.taxTypeId ?? 0, name: taxType?.name || '', active: taxType?.active ?? true });
   const [saving, setSaving] = useState(false);
@@ -64,24 +67,24 @@ const TaxTypeModal: React.FC<{ taxType: ITaxType | null; onClose: () => void; on
   };
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm">
-        <div className="flex items-center justify-between p-5 border-b">
-          <h2 className="font-semibold text-gray-900">{taxType ? 'Editar Tipo' : 'Nuevo Tipo'}</h2>
-          <button onClick={onClose}><X className="w-5 h-5 text-gray-500" /></button>
+      <div className="bg-white rounded-sm shadow-2xl w-full max-w-sm">
+        <div className="flex items-center justify-between p-3 border-b">
+          <h2 className="text-sm font-semibold text-gray-900">{taxType ? 'Editar Tipo' : 'Nuevo Tipo'}</h2>
+          <button onClick={onClose}><X className="w-4 h-4 text-gray-500" /></button>
         </div>
-        <form onSubmit={handleSubmit} className="p-5 space-y-3">
-          {!taxType && <div><label className="text-sm font-medium text-gray-700">Tax Type ID</label>
-            <input type="number" value={form.taxTypeId} onChange={e => setForm(f => ({ ...f, taxTypeId: Number(e.target.value) }))} className="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>}
-          <div><label className="text-sm font-medium text-gray-700">Nombre</label>
-            <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required className="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>
-          <label className="flex items-center gap-2 cursor-pointer text-sm">
+        <form onSubmit={handleSubmit} className="p-3 space-y-2">
+          {!taxType && <div><label className="text-xs font-medium text-gray-700">Tax Type ID</label>
+            <input type="number" value={form.taxTypeId} onChange={e => setForm(f => ({ ...f, taxTypeId: Number(e.target.value) }))} className="w-full mt-1 h-7 px-2 text-sm border border-gray-300 rounded-sm" /></div>}
+          <div><label className="text-xs font-medium text-gray-700">Nombre</label>
+            <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required className="w-full mt-1 h-7 px-2 text-sm border border-gray-300 rounded-sm" /></div>
+          <label className="flex items-center gap-2 cursor-pointer text-xs">
             <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="rounded" />Activo
           </label>
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg">Cancelar</button>
-            <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-60">
-              <Save className="w-4 h-4" />{saving ? 'Guardando...' : 'Guardar'}
-            </button>
+          <div className="flex justify-end gap-2 pt-1">
+            <CompactButton type="button" variant="ghost" onClick={onClose}>Cancelar</CompactButton>
+            <CompactButton type="submit" variant="primary" disabled={saving}>
+              <Save className="w-3.5 h-3.5" />{saving ? 'Guardando...' : 'Guardar'}
+            </CompactButton>
           </div>
         </form>
       </div>
@@ -89,7 +92,7 @@ const TaxTypeModal: React.FC<{ taxType: ITaxType | null; onClose: () => void; on
   );
 };
 
-// ─── Tax Line Modal ────────────────────────────────────────────
+// --- Tax Line Modal ---
 const TaxLineModal: React.FC<{
   taxId: string;
   line: ITaxLine | null;
@@ -118,47 +121,47 @@ const TaxLineModal: React.FC<{
       ? await taxService.updateTaxLine(taxId, line.line, payload)
       : await taxService.createTaxLine({ taxId, line: form.line, rate: form.rate, startTime: form.startTime, endTime: form.endTime || null, status: form.status });
     setSaving(false);
-    if (res.successful) { toast.success(line ? 'Línea actualizada' : 'Línea creada'); onSaved(); }
+    if (res.successful) { toast.success(line ? 'Linea actualizada' : 'Linea creada'); onSaved(); }
     else toast.error(res.error || 'Error al guardar');
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between p-5 border-b">
+      <div className="bg-white rounded-sm shadow-2xl w-full max-w-md">
+        <div className="flex items-center justify-between p-3 border-b">
           <div>
-            <h2 className="font-semibold text-gray-900">{line ? 'Editar Línea de Tasa' : 'Nueva Línea de Tasa'}</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Impuesto {taxId}</p>
+            <h2 className="text-sm font-semibold text-gray-900">{line ? 'Editar Linea de Tasa' : 'Nueva Linea de Tasa'}</h2>
+            <p className="text-xs text-gray-400">Impuesto {taxId}</p>
           </div>
-          <button onClick={onClose}><X className="w-5 h-5 text-gray-500" /></button>
+          <button onClick={onClose}><X className="w-4 h-4 text-gray-500" /></button>
         </div>
-        <form onSubmit={handleSubmit} className="p-5 space-y-3">
+        <form onSubmit={handleSubmit} className="p-3 space-y-2">
           {!line && (
-            <div><label className="text-sm font-medium text-gray-700">Número de Línea</label>
-              <input type="number" min={1} value={form.line} onChange={e => setForm(f => ({ ...f, line: Number(e.target.value) }))} required className="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>
+            <div><label className="text-xs font-medium text-gray-700">Numero de Linea</label>
+              <input type="number" min={1} value={form.line} onChange={e => setForm(f => ({ ...f, line: Number(e.target.value) }))} required className="w-full mt-1 h-7 px-2 text-sm border border-gray-300 rounded-sm" /></div>
           )}
-          <div><label className="text-sm font-medium text-gray-700">Tasa (%)</label>
+          <div><label className="text-xs font-medium text-gray-700">Tasa (%)</label>
             <div className="relative mt-1">
               <input type="number" step="0.01" min={0} max={100} value={form.rate}
                 onChange={e => setForm(f => ({ ...f, rate: Number(e.target.value) }))} required
-                className="w-full pl-4 pr-10 py-2 border rounded-lg text-sm" />
-              <span className="absolute right-3 top-2.5 text-gray-400 text-sm font-bold">%</span>
+                className="w-full h-7 pl-2 pr-8 text-sm border border-gray-300 rounded-sm" />
+              <span className="absolute right-2 top-1.5 text-gray-400 text-xs font-bold">%</span>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-sm font-medium text-gray-700">Fecha Inicio</label>
-              <input type="date" value={form.startTime} onChange={e => setForm(f => ({ ...f, startTime: e.target.value }))} required className="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>
-            <div><label className="text-sm font-medium text-gray-700">Fecha Fin <span className="text-gray-400 font-normal">(opcional)</span></label>
-              <input type="date" value={form.endTime} onChange={e => setForm(f => ({ ...f, endTime: e.target.value }))} className="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>
+          <div className="grid grid-cols-2 gap-2">
+            <div><label className="text-xs font-medium text-gray-700">Fecha Inicio</label>
+              <input type="date" value={form.startTime} onChange={e => setForm(f => ({ ...f, startTime: e.target.value }))} required className="w-full mt-1 h-7 px-2 text-sm border border-gray-300 rounded-sm" /></div>
+            <div><label className="text-xs font-medium text-gray-700">Fecha Fin <span className="text-gray-400 font-normal">(opc.)</span></label>
+              <input type="date" value={form.endTime} onChange={e => setForm(f => ({ ...f, endTime: e.target.value }))} className="w-full mt-1 h-7 px-2 text-sm border border-gray-300 rounded-sm" /></div>
           </div>
-          <label className="flex items-center gap-2 cursor-pointer text-sm">
+          <label className="flex items-center gap-2 cursor-pointer text-xs">
             <input type="checkbox" checked={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.checked }))} className="rounded" />Activa
           </label>
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg">Cancelar</button>
-            <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 text-sm bg-amber-600 hover:bg-amber-700 text-white rounded-lg disabled:opacity-60">
-              <Save className="w-4 h-4" />{saving ? 'Guardando...' : 'Guardar'}
-            </button>
+          <div className="flex justify-end gap-2 pt-1">
+            <CompactButton type="button" variant="ghost" onClick={onClose}>Cancelar</CompactButton>
+            <CompactButton type="submit" variant="primary" disabled={saving}>
+              <Save className="w-3.5 h-3.5" />{saving ? 'Guardando...' : 'Guardar'}
+            </CompactButton>
           </div>
         </form>
       </div>
@@ -166,7 +169,7 @@ const TaxLineModal: React.FC<{
   );
 };
 
-// ─── Tax Lines Sub-table ───────────────────────────────────────
+// --- Tax Lines Sub-table ---
 const TaxLinesRow: React.FC<{ taxId: string; onAddLine: () => void }> = ({ taxId, onAddLine }) => {
   const [lines, setLines] = useState<ITaxLine[]>([]);
   const [loading, setLoading] = useState(true);
@@ -182,9 +185,9 @@ const TaxLinesRow: React.FC<{ taxId: string; onAddLine: () => void }> = ({ taxId
   useEffect(() => { loadLines(); }, [loadLines]);
 
   const handleDelete = async (line: number) => {
-    if (!confirm(`¿Eliminar línea ${line} del impuesto ${taxId}?`)) return;
+    if (!confirm(`¿Eliminar linea ${line} del impuesto ${taxId}?`)) return;
     const r = await taxService.deleteTaxLine(taxId, line);
-    if (r.successful) { toast.success('Línea eliminada'); loadLines(); }
+    if (r.successful) { toast.success('Linea eliminada'); loadLines(); }
     else toast.error(r.error || 'Error');
   };
 
@@ -197,55 +200,53 @@ const TaxLinesRow: React.FC<{ taxId: string; onAddLine: () => void }> = ({ taxId
     <>
       <tr>
         <td colSpan={6} className="bg-amber-50 px-0 py-0">
-          <div className="px-8 py-3">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide flex items-center gap-1.5">
-                <Percent className="w-3.5 h-3.5" />Líneas de Tasa — Impuesto {taxId}
+          <div className="px-4 py-2">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide flex items-center gap-1">
+                <Percent className="w-3 h-3" />Lineas de Tasa — {taxId}
               </p>
-              <button onClick={() => { setLineModal({ show: true, line: null }); }}
-                className="flex items-center gap-1 px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs">
-                <Plus className="w-3 h-3" />Nueva Línea
-              </button>
+              <CompactButton variant="primary" onClick={() => { setLineModal({ show: true, line: null }); }}
+                className="!h-6 !text-xs !bg-amber-600 hover:!bg-amber-700">
+                <Plus className="w-3 h-3" />Nueva Linea
+              </CompactButton>
             </div>
 
             {loading ? (
-              <div className="flex items-center gap-2 text-xs text-gray-400 py-2">
-                <div className="animate-spin h-3.5 w-3.5 border-b-2 border-amber-600 rounded-full" />Cargando...
+              <div className="flex items-center gap-2 text-xs text-gray-400 py-1">
+                <div className="animate-spin h-3 w-3 border-b-2 border-amber-600 rounded-full" />Cargando...
               </div>
             ) : lines.length === 0 ? (
-              <p className="text-xs text-gray-400 py-2 italic">Sin líneas de tasa. <button onClick={onAddLine} className="text-amber-600 hover:underline">Agregar</button></p>
+              <p className="text-xs text-gray-400 py-1 italic">Sin lineas. <button onClick={onAddLine} className="text-amber-600 hover:underline">Agregar</button></p>
             ) : (
-              <div className="overflow-x-auto rounded-lg border border-amber-100">
+              <div className="overflow-x-auto rounded-sm border border-amber-100">
                 <table className="min-w-full text-xs">
                   <thead className="bg-amber-100/60">
-                    <tr>
-                      {['Línea', 'Tasa', 'Fecha Inicio', 'Fecha Fin', 'Estado', 'Acciones'].map(h => (
-                        <th key={h} className="px-4 py-2 text-left font-semibold text-amber-800">{h}</th>
+                    <tr className="h-7">
+                      {['Linea', 'Tasa', 'Fecha Inicio', 'Fecha Fin', 'Estado', 'Acciones'].map(h => (
+                        <th key={h} className="px-2 text-left text-xs font-semibold text-amber-800">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-amber-100">
                     {lines.map(l => (
-                      <tr key={l.line} className="hover:bg-amber-50/70 transition-colors">
-                        <td className="px-4 py-2 font-mono text-gray-700">{l.line}</td>
-                        <td className="px-4 py-2">
-                          <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-semibold">
+                      <tr key={l.line} className="h-7 hover:bg-amber-50/70 transition-colors">
+                        <td className="px-2 font-mono text-gray-700">{l.line}</td>
+                        <td className="px-2">
+                          <span className="inline-flex items-center gap-0.5 text-amber-800 font-semibold">
                             <Percent className="w-3 h-3" />{(l.rate * 100).toFixed(0)}%
                           </span>
                         </td>
-                        <td className="px-4 py-2 flex items-center gap-1 text-gray-600">
+                        <td className="px-2 text-gray-600 flex items-center gap-0.5">
                           <Calendar className="w-3 h-3 text-gray-400" />{formatDate(l.startTime)}
                         </td>
-                        <td className="px-4 py-2 text-gray-600">{formatDate(l.endTime)}</td>
-                        <td className="px-4 py-2">
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${l.status ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                            {l.status ? '● Activa' : '○ Inactiva'}
-                          </span>
+                        <td className="px-2 text-gray-600">{formatDate(l.endTime)}</td>
+                        <td className="px-2">
+                          <StatusDot color={l.status ? 'green' : 'gray'} label={l.status ? 'Activa' : 'Inactiva'} />
                         </td>
-                        <td className="px-4 py-2">
-                          <div className="flex gap-1">
-                            <button onClick={() => setLineModal({ show: true, line: l })} className="p-1 text-blue-600 hover:bg-blue-50 rounded"><Edit2 className="w-3.5 h-3.5" /></button>
-                            <button onClick={() => handleDelete(l.line)} className="p-1 text-red-600 hover:bg-red-50 rounded"><Trash2 className="w-3.5 h-3.5" /></button>
+                        <td className="px-2">
+                          <div className="flex gap-0.5">
+                            <button onClick={() => setLineModal({ show: true, line: l })} className="p-0.5 text-blue-600 hover:bg-blue-50 rounded-sm"><Edit2 className="w-3 h-3" /></button>
+                            <button onClick={() => handleDelete(l.line)} className="p-0.5 text-red-600 hover:bg-red-50 rounded-sm"><Trash2 className="w-3 h-3" /></button>
                           </div>
                         </td>
                       </tr>
@@ -270,7 +271,7 @@ const TaxLinesRow: React.FC<{ taxId: string; onAddLine: () => void }> = ({ taxId
   );
 };
 
-// ─── Main Section ─────────────────────────────────────────────
+// --- Main Section ---
 type Tab = 'taxes' | 'types';
 
 const TaxesSection: React.FC = () => {
@@ -306,136 +307,121 @@ const TaxesSection: React.FC = () => {
   const toggleExpand = (taxId: string) => setExpandedTaxId(prev => prev === taxId ? null : taxId);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-              <Receipt className="w-5 h-5 text-amber-600" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Impuestos</h1>
-              <p className="text-sm text-gray-500">Gestión de impuestos, tipos y tasas vigentes</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {tab === 'taxes'
-              ? <button onClick={() => setTaxModal({ show: true, tax: null })} className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm"><Plus className="w-4 h-4" />Nuevo Impuesto</button>
-              : <button onClick={() => setTypeModal({ show: true, type: null })} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm"><Plus className="w-4 h-4" />Nuevo Tipo</button>}
-            <button onClick={load} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg">
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
-        </div>
-        <div className="flex gap-2">
+    <div className="space-y-1">
+      {/* Toolbar */}
+      <Toolbar
+        chips={[
+          { label: "Impuestos", value: taxes.length, color: "orange" },
+          { label: "Tipos", value: taxTypes.length, color: "blue" },
+        ]}
+      >
+        <div className="flex gap-1 mr-2">
           {(['taxes', 'types'] as Tab[]).map(t => (
-            <button key={t} onClick={() => setTab(t)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t ? 'bg-amber-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+            <CompactButton key={t} variant={tab === t ? 'primary' : 'ghost'}
+              onClick={() => setTab(t)}
+              className={tab === t ? '!bg-amber-600 hover:!bg-amber-700' : ''}>
               {t === 'taxes' ? `Impuestos (${taxes.length})` : `Tipos (${taxTypes.length})`}
-            </button>
+            </CompactButton>
           ))}
         </div>
-      </motion.div>
+        {tab === 'taxes'
+          ? <CompactButton variant="primary" onClick={() => setTaxModal({ show: true, tax: null })} className="!bg-amber-600 hover:!bg-amber-700">
+              <Plus className="w-3.5 h-3.5" />Nuevo Impuesto
+            </CompactButton>
+          : <CompactButton variant="primary" onClick={() => setTypeModal({ show: true, type: null })}>
+              <Plus className="w-3.5 h-3.5" />Nuevo Tipo
+            </CompactButton>}
+        <CompactButton variant="icon" onClick={load}>
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+        </CompactButton>
+      </Toolbar>
 
       {/* Table */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-sm border border-gray-200 overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center h-40">
+          <div className="flex items-center justify-center h-32">
             <div className="animate-spin h-8 w-8 border-b-2 border-amber-600 rounded-full" />
           </div>
         ) : (
           <div className="overflow-x-auto">
             {tab === 'taxes' ? (
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="w-10 px-2 py-3" />
+              <table className="min-w-full">
+                <thead>
+                  <tr className="h-8 text-xs uppercase tracking-wide bg-table-header border-b border-table-border">
+                    <th className="w-8 px-1" />
                     {['Tax ID', 'Nombre', 'Tipo', 'Estado', 'Acciones'].map(h => (
-                      <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
+                      <th key={h} className="px-2 text-left text-xs font-medium text-gray-500">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody>
                   {taxes.map(t => (
                     <React.Fragment key={t.taxId}>
-                      <tr className={`hover:bg-gray-50 transition-colors ${expandedTaxId === t.taxId ? 'bg-amber-50/40' : ''}`}>
-                        {/* Expand toggle */}
-                        <td className="pl-4 pr-0 py-4">
+                      <tr className={`h-8 max-h-8 border-b border-table-border hover:bg-row-hover transition-colors ${expandedTaxId === t.taxId ? 'bg-amber-50/40' : ''}`}>
+                        <td className="pl-2 pr-0">
                           <button onClick={() => toggleExpand(t.taxId)}
-                            className={`p-1 rounded transition-colors ${expandedTaxId === t.taxId ? 'bg-amber-100 text-amber-700' : 'hover:bg-gray-100 text-gray-400'}`}
-                            title={expandedTaxId === t.taxId ? 'Ocultar líneas' : 'Ver líneas de tasa'}>
-                            {expandedTaxId === t.taxId
-                              ? <ChevronDown className="w-4 h-4" />
-                              : <ChevronRight className="w-4 h-4" />}
+                            className={`p-0.5 rounded-sm transition-colors ${expandedTaxId === t.taxId ? 'bg-amber-100 text-amber-700' : 'hover:bg-gray-100 text-gray-400'}`}>
+                            {expandedTaxId === t.taxId ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                           </button>
                         </td>
-                        <td className="px-6 py-4 text-sm font-mono font-semibold text-gray-900">{t.taxId}</td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{t.name}</td>
-                        <td className="px-6 py-4 text-sm text-gray-500">{taxTypes.find(tt => tt.taxTypeId === t.taxTypeId)?.name || `Tipo ${t.taxTypeId}`}</td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2.5 py-1 text-xs rounded-full font-medium ${t.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                            {t.active ? 'Activo' : 'Inactivo'}
-                          </span>
+                        <td className="px-2 text-sm whitespace-nowrap font-mono font-semibold text-gray-900">{t.taxId}</td>
+                        <td className="px-2 text-sm whitespace-nowrap text-gray-900">{t.name}</td>
+                        <td className="px-2 text-sm whitespace-nowrap text-gray-500">{taxTypes.find(tt => tt.taxTypeId === t.taxTypeId)?.name || `Tipo ${t.taxTypeId}`}</td>
+                        <td className="px-2 text-sm whitespace-nowrap">
+                          <StatusDot color={t.active ? 'green' : 'gray'} label={t.active ? 'Activo' : 'Inactivo'} />
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="flex gap-2">
-                            <button onClick={() => setTaxModal({ show: true, tax: t })} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg"><Edit2 className="w-4 h-4" /></button>
-                            <button onClick={() => deleteT(t.taxId)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
+                        <td className="px-2 text-sm whitespace-nowrap">
+                          <div className="flex gap-1">
+                            <button onClick={() => setTaxModal({ show: true, tax: t })} className="p-0.5 text-blue-600 hover:bg-blue-50 rounded-sm"><Edit2 className="w-3.5 h-3.5" /></button>
+                            <button onClick={() => deleteT(t.taxId)} className="p-0.5 text-red-600 hover:bg-red-50 rounded-sm"><Trash2 className="w-3.5 h-3.5" /></button>
                           </div>
                         </td>
                       </tr>
 
-                      {/* Expandable tax lines row */}
                       <AnimatePresence>
                         {expandedTaxId === t.taxId && (
-                          <TaxLinesRow
-                            taxId={t.taxId}
-                            onAddLine={() => setExpandedTaxId(t.taxId)}
-                          />
+                          <TaxLinesRow taxId={t.taxId} onAddLine={() => setExpandedTaxId(t.taxId)} />
                         )}
                       </AnimatePresence>
                     </React.Fragment>
                   ))}
                   {taxes.length === 0 && (
-                    <tr><td colSpan={6} className="px-6 py-10 text-center text-sm text-gray-400">Sin impuestos</td></tr>
+                    <tr><td colSpan={6} className="px-2 py-6 text-center text-sm text-gray-400">Sin impuestos</td></tr>
                   )}
                 </tbody>
               </table>
             ) : (
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50"><tr>
-                  {['ID', 'Nombre', 'Estado', 'Acciones'].map(h => (
-                    <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
-                  ))}
-                </tr></thead>
-                <tbody className="divide-y divide-gray-200">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="h-8 text-xs uppercase tracking-wide bg-table-header border-b border-table-border">
+                    {['ID', 'Nombre', 'Estado', 'Acciones'].map(h => (
+                      <th key={h} className="px-2 text-left text-xs font-medium text-gray-500">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
                   {taxTypes.map(t => (
-                    <tr key={t.taxTypeId} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm text-gray-900">{t.taxTypeId}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{t.name}</td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2.5 py-1 text-xs rounded-full font-medium ${t.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                          {t.active ? 'Activo' : 'Inactivo'}
-                        </span>
+                    <tr key={t.taxTypeId} className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover">
+                      <td className="px-2 text-sm whitespace-nowrap text-gray-900">{t.taxTypeId}</td>
+                      <td className="px-2 text-sm whitespace-nowrap text-gray-900">{t.name}</td>
+                      <td className="px-2 text-sm whitespace-nowrap">
+                        <StatusDot color={t.active ? 'green' : 'gray'} label={t.active ? 'Activo' : 'Inactivo'} />
                       </td>
-                      <td className="px-6 py-4"><div className="flex gap-2">
-                        <button onClick={() => setTypeModal({ show: true, type: t })} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg"><Edit2 className="w-4 h-4" /></button>
-                        <button onClick={() => deleteTT(t.taxTypeId)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
+                      <td className="px-2 text-sm whitespace-nowrap"><div className="flex gap-1">
+                        <button onClick={() => setTypeModal({ show: true, type: t })} className="p-0.5 text-blue-600 hover:bg-blue-50 rounded-sm"><Edit2 className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => deleteTT(t.taxTypeId)} className="p-0.5 text-red-600 hover:bg-red-50 rounded-sm"><Trash2 className="w-3.5 h-3.5" /></button>
                       </div></td>
                     </tr>
                   ))}
                   {taxTypes.length === 0 && (
-                    <tr><td colSpan={4} className="px-6 py-10 text-center text-sm text-gray-400">Sin tipos de impuesto</td></tr>
+                    <tr><td colSpan={4} className="px-2 py-6 text-center text-sm text-gray-400">Sin tipos de impuesto</td></tr>
                   )}
                 </tbody>
               </table>
             )}
           </div>
         )}
-      </motion.div>
+      </div>
 
       {taxModal.show && (
         <TaxModal tax={taxModal.tax} taxTypes={taxTypes}

@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Users, Search, Plus, Edit, Trash2, RefreshCw, Filter, CheckCircle, UserCheck, UserX, Shield } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, RefreshCw, Filter } from 'lucide-react';
 import DeleteUserDialog from './DeleteUserDialog';
 import UserModal from './UserModal';
 import { useAuth } from '../../../context/AuthContext';
@@ -11,18 +10,14 @@ import { IUser } from '../../../services/userService';
 import { PermissionGate } from '../../common';
 import { Role } from '../../../config/permissions';
 import { formatDateDMY } from '../../../utils/dateUtils';
+import { CompactButton } from '../../ui';
+import StatusDot from '../../ui/StatusDot';
+import Toolbar from '../../ui/Toolbar';
+import { CompactSelect } from '../../ui/CompactInput';
+import CompactTable from '../../ui/CompactTable';
+import { createColumnHelper } from '@tanstack/react-table';
 
-
-// Función para formatear fecha de creación de usuario
-const formatUserDate = (dateString: string | Date): { date: string; time: string } => {
-  const date = new Date(dateString);
-  const dateFormatted = formatDateDMY(dateString);
-  const timeFormatted = date.toLocaleTimeString('es-DO', {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-  return { date: dateFormatted, time: timeFormatted };
-};
+const columnHelper = createColumnHelper<IUser>();
 
 const UsersSection: React.FC = () => {
   const { } = useNavigate();
@@ -36,599 +31,250 @@ const UsersSection: React.FC = () => {
   const [groupFilter, setGroupFilter] = useState('');
   const [portalAccessFilter, setPortalAccessFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [modalUser, setModalUser] = useState<IUser | null>(null);
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view'>('create');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<IUser | null>(null);
 
-  const filteredUsers = (Array.isArray(users) ? users : []).filter(user => {
-    const matchesSearch = 
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesRole = roleFilter === '' || user.role.toLowerCase() === roleFilter.toLowerCase();
-    const matchesStatus = statusFilter === '' || 
-      (statusFilter === 'active' && user.active === 1) ||
-      (statusFilter === 'inactive' && user.active === 0);
-    const matchesSite = siteFilter === '' || user.site_id === siteFilter;
-    const matchesGroup = groupFilter === '' || user.staft_group === groupFilter;
-    const matchesPortalAccess = portalAccessFilter === '' || 
-      (portalAccessFilter === 'yes' && user.portal_access) ||
-      (portalAccessFilter === 'no' && !user.portal_access);
+  const filteredUsers = useMemo(() => {
+    return (Array.isArray(users) ? users : []).filter(user => {
+      const matchesSearch =
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesRole = roleFilter === '' || user.role.toLowerCase() === roleFilter.toLowerCase();
+      const matchesStatus = statusFilter === '' ||
+        (statusFilter === 'active' && user.active === 1) ||
+        (statusFilter === 'inactive' && user.active === 0);
+      const matchesSite = siteFilter === '' || user.site_id === siteFilter;
+      const matchesGroup = groupFilter === '' || user.staft_group === groupFilter;
+      const matchesPortalAccess = portalAccessFilter === '' ||
+        (portalAccessFilter === 'yes' && user.portal_access) ||
+        (portalAccessFilter === 'no' && !user.portal_access);
+      return matchesSearch && matchesRole && matchesStatus && matchesSite && matchesGroup && matchesPortalAccess;
+    });
+  }, [users, searchTerm, roleFilter, statusFilter, siteFilter, groupFilter, portalAccessFilter]);
 
-    return matchesSearch && matchesRole && matchesStatus && matchesSite && matchesGroup && matchesPortalAccess;
-  });
-
-  const getStatusText = (active: number) => active === 1 ? 'Activo' : 'Inactivo';
-  const getStatusColor = (active: number) => active === 1 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
-  
-  const getRoleColor = (role: string) => {
-    switch (role.toLowerCase()) {
-      case 'admin': return 'bg-purple-100 text-purple-800';
-          case 'MANAGER': return 'bg-blue-100 text-blue-800';
-    case 'SUPERVISOR': return 'bg-green-100 text-green-800';
-    case 'AUDIT': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const handleViewDetails = (user: IUser) => {
-    setModalUser(user);
-    setModalMode('view');
-    setIsUserModalOpen(true);
-  };
-
-  const handleCreateUser = () => {
-    setModalUser(null);
-    setModalMode('create');
-    setIsUserModalOpen(true);
-  };
-
-  const handleEditUser = (user: IUser) => {
-    setModalUser(user);
-    setModalMode('edit');
-    setIsUserModalOpen(true);
-  };
-
-  const handleUserModalSuccess = () => {
-    refreshUsers();
-  };
-
-  const handleCloseUserModal = () => {
-    setIsUserModalOpen(false);
-    setModalUser(null);
-    setModalMode('create');
-  };
-
-  const handleDeleteUser = (user: IUser) => {
-    setUserToDelete(user);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleCloseDeleteDialog = () => {
-    setIsDeleteDialogOpen(false);
-    setUserToDelete(null);
-  };
-
-  const handleDeleteSuccess = () => {
-    refreshUsers();
-  };
-
+  const handleViewDetails = (user: IUser) => { setModalUser(user); setModalMode('view'); setIsUserModalOpen(true); };
+  const handleCreateUser = () => { setModalUser(null); setModalMode('create'); setIsUserModalOpen(true); };
+  const handleEditUser = (user: IUser) => { setModalUser(user); setModalMode('edit'); setIsUserModalOpen(true); };
+  const handleUserModalSuccess = () => { refreshUsers(); };
+  const handleCloseUserModal = () => { setIsUserModalOpen(false); setModalUser(null); setModalMode('create'); };
+  const handleDeleteUser = (user: IUser) => { setUserToDelete(user); setIsDeleteDialogOpen(true); };
+  const handleCloseDeleteDialog = () => { setIsDeleteDialogOpen(false); setUserToDelete(null); };
+  const handleDeleteSuccess = () => { refreshUsers(); };
   const handleClearFilters = () => {
-    setSearchTerm('');
-    setRoleFilter('');
-    setStatusFilter('');
-    setSiteFilter('');
-    setGroupFilter('');
-    setPortalAccessFilter('');
+    setSearchTerm(''); setRoleFilter(''); setStatusFilter('');
+    setSiteFilter(''); setGroupFilter(''); setPortalAccessFilter('');
   };
 
-  // Calcular estadísticas
   const totalUsers = users.length;
-  const activeUsers = users.filter(user => user.active === 1).length;
-  const inactiveUsers = users.filter(user => user.active === 0).length;
-  const adminUsers = users.filter(user => user.role.toLowerCase() === Role.ADMIN.toLowerCase()).length;
-  const portalAccessUsers = users.filter(user => user.portal_access).length;
+  const activeUsers = users.filter(u => u.active === 1).length;
+  const inactiveUsers = users.filter(u => u.active === 0).length;
+  const adminUsers = users.filter(u => u.role.toLowerCase() === Role.ADMIN.toLowerCase()).length;
 
-  // Obtener valores únicos para los filtros
-  const uniqueSites = Array.from(new Set(users.map(user => user.site_id).filter(Boolean)));
-  const uniqueGroups = Array.from(new Set(users.map(user => user.staft_group).filter(Boolean)));
+  const uniqueSites = Array.from(new Set(users.map(u => u.site_id).filter(Boolean)));
+  const uniqueGroups = Array.from(new Set(users.map(u => u.staft_group).filter(Boolean)));
 
-  // Calcular paginación
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
-
-  // Funciones de paginación
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
+  const getRoleDotColor = (role: string) => {
+    switch (role.toLowerCase()) {
+      case 'admin': return 'purple';
+      case 'manager': return 'blue';
+      case 'supervisor': return 'green';
+      case 'audit': return 'orange';
+      default: return 'gray';
     }
   };
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  // Resetear página cuando cambian los filtros
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, roleFilter, statusFilter, siteFilter, groupFilter, portalAccessFilter]);
+  const columns = useMemo(() => [
+    columnHelper.accessor('name', {
+      header: 'Usuario',
+      size: 200,
+      cell: (info) => {
+        const user = info.row.original;
+        return (
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 bg-blue-100 rounded text-2xs font-medium text-blue-600 flex items-center justify-center flex-shrink-0">
+              {user.staft_id}
+            </div>
+            <span className="text-sm text-text-primary truncate">{user.name}</span>
+            <span className="text-text-muted truncate">{user.email}</span>
+          </div>
+        );
+      },
+    }),
+    columnHelper.accessor('site_id', {
+      header: 'Sucursal',
+      size: 100,
+      cell: (info) => <span className="text-sm">{info.getValue()}</span>,
+    }),
+    columnHelper.accessor('role', {
+      header: 'Rol',
+      size: 100,
+      cell: (info) => <StatusDot color={getRoleDotColor(info.getValue())} label={info.getValue()} />,
+    }),
+    columnHelper.accessor('staft_group', {
+      header: 'Grupo',
+      size: 100,
+      cell: (info) => <span className="text-sm">{info.getValue()}</span>,
+    }),
+    columnHelper.accessor('active', {
+      header: 'Estado',
+      size: 80,
+      cell: (info) => (
+        <StatusDot
+          color={info.getValue() === 1 ? 'green' : 'red'}
+          label={info.getValue() === 1 ? 'Activo' : 'Inactivo'}
+        />
+      ),
+    }),
+    columnHelper.accessor('portal_access', {
+      header: 'Portal',
+      size: 60,
+      cell: (info) => (
+        <StatusDot
+          color={info.getValue() ? 'green' : 'red'}
+          label={info.getValue() ? 'Sí' : 'No'}
+        />
+      ),
+    }),
+    columnHelper.accessor('created_at', {
+      header: 'Fecha',
+      size: 100,
+      cell: (info) => {
+        const val = info.getValue();
+        if (!val) return null;
+        return <span className="text-sm">{formatDateDMY(val)}</span>;
+      },
+    }),
+  ], []);
 
   if (loading) {
     return (
-      <div className="space-y-6">
-
-        <div className="bg-white rounded-lg shadow-sm p-8 border border-gray-200">
-          <div className="flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600">Cargando usuarios...</p>
-            </div>
-          </div>
-        </div>
+      <div className="flex items-center justify-center h-32">
+        <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   if (error && users.length === 0) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Users className="w-8 h-8 text-blue-600" />
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Gestión de Usuarios</h2>
-              <p className="text-gray-600">Administra usuarios del sistema</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm p-8 border border-gray-200">
-          <div className="text-center">
-            <p className="text-red-600 mb-4">{error}</p>
-            <button 
-              onClick={refreshUsers}
-              className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors mx-auto"
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span>Reintentar</span>
-            </button>
-          </div>
-        </div>
+      <div className="bg-white rounded-sm border border-table-border p-4">
+        <p className="text-sm text-red-600 mb-2">{error}</p>
+        <CompactButton variant="primary" onClick={refreshUsers}>
+          <RefreshCw className="w-3 h-3" /> Reintentar
+        </CompactButton>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Search and Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+    <div className="space-y-1">
+      {/* Toolbar */}
+      <Toolbar
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Buscar usuarios..."
+        chips={[
+          { label: 'Total', value: totalUsers },
+          { label: 'Activos', value: activeUsers, color: 'green' },
+          { label: 'Inactivos', value: inactiveUsers, color: 'red' },
+          { label: 'Admins', value: adminUsers, color: 'purple' },
+        ]}
       >
-        {/* Header con búsqueda y botones de acción */}
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <div className="flex items-center space-x-4">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Buscar usuarios por nombre, usuario o email..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                
-                {/* Stats Cards */}
-                <div className="flex items-center space-x-4">
-                  {[
-                    { label: "Total", value: totalUsers, icon: Users, color: "text-blue-500" },
-                    { label: "Activos", value: activeUsers, icon: UserCheck, color: "text-green-500" },
-                    { label: "Inactivos", value: inactiveUsers, icon: UserX, color: "text-red-500" },
-                    { label: "Admins", value: adminUsers, icon: Shield, color: "text-purple-500" },
-                    { label: "Portal", value: portalAccessUsers, icon: CheckCircle, color: "text-blue-500" }
-                  ].map((stat, index) => (
-                    <motion.div
-                      key={stat.label}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3, delay: index * 0.1 }}
-                      whileHover={{ scale: 1.05 }}
-                      className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-600">{stat.label}</span>
-                        <span className={`text-lg font-bold ${stat.label === 'Activos' ? 'text-green-600' : stat.label === 'Inactivos' ? 'text-red-600' : stat.label === 'Admins' ? 'text-purple-600' : 'text-gray-900'}`}>
-                          {stat.value}
-                        </span>
-                        <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3 ml-4">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                  showFilters 
-                    ? 'bg-blue-100 text-blue-700 border border-blue-300' 
-                    : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
-                }`}
-              >
-                <Filter className="w-4 h-4" />
-                <span>{showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}</span>
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleClearFilters}
-                className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg transition-colors hover:bg-gray-50"
-              >
-                <RefreshCw className="w-4 h-4" />
-                <span>Limpiar</span>
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={refreshUsers}
-                className="flex items-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                <RefreshCw className="w-4 h-4" />
-                <span>Actualizar</span>
-              </motion.button>
-              <PermissionGate roles={[Role.ADMIN]}>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleCreateUser}
-                  className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Nuevo Usuario</span>
-                </motion.button>
-              </PermissionGate>
-            </div>
-          </div>
-        </div>
+        <CompactButton variant="icon" onClick={() => setShowFilters(!showFilters)} title="Filtros">
+          <Filter className={`w-[13px] h-[13px] ${showFilters ? 'text-blue-600' : ''}`} />
+        </CompactButton>
+        <CompactButton variant="icon" onClick={handleClearFilters} title="Limpiar">
+          <RefreshCw className="w-[13px] h-[13px]" />
+        </CompactButton>
+        <CompactButton variant="ghost" onClick={refreshUsers}>
+          <RefreshCw className="w-3 h-3" /> Actualizar
+        </CompactButton>
+        <PermissionGate roles={[Role.ADMIN]}>
+          <CompactButton variant="primary" onClick={handleCreateUser}>
+            <Plus className="w-3 h-3" /> Nuevo Usuario
+          </CompactButton>
+        </PermissionGate>
+      </Toolbar>
 
-        {/* Filtros expandibles */}
-        {showFilters && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="p-4 bg-gray-50 border-t border-gray-200"
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Rol */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
-                <select 
-                  value={roleFilter}
-                  onChange={(e) => setRoleFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Todos los roles</option>
-                                  <option value="ADMIN">ADMIN</option>
+      {/* Filters */}
+      {showFilters && (
+        <div className="bg-gray-50 border border-table-border rounded-sm p-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div>
+              <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Rol</label>
+              <CompactSelect value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="w-full">
+                <option value="">Todos</option>
+                <option value="ADMIN">ADMIN</option>
                 <option value="MANAGER">MANAGER</option>
                 <option value="SUPERVISOR">SUPERVISOR</option>
                 <option value="AUDIT">AUDIT</option>
-                </select>
-              </div>
-
-              {/* Estado */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                <select 
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Todos los estados</option>
-                  <option value="active">Activo</option>
-                  <option value="inactive">Inactivo</option>
-                </select>
-              </div>
-
-              {/* Sucursal */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sucursal</label>
-                <select 
-                  value={siteFilter}
-                  onChange={(e) => setSiteFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Todas las sucursales</option>
-                  {uniqueSites.map(site => (
-                    <option key={site} value={site}>{site}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Grupo */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Grupo</label>
-                <select 
-                  value={groupFilter}
-                  onChange={(e) => setGroupFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Todos los grupos</option>
-                  {uniqueGroups.map(group => (
-                    <option key={group} value={group}>{group}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Portal Access */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Portal</label>
-                <select 
-                  value={portalAccessFilter}
-                  onChange={(e) => setPortalAccessFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Todos</option>
-                  <option value="yes">Sí</option>
-                  <option value="no">No</option>
-                </select>
-              </div>
+              </CompactSelect>
             </div>
-          </motion.div>
-        )}
-      </motion.div>
-
-      {/* Warning Message */}
-      {error && error.includes('datos de prueba') && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
+            <div>
+              <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Estado</label>
+              <CompactSelect value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full">
+                <option value="">Todos</option>
+                <option value="active">Activo</option>
+                <option value="inactive">Inactivo</option>
+              </CompactSelect>
             </div>
-            <div className="ml-3">
-              <p className="text-sm text-yellow-800">
-                {error}
-              </p>
+            <div>
+              <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Sucursal</label>
+              <CompactSelect value={siteFilter} onChange={(e) => setSiteFilter(e.target.value)} className="w-full">
+                <option value="">Todas</option>
+                {uniqueSites.map(site => <option key={site} value={site}>{site}</option>)}
+              </CompactSelect>
+            </div>
+            <div>
+              <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Grupo</label>
+              <CompactSelect value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)} className="w-full">
+                <option value="">Todos</option>
+                {uniqueGroups.map(g => <option key={g} value={g}>{g}</option>)}
+              </CompactSelect>
+            </div>
+            <div>
+              <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Portal</label>
+              <CompactSelect value={portalAccessFilter} onChange={(e) => setPortalAccessFilter(e.target.value)} className="w-full">
+                <option value="">Todos</option>
+                <option value="yes">Sí</option>
+                <option value="no">No</option>
+              </CompactSelect>
             </div>
           </div>
         </div>
       )}
 
+      {/* Warning */}
+      {error && error.includes('datos de prueba') && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-sm px-3 py-2 text-xs text-yellow-800">{error}</div>
+      )}
 
-
-      {/* Users Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Sucursal</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Grupo</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Portal</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha de Creacion</th>
-                <PermissionGate roles={[Role.ADMIN]}>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                </PermissionGate>
-                
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {paginatedUsers.map((user, index) => (
-                <motion.tr
-                  key={user.user_id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className="hover:bg-gray-50 cursor-pointer transition-colors"
-                  onClick={() => handleViewDetails(user)}
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-blue-100 rounded flex items-center justify-center">
-                        <span className="text-sm font-medium text-blue-600">
-                          {user.staft_id  }
-                        </span>
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
-
-                        <div className="text-xs text-gray-400">{user.email}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-gray-900">{user.site_id}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(user.role)}`}>
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-gray-900">{user.staft_group}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(user.active)}`}>
-                      {getStatusText(user.active)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      user.portal_access ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {user.portal_access ? 'Sí' : 'No'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    {user.created_at && (
-                      <div>
-                        <div className="text-sm text-gray-900">{formatUserDate(user.created_at).date}</div>
-                        <div className="text-sm text-gray-500">{formatUserDate(user.created_at).time}</div>
-                      </div>
-                    )}
-                  </td>
-                  <PermissionGate roles={[Role.ADMIN]}>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-2">
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditUser(user);
-                          }}
-                          className="p-1 text-blue-600 hover:text-blue-900" 
-                          title="Editar"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </motion.button>
-                        <PermissionGate permissions={['users.delete']}>
-                          <motion.button
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteUser(user);
-                            }}
-                            className="p-1 text-red-600 hover:text-red-900" 
-                            title="Eliminar"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </motion.button>
-                        </PermissionGate>
-                      </div>
-                    </td>
-                  </PermissionGate>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </motion.div>
-
-      {/* Pagination */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.4 }}
-        className="flex items-center justify-between bg-white px-6 py-3 border border-gray-200 rounded-lg"
-      >
-        <div className="text-sm text-gray-700">
-          Mostrando <span className="font-medium">{startIndex + 1}</span> a{' '}
-          <span className="font-medium">{Math.min(endIndex, filteredUsers.length)}</span> de{' '}
-          <span className="font-medium">{filteredUsers.length}</span> usuarios
-          {filteredUsers.length !== users.length && (
-            <span className="text-gray-500"> (filtrados de {users.length} total)</span>
-          )}
-        </div>
-        <div className="flex items-center space-x-2">
-          <motion.button
-            whileHover={{ scale: currentPage === 1 ? 1 : 1.05 }}
-            whileTap={{ scale: currentPage === 1 ? 1 : 0.95 }}
-            onClick={handlePreviousPage}
-            disabled={currentPage === 1}
-            className={`px-3 py-1 text-sm rounded transition-colors ${
-              currentPage === 1 
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-            }`}
-          >
-            Anterior
-          </motion.button>
-          
-          {/* Números de página */}
-          <div className="flex items-center space-x-1">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
-              // Mostrar solo algunas páginas para evitar demasiados botones
-              if (totalPages <= 7 || 
-                  page === 1 || 
-                  page === totalPages || 
-                  (page >= currentPage - 1 && page <= currentPage + 1)) {
-                return (
-                  <motion.button
-                    key={page}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => handlePageChange(page)}
-                    className={`px-3 py-1 text-sm rounded transition-colors ${
-                      page === currentPage
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                    }`}
-                  >
-                    {page}
-                  </motion.button>
-                );
-              } else if (page === currentPage - 2 || page === currentPage + 2) {
-                return <span key={page} className="px-2 text-gray-500">...</span>;
-              }
-              return null;
-            })}
-          </div>
-          
-          <motion.button
-            whileHover={{ scale: currentPage === totalPages ? 1 : 1.05 }}
-            whileTap={{ scale: currentPage === totalPages ? 1 : 0.95 }}
-            onClick={handleNextPage}
-            disabled={currentPage === totalPages}
-            className={`px-3 py-1 text-sm rounded transition-colors ${
-              currentPage === totalPages 
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-            }`}
-          >
-            Siguiente
-          </motion.button>
-        </div>
-      </motion.div>
-
-      {/* User Modal */}
-      <UserModal
-        isOpen={isUserModalOpen}
-        onClose={handleCloseUserModal}
-        user={modalUser}
-        mode={modalMode}
-        onSuccess={handleUserModalSuccess}
+      {/* Table */}
+      <CompactTable
+        data={filteredUsers}
+        columns={columns}
+        onRowClick={handleViewDetails}
+        renderRowActions={(user) => (
+          <PermissionGate roles={[Role.ADMIN]}>
+            <button onClick={(e) => { e.stopPropagation(); handleEditUser(user); }} className="p-0.5 text-blue-600 hover:text-blue-900" title="Editar">
+              <Edit className="w-3.5 h-3.5" />
+            </button>
+            <PermissionGate permissions={['users.delete']}>
+              <button onClick={(e) => { e.stopPropagation(); handleDeleteUser(user); }} className="p-0.5 text-red-600 hover:text-red-900" title="Eliminar">
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </PermissionGate>
+          </PermissionGate>
+        )}
+        pageSize={15}
       />
 
-      {/* Delete User Dialog */}
-      <DeleteUserDialog
-        isOpen={isDeleteDialogOpen}
-        onClose={handleCloseDeleteDialog}
-        user={userToDelete}
-        onSuccess={handleDeleteSuccess}
-      />
+      {/* Modals */}
+      <UserModal isOpen={isUserModalOpen} onClose={handleCloseUserModal} user={modalUser} mode={modalMode} onSuccess={handleUserModalSuccess} />
+      <DeleteUserDialog isOpen={isDeleteDialogOpen} onClose={handleCloseDeleteDialog} user={userToDelete} onSuccess={handleDeleteSuccess} />
     </div>
   );
 };

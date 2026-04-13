@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Barcode, Plus, Edit2, Trash2, RefreshCw, Search } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Plus, Edit2, Trash2, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { barcodeService } from '../../../services/barcodeService';
 import { IBarcode } from '../../../types/barcode';
 import BarcodeModal from './BarcodeModal';
+import { CompactButton } from '../../ui';
+import Toolbar from '../../ui/Toolbar';
 
 const BarcodesSection: React.FC = () => {
   const [barcodes, setBarcodes] = useState<IBarcode[]>([]);
@@ -34,58 +35,83 @@ const BarcodesSection: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6">
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-              <Barcode className="w-5 h-5 text-orange-600" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Barcodes</h1>
-              <p className="text-sm text-gray-500">{barcodes.length} códigos de barras</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={() => setModal({ show: true, barcode: null })}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm"><Plus className="w-4 h-4" />Nuevo</button>
-            <button onClick={load} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg"><RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /></button>
-          </div>
-        </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <input placeholder="Buscar barcode, producto o variante..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-orange-500" />
-        </div>
-      </motion.div>
+    <div className="space-y-1">
+      {/* Toolbar */}
+      <Toolbar
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Buscar barcode, producto o variante..."
+        chips={[
+          { label: 'Total', value: barcodes.length, color: 'orange' },
+        ]}
+      >
+        <CompactButton
+          variant="primary"
+          onClick={() => setModal({ show: true, barcode: null })}
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Nuevo
+        </CompactButton>
+        <CompactButton
+          variant="ghost"
+          onClick={load}
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+        </CompactButton>
+      </Toolbar>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        {loading ? <div className="flex justify-center h-40 items-center"><div className="animate-spin h-8 w-8 border-b-2 border-orange-600 rounded-full" /></div> : (
+      {/* Table */}
+      <div className="bg-white rounded-sm border border-gray-200 overflow-hidden">
+        {loading ? (
+          <div className="flex justify-center h-40 items-center">
+            <div className="animate-spin h-8 w-8 border-b-2 border-orange-600 rounded-full" />
+          </div>
+        ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50"><tr>
-                {['Barcode ID', 'Producto ID', 'Variante', 'Acciones'].map(h => <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>)}
-              </tr></thead>
-              <tbody className="divide-y divide-gray-200">
-                {filtered.map((b, i) => (
-                  <motion.tr key={b.barcodeId} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-mono text-gray-900">{b.barcodeId}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{b.productId}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{b.variantName || '—'}</td>
-                    <td className="px-6 py-4"><div className="flex gap-2">
-                      <button onClick={() => setModal({ show: true, barcode: b })} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg"><Edit2 className="w-4 h-4" /></button>
-                      <button onClick={() => handleDelete(b.barcodeId)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
-                    </div></td>
-                  </motion.tr>
+            <table className="w-full">
+              <thead>
+                <tr className="h-8 text-xs uppercase tracking-wide bg-table-header border-b border-table-border">
+                  {['Barcode ID', 'Producto ID', 'Variante', 'Acciones'].map(h => (
+                    <th key={h} className="text-left px-2 text-xs font-medium text-gray-500">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((b) => (
+                  <tr key={b.barcodeId} className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover">
+                    <td className="px-2 text-sm whitespace-nowrap font-mono text-gray-900">{b.barcodeId}</td>
+                    <td className="px-2 text-sm whitespace-nowrap text-gray-600">{b.productId}</td>
+                    <td className="px-2 text-sm whitespace-nowrap text-gray-500 text-ellipsis overflow-hidden">{b.variantName || '—'}</td>
+                    <td className="px-2 text-sm whitespace-nowrap">
+                      <div className="flex items-center gap-1">
+                        <CompactButton
+                          variant="icon"
+                          onClick={() => setModal({ show: true, barcode: b })}
+                          title="Editar"
+                        >
+                          <Edit2 className="w-3.5 h-3.5 text-blue-600" />
+                        </CompactButton>
+                        <CompactButton
+                          variant="icon"
+                          onClick={() => handleDelete(b.barcodeId)}
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                        </CompactButton>
+                      </div>
+                    </td>
+                  </tr>
                 ))}
-                {filtered.length === 0 && <tr><td colSpan={4} className="px-6 py-10 text-center text-sm text-gray-400">Sin barcodes</td></tr>}
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-2 py-6 text-center text-xs text-gray-400">Sin barcodes</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         )}
-      </motion.div>
+      </div>
 
       {modal.show && <BarcodeModal barcode={modal.barcode} onClose={() => setModal({ show: false, barcode: null })} onSaved={() => { setModal({ show: false, barcode: null }); load(); }} />}
     </div>

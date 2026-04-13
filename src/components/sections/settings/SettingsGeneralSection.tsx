@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
-import GenericSection from '../GenericSection';
+import { CompactButton } from '../../ui';
 
 const SettingsGeneralSection: React.FC = () => {
   const [isUpdating, setIsUpdating] = useState(false);
@@ -38,14 +38,14 @@ const SettingsGeneralSection: React.FC = () => {
           icon: '✅',
         });
       } else {
-        toast.error('La API respondió con un error al actualizar los RNC.', {
+        toast.error('La API respondio con un error al actualizar los RNC.', {
           duration: 4000,
           icon: '❌',
         });
       }
     } catch (error) {
       console.error('Error al actualizar RNC desde DGII:', error);
-      toast.error('Error de conexión al actualizar RNC desde DGII.', {
+      toast.error('Error de conexion al actualizar RNC desde DGII.', {
         duration: 4000,
         icon: '❌',
       });
@@ -55,56 +55,39 @@ const SettingsGeneralSection: React.FC = () => {
   };
 
   return (
-    <GenericSection
-      title="Configuración General"
-      description="Configuración general del sistema"
-      icon={RefreshCw}
-    >
-      <div className="space-y-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              Actualizar RNC desde DGII
-            </h3>
-            <p className="text-sm text-gray-600 mt-1 max-w-xl">
-              Este proceso consulta la DGII y actualiza la información de los contribuyentes
-              (RNC) almacenada en el sistema.
-            </p>
-          </div>
-        </div>
+    <div className="space-y-1">
+      <div className="bg-white rounded-sm border border-gray-200 p-3">
+        <h2 className="text-sm font-semibold text-gray-900 mb-1">Configuracion General</h2>
+        <p className="text-xs text-gray-500 mb-2">Configuracion general del sistema</p>
 
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+        <div className="space-y-2">
           <div>
-            <p className="text-sm font-medium text-gray-900">
-              Sincronizar información de contribuyentes
-            </p>
-            <p className="text-xs text-gray-600 mt-1">
-              Pulsa el botón para iniciar la actualización desde la DGII. El proceso puede
-              tardar varios segundos.
+            <h3 className="text-sm font-medium text-gray-900">Actualizar RNC desde DGII</h3>
+            <p className="text-xs text-gray-600 mt-0.5">
+              Este proceso consulta la DGII y actualiza la informacion de los contribuyentes (RNC) almacenada en el sistema.
             </p>
           </div>
-          <button
-            onClick={handleUpdateRNC}
-            disabled={isUpdating}
-            className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors"
-          >
-            {isUpdating ? (
-              <>
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                <span>Actualizando...</span>
-              </>
-            ) : (
-              <>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                <span>Actualizar RNC desde DGII</span>
-              </>
-            )}
-          </button>
+
+          <div className="bg-gray-50 border border-gray-200 rounded-sm p-2 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-gray-900">Sincronizar informacion de contribuyentes</p>
+              <p className="text-xs text-gray-600 mt-0.5">
+                Pulsa el boton para iniciar la actualizacion desde la DGII.
+              </p>
+            </div>
+            <CompactButton
+              variant="primary"
+              onClick={handleUpdateRNC}
+              disabled={isUpdating}
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isUpdating ? 'animate-spin' : ''}`} />
+              {isUpdating ? 'Actualizando...' : 'Actualizar RNC desde DGII'}
+            </CompactButton>
+          </div>
         </div>
       </div>
-    </GenericSection>
+    </div>
   );
 };
 
 export default SettingsGeneralSection;
-

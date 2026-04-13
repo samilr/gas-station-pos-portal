@@ -23,21 +23,21 @@ const BarcodeModal: React.FC<Props> = ({ barcode, onClose, onSaved }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between p-5 border-b">
-          <h2 className="font-semibold text-gray-900">{isEdit ? 'Editar Barcode' : 'Nuevo Barcode'}</h2>
-          <button onClick={onClose}><X className="w-5 h-5 text-gray-500" /></button>
+      <div className="bg-white rounded-sm shadow-2xl w-full max-w-lg">
+        <div className="flex items-center justify-between px-4 py-3 border-b">
+          <h2 className="text-base font-semibold text-gray-900">{isEdit ? 'Editar Barcode' : 'Nuevo Barcode'}</h2>
+          <button onClick={onClose}><X className="w-4 h-4 text-gray-500" /></button>
         </div>
-        <form onSubmit={handleSubmit} className="p-5 space-y-3">
-          <div><label className="text-sm font-medium text-gray-700">Barcode ID</label>
-            <input value={form.barcodeId} onChange={e => setForm(f => ({ ...f, barcodeId: e.target.value }))} disabled={isEdit} required className="w-full mt-1 px-3 py-2 border rounded-lg text-sm disabled:bg-gray-50" /></div>
-          <div><label className="text-sm font-medium text-gray-700">Producto ID</label>
-            <input value={form.productId} onChange={e => setForm(f => ({ ...f, productId: e.target.value }))} required className="w-full mt-1 px-3 py-2 border rounded-lg text-sm" /></div>
-          <div><label className="text-sm font-medium text-gray-700">Variante</label>
-            <input value={form.variantName} onChange={e => setForm(f => ({ ...f, variantName: e.target.value }))} className="w-full mt-1 px-3 py-2 border rounded-lg text-sm" placeholder="Opcional" /></div>
+        <form onSubmit={handleSubmit} className="p-4 space-y-3">
+          <div><label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">Barcode ID</label>
+            <input value={form.barcodeId} onChange={e => setForm(f => ({ ...f, barcodeId: e.target.value }))} disabled={isEdit} required className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50" /></div>
+          <div><label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">Producto ID</label>
+            <input value={form.productId} onChange={e => setForm(f => ({ ...f, productId: e.target.value }))} required className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500" /></div>
+          <div><label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">Variante</label>
+            <input value={form.variantName} onChange={e => setForm(f => ({ ...f, variantName: e.target.value }))} className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Opcional" /></div>
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg">Cancelar</button>
-            <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 text-sm bg-orange-600 hover:bg-orange-700 text-white rounded-lg disabled:opacity-60">
+            <button type="button" onClick={onClose} className="h-7 px-3 text-sm rounded-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50">Cancelar</button>
+            <button type="submit" disabled={saving} className="flex items-center gap-2 h-7 px-3 text-sm rounded-sm font-medium bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-60">
               <Save className="w-4 h-4" />{saving ? 'Guardando...' : 'Guardar'}
             </button>
           </div>

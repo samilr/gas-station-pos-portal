@@ -1,15 +1,11 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
 import {
   Building2,
-  Search,
   Filter,
   RefreshCw,
   Plus,
   Edit,
   Trash2,
-  CheckCircle,
-  XCircle,
   Phone,
   Mail,
   MapPin,
@@ -22,6 +18,9 @@ import { useSites } from "../../../hooks/useSites";
 import { usePermissions } from "../../../hooks/usePermissions";
 import { ISite } from "../../../types/site";
 import { PermissionGate } from "../../common";
+import { CompactButton } from '../../ui';
+import StatusDot from '../../ui/StatusDot';
+import Toolbar from '../../ui/Toolbar';
 
 const SitesSection: React.FC = () => {
   const {
@@ -69,7 +68,7 @@ const SitesSection: React.FC = () => {
     return matchesSearch && matchesStatus && matchesPos;
   });
 
-  // Paginación
+  // Paginacion
   const totalPages = Math.ceil(filteredSites.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -95,15 +94,6 @@ const SitesSection: React.FC = () => {
     refreshSites();
     setCurrentPage(1);
   };
-
-  // const handleExport = async () => {
-  //   try {
-  //     toast.success("Exportación iniciada");
-  //   } catch (error) {
-  //     console.error("Error al exportar:", error);
-  //     toast.error("Error al exportar");
-  //   }
-  // };
 
   const handleViewDetails = (site: ISite) => {
     setSelectedSite(site);
@@ -177,23 +167,7 @@ const SitesSection: React.FC = () => {
     }
   };
 
-  const getStatusIcon = (active: boolean) => {
-    return active ? (
-      <CheckCircle className="w-4 h-4 text-green-500" />
-    ) : (
-      <XCircle className="w-4 h-4 text-red-500" />
-    );
-  };
-
-  const getStatusColor = (active: boolean) => {
-    return active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
-  };
-
-  const getStatusText = (active: boolean) => {
-    return active ? "Activa" : "Inactiva";
-  };
-
-  // Calcular estadísticas
+  // Calcular estadisticas
   const totalSites = sites.length;
   const activeSites = sites.filter((s) => s.active).length;
   const inactiveSites = sites.filter((s) => !s.active).length;
@@ -208,354 +182,198 @@ const SitesSection: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Search and Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+    <div className="space-y-1">
+      {/* Toolbar */}
+      <Toolbar
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Buscar sucursales..."
+        chips={[
+          { label: "Total", value: totalSites, color: "blue" },
+          { label: "Activas", value: activeSites, color: "green" },
+          { label: "Inactivas", value: inactiveSites, color: "red" },
+          { label: "POS", value: posSites, color: "blue" },
+        ]}
       >
-        {/* Header con búsqueda y botones */}
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <div className="flex items-center space-x-4">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Buscar sucursales..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
+        <CompactButton variant="ghost" onClick={() => setShowFilters(!showFilters)}>
+          <Filter className="w-3.5 h-3.5" />
+          {showFilters ? "Ocultar" : "Filtros"}
+        </CompactButton>
+        <CompactButton variant="ghost" onClick={handleRefresh} disabled={loading}>
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+        </CompactButton>
+        <PermissionGate permissions={['sites.create']}>
+          <CompactButton variant="primary" onClick={handleCreateSite}>
+            <Plus className="w-3.5 h-3.5" />
+            Nueva Sucursal
+          </CompactButton>
+        </PermissionGate>
+      </Toolbar>
 
-                {/* Stats Cards */}
-                <div className="flex items-center space-x-4">
-                  {[
-                    { label: "Total", value: totalSites, icon: Building2, color: "text-blue-500" },
-                    { label: "Activas", value: activeSites, icon: Building2, color: "text-green-500" },
-                    { label: "Inactivas", value: inactiveSites, icon: Building2, color: "text-red-500" },
-                    { label: "Con POS", value: posSites, icon: DollarSign, color: "text-blue-500" }
-                  ].map((stat, index) => (
-                    <motion.div
-                      key={stat.label}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3, delay: index * 0.1 }}
-                      whileHover={{ scale: 1.05 }}
-                      className="bg-white px-4 py-2 rounded-lg border border-gray-200 min-w-[120px]"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-600">{stat.label}</span>
-                        <span className={`text-lg font-bold ${stat.label === 'Activas' ? 'text-green-600' : stat.label === 'Inactivas' ? 'text-red-600' : 'text-gray-900'}`}>
-                          {stat.value}
-                        </span>
-                        <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3 ml-4">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                  showFilters
-                    ? "bg-blue-100 text-blue-700 border border-blue-300"
-                    : "bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200"
-                }`}
+      {/* Filtros expandibles */}
+      {showFilters && (
+        <div className="p-2 bg-gray-50 border border-gray-200 rounded-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Estado</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <Filter className="w-4 h-4" />
-                <span>
-                  {showFilters ? "Ocultar Filtros" : "Mostrar Filtros"}
-                </span>
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleRefresh}
-                disabled={loading}
-                className="flex items-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
+                <option value="">Todos</option>
+                <option value="active">Activas</option>
+                <option value="inactive">Inactivas</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">POS</label>
+              <select
+                value={posFilter}
+                onChange={(e) => setPosFilter(e.target.value)}
+                className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <RefreshCw
-                  className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
-                />
-                <span>Actualizar</span>
-              </motion.button>
-              <PermissionGate permissions={['sites.create']}>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleCreateSite}
-                  className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Nueva Sucursal</span>
-                </motion.button>
-              </PermissionGate>
-            </div>
-          </div>
-        </div>
-
-        {/* Filtros expandibles */}
-        {showFilters && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="p-4 bg-gray-50 border-t border-gray-200"
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Status Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Estado
-                </label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Todos</option>
-                  <option value="active">Activas</option>
-                  <option value="inactive">Inactivas</option>
-                </select>
-              </div>
-
-              {/* POS Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  POS
-                </label>
-                <select
-                  value={posFilter}
-                  onChange={(e) => setPosFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Todas</option>
-                  <option value="pos">Con POS</option>
-                  <option value="no-pos">Sin POS</option>
-                </select>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </motion.div>
-
-      {/* Warning Message */}
-      {error && error.includes("datos de prueba") && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-5 w-5 text-yellow-400"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-yellow-800">{error}</p>
+                <option value="">Todas</option>
+                <option value="pos">Con POS</option>
+                <option value="no-pos">Sin POS</option>
+              </select>
             </div>
           </div>
         </div>
       )}
 
+      {/* Warning Message */}
+      {error && error.includes("datos de prueba") && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-sm p-2 text-sm text-yellow-800">
+          {error}
+        </div>
+      )}
+
       {/* Sites Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
-      >
+      <div className="bg-white rounded-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Sucursal
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Contacto
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Configuración
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Estado
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Acciones
-                </th>
+          <table className="min-w-full">
+            <thead>
+              <tr className="h-8 text-xs uppercase tracking-wide bg-table-header border-b border-table-border">
+                <th className="text-left px-2 text-xs font-medium text-gray-500">Sucursal</th>
+                <th className="text-left px-2 text-xs font-medium text-gray-500">Contacto</th>
+                <th className="text-left px-2 text-xs font-medium text-gray-500">Config</th>
+                <th className="text-left px-2 text-xs font-medium text-gray-500">Estado</th>
+                <th className="text-left px-2 text-xs font-medium text-gray-500">Acciones</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {currentSites.map((site, index) => (
-                <motion.tr
+            <tbody>
+              {currentSites.map((site) => (
+                <tr
                   key={site.site_id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover cursor-pointer transition-colors"
                   onClick={() => handleViewDetails(site)}
                 >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-blue-100 rounded flex items-center justify-center">
-                        <Building2 className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {site.site_id} {site.name}
-                        </div>
-                        {site.address1 && (
-                        <div className="flex items-center text-sm text-gray-500">
-                          <MapPin className="w-3 h-3 mr-1" />
-                          {site.address1}
-                        </div>
+                  <td className="px-2 text-sm whitespace-nowrap">
+                    <div className="flex items-center gap-1.5">
+                      <Building2 className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+                      <span className="font-medium text-gray-900 text-ellipsis overflow-hidden whitespace-nowrap max-w-[200px]">
+                        {site.site_id} {site.name}
+                      </span>
+                      {site.address1 && (
+                        <span className="text-xs text-gray-400 text-ellipsis overflow-hidden whitespace-nowrap max-w-[120px]">
+                          <MapPin className="w-3 h-3 inline mr-0.5" />{site.address1}
+                        </span>
                       )}
-                      </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="space-y-1">
+                  <td className="px-2 text-sm whitespace-nowrap">
+                    <div className="flex items-center gap-2">
                       {site.phone && (
-                        <div className="flex items-center text-sm text-gray-500">
-                          <Phone className="w-3 h-3 mr-1" />
-                          {site.phone}
-                        </div>
+                        <span className="text-xs text-gray-500 flex items-center">
+                          <Phone className="w-3 h-3 mr-0.5" />{site.phone}
+                        </span>
                       )}
                       {site.email && (
-                        <div className="flex items-center text-sm text-gray-500">
-                          <Mail className="w-3 h-3 mr-1" />
-                          {site.email}
-                        </div>
+                        <span className="text-xs text-gray-500 flex items-center">
+                          <Mail className="w-3 h-3 mr-0.5" />{site.email}
+                        </span>
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="space-y-1">
-                      <div className="flex items-center">
-                        <DollarSign className="w-3 h-3 mr-1" />
-                        <span className="text-sm text-gray-500">
-                          {site.pos ? "POS Habilitado" : "Sin POS"}
-                        </span>
-                      </div>
+                  <td className="px-2 text-sm whitespace-nowrap">
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-gray-500">
+                        <DollarSign className="w-3 h-3 inline" />
+                        {site.pos ? "POS" : "Sin POS"}
+                      </span>
                       {site.head_office && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                          Oficina Principal
-                        </span>
+                        <span className="text-xs text-blue-600">HQ</span>
                       )}
                       {site.pos_is_restaurant && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
-                          Restaurante
-                        </span>
+                        <span className="text-xs text-orange-600">Rest.</span>
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      {getStatusIcon(site.active)}
-                      <span
-                        className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                          site.active
-                        )}`}
-                      >
-                        {getStatusText(site.active)}
-                      </span>
-                    </div>
+                  <td className="px-2 text-sm whitespace-nowrap">
+                    <StatusDot
+                      color={site.active ? "green" : "red"}
+                      label={site.active ? "Activa" : "Inactiva"}
+                    />
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-2">
+                  <td className="px-2 text-sm whitespace-nowrap">
+                    <div className="flex items-center gap-1">
                       <PermissionGate permissions={['sites.edit']}>
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleEditSite(site);
                           }}
-                          className="p-1 text-blue-600 hover:text-blue-900"
+                          className="p-0.5 text-blue-600 hover:text-blue-900"
                           title="Editar"
                         >
-                          <Edit className="w-4 h-4" />
-                        </motion.button>
+                          <Edit className="w-3.5 h-3.5" />
+                        </button>
                       </PermissionGate>
                       <PermissionGate permissions={['sites.delete']}>
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDeleteSite(site);
                           }}
-                          className="p-1 text-red-600 hover:text-red-900"
+                          className="p-0.5 text-red-600 hover:text-red-900"
                           title="Eliminar"
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </motion.button>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </PermissionGate>
                     </div>
                   </td>
-                </motion.tr>
+                </tr>
               ))}
             </tbody>
           </table>
         </div>
 
         {/* Pagination */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.4 }}
-          className="flex items-center justify-between bg-white px-6 py-3 border border-gray-200 rounded-lg"
-        >
-          <div className="text-sm text-gray-700">
-            Mostrando <span className="font-medium">{startIndex + 1}</span> a{" "}
-            <span className="font-medium">
-              {Math.min(endIndex, filteredSites.length)}
-            </span>{" "}
-            de <span className="font-medium">{filteredSites.length}</span>{" "}
-            sucursales
+        <div className="flex items-center justify-between px-2 py-1 border-t border-gray-200 text-xs text-gray-600">
+          <div>
+            {startIndex + 1}-{Math.min(endIndex, filteredSites.length)} de {filteredSites.length}
             {filteredSites.length !== sites.length && (
-              <span className="text-gray-500">
-                {" "}
-                (filtradas de {sites.length} total)
-              </span>
+              <span className="text-gray-400"> (de {sites.length})</span>
             )}
           </div>
-          <div className="flex items-center space-x-2">
-            <motion.button
-              whileHover={{ scale: currentPage === 1 ? 1 : 1.05 }}
-              whileTap={{ scale: currentPage === 1 ? 1 : 0.95 }}
+          <div className="flex items-center gap-1">
+            <button
               onClick={handlePrevPage}
               disabled={currentPage === 1}
-              className={`px-3 py-1 text-sm rounded transition-colors ${
+              className={`px-2 py-0.5 text-xs rounded-sm transition-colors ${
                 currentPage === 1
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "hover:bg-gray-100 text-gray-700"
               }`}
             >
               Anterior
-            </motion.button>
+            </button>
 
-            {/* Números de página */}
-            <div className="flex items-center space-x-1">
+            <div className="flex items-center gap-0.5">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(
                 (page) => {
-                  // Mostrar solo algunas páginas para evitar demasiados botones
                   if (
                     totalPages <= 7 ||
                     page === 1 ||
@@ -563,28 +381,24 @@ const SitesSection: React.FC = () => {
                     (page >= currentPage - 1 && page <= currentPage + 1)
                   ) {
                     return (
-                      <motion.button
+                      <button
                         key={page}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
                         onClick={() => handlePageChange(page)}
-                        className={`px-3 py-1 text-sm rounded transition-colors ${
+                        className={`px-2 py-0.5 text-xs rounded-sm transition-colors ${
                           page === currentPage
                             ? "bg-blue-600 text-white"
-                            : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                            : "hover:bg-gray-100 text-gray-700"
                         }`}
                       >
                         {page}
-                      </motion.button>
+                      </button>
                     );
                   } else if (
                     page === currentPage - 2 ||
                     page === currentPage + 2
                   ) {
                     return (
-                      <span key={page} className="px-2 text-gray-500">
-                        ...
-                      </span>
+                      <span key={page} className="px-1 text-gray-400">...</span>
                     );
                   }
                   return null;
@@ -592,26 +406,24 @@ const SitesSection: React.FC = () => {
               )}
             </div>
 
-            <motion.button
-              whileHover={{ scale: currentPage === totalPages ? 1 : 1.05 }}
-              whileTap={{ scale: currentPage === totalPages ? 1 : 0.95 }}
+            <button
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
-              className={`px-3 py-1 text-sm rounded transition-colors ${
+              className={`px-2 py-0.5 text-xs rounded-sm transition-colors ${
                 currentPage === totalPages
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "hover:bg-gray-100 text-gray-700"
               }`}
             >
               Siguiente
-            </motion.button>
+            </button>
           </div>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">{error}</p>
+        <div className="bg-red-50 border border-red-200 rounded-sm p-2">
+          <p className="text-sm text-red-800">{error}</p>
         </div>
       )}
 
@@ -624,7 +436,7 @@ const SitesSection: React.FC = () => {
         mode={modalMode}
       />
 
-      {/* Modal de Confirmación de Eliminación */}
+      {/* Modal de Confirmacion de Eliminacion */}
       <DeleteSiteDialog
         isOpen={showDeleteDialog}
         onClose={() => setShowDeleteDialog(false)}

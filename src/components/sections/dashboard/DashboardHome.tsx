@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import { motion } from "framer-motion";
 import {
   Users,
   CreditCard,
@@ -20,129 +19,60 @@ import DailySalesChart from "./charts/DailySalesChart";
 import SiteSalesChart from "./charts/SiteSalesChart";
 import CfTypePieChart from "./charts/CfTypePieChart";
 import TopProductsChart from "./charts/TopProductsChart";
+import { CompactButton } from "../../ui";
+import Toolbar from "../../ui/Toolbar";
 
 const DashboardHome: React.FC = () => {
   let navigate: any;
-
-  try {
-    navigate = useNavigate();
-  } catch (error) {
-    // Fallback si useNavigate no está disponible
-    navigate = (path: string) => {
-      window.location.href = path;
-    };
-  }
+  try { navigate = useNavigate(); } catch (error) { navigate = (path: string) => { window.location.href = path; }; }
 
   const { user } = useAuth();
   const {
-    totalTransactions,
-    totalSales,
-    totalReturns,
-    totalFuelSales,
-    totalStoreSales,
-    salesByVendor,
-    dailySales,
-    chartLoading,
-    chartError,
-    chartFilters,
-    siteSales,
-    siteLoading,
-    siteError,
-    siteChartFilters,
-    cfTypeData,
-    recentTransactions,
-    allTransactions,
-    topProducts,
-    loading,
-    error,
-    refresh,
-    loadChartData,
-    updateChartFilters,
-    refreshChartData,
-    getChartStats,
-    loadSiteSalesData,
-    refreshSiteData,
-    updateSiteChartFilters,
-    getSiteStats,
+    totalTransactions, totalSales, totalReturns, totalFuelSales, totalStoreSales,
+    salesByVendor, dailySales, chartLoading, chartError, chartFilters,
+    siteSales, siteLoading, siteError, siteChartFilters,
+    cfTypeData, recentTransactions, allTransactions, topProducts,
+    loading, error, refresh, loadChartData,
+    updateChartFilters, refreshChartData, getChartStats,
+    loadSiteSalesData, refreshSiteData, updateSiteChartFilters, getSiteStats,
   } = useDashboard();
 
-  // Debug: Log CF Type Data
-  console.log("CF Type Data:", cfTypeData);
-
-  // Función para obtener la fecha y hora actual de Santo Domingo
   const getCurrentSantoDomingoDateTime = () => {
     const now = new Date();
     const formatter = new Intl.DateTimeFormat("es-DO", {
       timeZone: "America/Santo_Domingo",
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
+      weekday: "long", year: "numeric", month: "long", day: "numeric",
+      hour: "2-digit", minute: "2-digit", hour12: true,
     });
     return formatter.format(now);
   };
 
-  // Cargar datos del gráfico después de que se cargue el dashboard principal
   useEffect(() => {
     if (!loading && !error) {
-      // Esperar un poco para que el usuario vea que el dashboard principal se cargó
       const timer = setTimeout(() => {
-        console.log("📊 Iniciando carga de datos del gráfico...");
         loadChartData();
-
-        // Cargar datos de sucursales después de un pequeño delay adicional
-        setTimeout(() => {
-          console.log("🏢 Iniciando carga de datos de sucursales...");
-          loadSiteSalesData();
-        }, 500); // 0.5 segundos adicionales
-      }, 1000); // 1 segundo de delay
-
+        setTimeout(() => { loadSiteSalesData(); }, 500);
+      }, 1000);
       return () => clearTimeout(timer);
     }
   }, [loading, error, loadChartData]);
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              ¡Bienvenido, {user?.name || "Usuario"}!
-            </h1>
-            <p className="text-gray-600">
-              Estás viendo datos del sistema para{" "}
-              {getCurrentSantoDomingoDateTime()}
-            </p>
+            <p className="text-md font-semibold text-text-primary">Bienvenido, {user?.name || "Usuario"}</p>
+            <p className="text-xs text-text-muted">{getCurrentSantoDomingoDateTime()}</p>
           </div>
-          <button
-            onClick={refresh}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <RefreshCw className="w-4 h-4" />
-            <span>Actualizar</span>
-          </button>
+          <CompactButton variant="primary" onClick={refresh}><RefreshCw className="w-3 h-3" /> Actualizar</CompactButton>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(8)].map((_, i) => (
-            <div
-              key={i}
-              className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 animate-pulse"
-            >
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-24"></div>
-                  <div className="h-8 bg-gray-200 rounded w-16"></div>
-                  <div className="h-4 bg-gray-200 rounded w-20"></div>
-                  <div className="flex items-center space-x-1">
-                    <div className="w-4 h-4 bg-gray-200 rounded"></div>
-                    <div className="h-4 bg-gray-200 rounded w-8"></div>
-                  </div>
-                </div>
-                <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+        <div className="grid grid-cols-4 gap-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white rounded-sm p-3 border border-table-border animate-pulse">
+              <div className="space-y-2">
+                <div className="h-3 bg-gray-200 rounded w-20"></div>
+                <div className="h-5 bg-gray-200 rounded w-16"></div>
               </div>
             </div>
           ))}
@@ -153,377 +83,157 @@ const DashboardHome: React.FC = () => {
 
   if (error) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              ¡Bienvenido, {user?.name || "Usuario"}! 👋
-            </h1>
-            <p className="text-gray-600">
-              Estás viendo datos del sistema para{" "}
-              {getCurrentSantoDomingoDateTime()}
-            </p>
-          </div>
-          <button
-            onClick={refresh}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <RefreshCw className="w-4 h-4" />
-            <span>Reintentar</span>
-          </button>
+          <p className="text-md font-semibold text-text-primary">Bienvenido, {user?.name || "Usuario"}</p>
+          <CompactButton variant="primary" onClick={refresh}><RefreshCw className="w-3 h-3" /> Reintentar</CompactButton>
         </div>
-
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <div className="flex items-center space-x-3">
-            <XCircle className="w-6 h-6 text-red-600" />
-            <div>
-              <h3 className="text-lg font-medium text-red-800">
-                Error al cargar datos
-              </h3>
-              <p className="text-red-600">{error}</p>
-            </div>
-          </div>
+        <div className="bg-red-50 border border-red-200 rounded-sm p-3 flex items-center gap-2">
+          <XCircle className="w-4 h-4 text-red-600" />
+          <span className="text-sm text-red-700">{error}</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="flex items-center justify-between"
-      >
+    <div className="space-y-2">
+      {/* Header + Stats toolbar */}
+      <div className="flex items-center justify-between mb-1">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            ¡Bienvenido, {user?.name || "Usuario"}!
-          </h1>
-          <p className="text-gray-600">
-            Estás viendo datos del sistema para{" "}
-            {getCurrentSantoDomingoDateTime()}
-          </p>
+          <p className="text-md font-semibold text-text-primary">Bienvenido, {user?.name || "Usuario"}</p>
+          <p className="text-xs text-text-muted">{getCurrentSantoDomingoDateTime()}</p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={refresh}
-          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <RefreshCw className="w-4 h-4" />
-          <span>Actualizar</span>
-        </motion.button>
-      </motion.div>
+        <CompactButton variant="ghost" onClick={refresh}><RefreshCw className="w-3 h-3" /> Actualizar</CompactButton>
+      </div>
 
-      {/* Main Stats Grid - 4 columns */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Compact stat cards */}
+      <div className="grid grid-cols-4 gap-2">
         {[
-          {
-            title: "Ventas Totales",
-            value: formatCurrency(totalSales),
-            subtitle: `de ${formatNumber(totalTransactions)} transacciones`,
-            icon: DollarSign,
-            bgColor: "bg-green-500",
-            onClick: () => navigate("/dashboard/transactions")
-          },
-          {
-            title: "Total de Retornos",
-            value: formatCurrency(totalReturns),
-            subtitle: "transacciones de devolución",
-            icon: XCircle,
-            bgColor: "bg-red-500",
-            onClick: () => navigate("/dashboard/transactions")
-          },
-          {
-            title: "Ventas de Combustible",
-            value: formatCurrency(totalFuelSales),
-            subtitle: "Comprobantes NCF",
-            icon: Fuel,
-            bgColor: "bg-orange-500",
-            onClick: () => navigate("/dashboard/transactions/revenue")
-          },
-          {
-            title: "Ventas de Tienda",
-            value: formatCurrency(totalStoreSales),
-            subtitle: "Productos de conveniencia",
-            icon: Store,
-            bgColor: "bg-purple-500",
-            onClick: () => navigate("/dashboard/transactions/tienda")
-          }
-        ].map((stat, index) => (
-          <motion.div
-            key={stat.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
-            whileHover={{ scale: 1.02, y: -2 }}
-            whileTap={{ scale: 0.98 }}
-            className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer hover:bg-gray-50"
-            onClick={stat.onClick}
-          >
-            <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-600">
-                  {stat.title}
-                </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {stat.value}
-                </p>
-                <p className="text-sm text-gray-500">
-                  {stat.subtitle}
-                </p>
-              </div>
-              <div className={`${stat.bgColor} p-3 rounded-full`}>
-                <stat.icon className="w-6 h-6 text-white" />
-              </div>
-            </div>
-          </motion.div>
+          { title: "Ventas Totales", value: formatCurrency(totalSales), sub: `${formatNumber(totalTransactions)} trans.`, color: "text-green-600", onClick: () => navigate("/dashboard/transactions") },
+          { title: "Retornos", value: formatCurrency(totalReturns), sub: "devoluciones", color: "text-red-600", onClick: () => navigate("/dashboard/transactions") },
+          { title: "Combustible", value: formatCurrency(totalFuelSales), sub: "NCF", color: "text-orange-600", onClick: () => navigate("/dashboard/transactions/revenue") },
+          { title: "Tienda", value: formatCurrency(totalStoreSales), sub: "conveniencia", color: "text-purple-600", onClick: () => navigate("/dashboard/transactions/tienda") },
+        ].map((stat) => (
+          <div key={stat.title} onClick={stat.onClick}
+            className="bg-white rounded-sm p-2 border border-table-border hover:bg-row-hover cursor-pointer transition-colors">
+            <p className="text-2xs text-text-muted uppercase tracking-wide">{stat.title}</p>
+            <p className={`text-md font-bold ${stat.color}`}>{stat.value}</p>
+            <p className="text-2xs text-text-muted">{stat.sub}</p>
+          </div>
         ))}
       </div>
 
-      {/* Main Content Grid - Recent Transactions and Sales by Vendor */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Recent Transactions + Sales by Vendor */}
+      <div className="grid grid-cols-2 gap-2">
         {/* Recent Transactions */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Transacciones Recientes</h3>
-            <span className="text-sm text-gray-500">Últimas {recentTransactions.length} transacciones</span>
+        <div className="bg-white rounded-sm p-3 border border-table-border">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-semibold text-text-primary">Transacciones Recientes</span>
+            <span className="text-2xs text-text-muted">{recentTransactions.length}</span>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-1">
             {recentTransactions.length > 0 ? (
               recentTransactions.map((transaction, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.5 + index * 0.1 }}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      transaction.taxpayerName && transaction.taxpayerName !== 'Consumidor Final' 
-                        ? 'bg-green-100' 
-                        : 'bg-blue-100'
+                <div key={index} className="flex items-center justify-between py-1 px-2 bg-gray-50 rounded-sm">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                      transaction.taxpayerName && transaction.taxpayerName !== 'Consumidor Final' ? 'bg-green-100' : 'bg-blue-100'
                     }`}>
                       {transaction.taxpayerName && transaction.taxpayerName !== 'Consumidor Final' ? (
-                        <Building2 className="w-4 h-4 text-green-600" />
+                        <Building2 className="w-3 h-3 text-green-600" />
                       ) : (
-                        <User className="w-4 h-4 text-blue-600" />
+                        <User className="w-3 h-3 text-blue-600" />
                       )}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {`#${transaction.transNumber +' - '+ transaction.cfNumber || index + 1}`}
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        {transaction.taxpayerName || transaction.taxpayerId || 'Consumidor Final'}
-                      </p>
+                      <p className="text-sm text-text-primary font-medium">#{transaction.transNumber} · {transaction.cfNumber}</p>
+                      <p className="text-2xs text-text-muted">{transaction.taxpayerName || 'Consumidor Final'}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">
-                      {formatCurrency(transaction.total || 0)}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {transaction.transDate ? formatRelativeTime(transaction.transDate) : 'Reciente'}
-                    </p>
+                    <p className="text-sm font-medium text-text-primary">{formatCurrency(transaction.total || 0)}</p>
+                    <p className="text-2xs text-text-muted">{transaction.transDate ? formatRelativeTime(transaction.transDate) : 'Reciente'}</p>
                   </div>
-                </motion.div>
+                </div>
               ))
             ) : (
-              <div className="text-center py-8 text-gray-500">
-                <CreditCard className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                <p>No hay transacciones recientes</p>
-              </div>
+              <div className="text-center py-4 text-text-muted text-sm">No hay transacciones recientes</div>
             )}
           </div>
-        </motion.div>
+        </div>
 
         {/* Sales by Vendor */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Ventas por Vendedor
-            </h3>
-            <span className="text-sm text-gray-500">
-              Top {salesByVendor?.length || 0} vendedores
-            </span>
+        <div className="bg-white rounded-sm p-3 border border-table-border">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-semibold text-text-primary">Ventas por Vendedor</span>
+            <span className="text-2xs text-text-muted">Top {salesByVendor?.length || 0}</span>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-1">
             {salesByVendor && salesByVendor.length > 0 ? (
               salesByVendor.slice(0, 5).map((vendor, index) => (
-                <motion.div
-                  key={vendor.staftId}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.5 + index * 0.1 }}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-medium text-blue-600">
-                        #{index + 1}
-                      </span>
+                <div key={vendor.staftId} className="flex items-center justify-between py-1 px-2 bg-gray-50 rounded-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-2xs font-medium text-blue-600">#{index + 1}</span>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {vendor.staftName}
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        ID: {vendor.staftId} • {vendor.transactionCount}{" "}
-                        transacciones
-                      </p>
+                      <p className="text-sm text-text-primary font-medium">{vendor.staftName}</p>
+                      <p className="text-2xs text-text-muted">ID: {vendor.staftId} · {vendor.transactionCount} trans.</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">
-                      {formatCurrency(vendor.totalSales)}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {totalSales > 0
-                        ? `${Math.round(
-                            (vendor.totalSales / totalSales) * 100
-                          )}%`
-                        : "0%"}{" "}
-                      del total
-                    </p>
+                    <p className="text-sm font-medium text-text-primary">{formatCurrency(vendor.totalSales)}</p>
+                    <p className="text-2xs text-text-muted">{totalSales > 0 ? `${Math.round((vendor.totalSales / totalSales) * 100)}%` : "0%"}</p>
                   </div>
-                </motion.div>
+                </div>
               ))
             ) : (
-              <div className="text-center py-8 text-gray-500">
-                <User className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                <p>No hay datos de ventas por vendedor</p>
-              </div>
+              <div className="text-center py-4 text-text-muted text-sm">No hay datos</div>
             )}
           </div>
-        </motion.div>
+        </div>
       </div>
 
-      {/* CF Type Pie Chart and Top Products Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-        >
-          <TopProductsChart
-            data={allTransactions}
-            topProducts={topProducts}
-            loading={loading}
-            error={error}
-          />
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.7 }}
-        >
+      {/* Charts */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="bg-white rounded-sm border border-table-border p-2">
+          <TopProductsChart data={allTransactions} topProducts={topProducts} loading={loading} error={error} />
+        </div>
+        <div className="bg-white rounded-sm border border-table-border p-2">
           <CfTypePieChart data={cfTypeData} loading={loading} error={error} />
-        </motion.div>
+        </div>
       </div>
 
-      {/* Daily Sales Chart Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.8 }}
-        className="grid grid-cols-1 gap-6"
-      >
-        <DailySalesChart
-          data={dailySales}
-          loading={chartLoading}
-          error={chartError}
-          chartFilters={chartFilters}
-          onUpdateFilters={updateChartFilters}
-          onRefresh={refreshChartData}
-          chartStats={getChartStats}
-        />
-      </motion.div>
+      <div className="bg-white rounded-sm border border-table-border p-2">
+        <DailySalesChart data={dailySales} loading={chartLoading} error={chartError}
+          chartFilters={chartFilters} onUpdateFilters={updateChartFilters}
+          onRefresh={refreshChartData} chartStats={getChartStats} />
+      </div>
 
-      {/* Site Sales Chart Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.9 }}
-        className="grid grid-cols-1 gap-6"
-      >
-        <SiteSalesChart
-          data={siteSales}
-          loading={siteLoading}
-          error={siteError}
-          chartFilters={siteChartFilters}
-          onUpdateFilters={updateSiteChartFilters}
-          onRefresh={refreshSiteData}
-          siteStats={getSiteStats}
-        />
-      </motion.div>
+      <div className="bg-white rounded-sm border border-table-border p-2">
+        <SiteSalesChart data={siteSales} loading={siteLoading} error={siteError}
+          chartFilters={siteChartFilters} onUpdateFilters={updateSiteChartFilters}
+          onRefresh={refreshSiteData} siteStats={getSiteStats} />
+      </div>
 
       {/* Quick Actions */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 1.0 }}
-        className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
-      >
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Acciones Rápidas
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="bg-white rounded-sm p-3 border border-table-border">
+        <span className="text-sm font-semibold text-text-primary block mb-2">Acciones Rápidas</span>
+        <div className="grid grid-cols-3 gap-2">
           {[
-            {
-              title: "Gestionar Usuarios",
-              description: "Ver y administrar usuarios del sistema",
-              icon: Users,
-              color: "blue",
-              onClick: () => navigate("/dashboard/users")
-            },
-            {
-              title: "Ver Transacciones",
-              description: "Revisar transacciones y ventas",
-              icon: CreditCard,
-              color: "green",
-              onClick: () => navigate("/dashboard/transactions")
-            },
-            {
-              title: "Generar Reportes",
-              description: "Crear reportes detallados",
-              icon: BarChart3,
-              color: "purple",
-              onClick: () => navigate("/dashboard/reports")
-            }
-          ].map((action, index) => (
-            <motion.button
-              key={action.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 1.1 + index * 0.1 }}
-              whileHover={{ scale: 1.02, y: -2 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={action.onClick}
-              className={`p-4 text-left bg-${action.color}-50 hover:bg-${action.color}-100 rounded-lg border border-${action.color}-200 transition-colors`}
-            >
-              <action.icon className={`w-8 h-8 text-${action.color}-600 mb-2`} />
-              <h4 className="font-medium text-gray-900">{action.title}</h4>
-              <p className="text-sm text-gray-600">
-                {action.description}
-              </p>
-            </motion.button>
+            { title: "Usuarios", icon: Users, color: "blue", onClick: () => navigate("/dashboard/users") },
+            { title: "Transacciones", icon: CreditCard, color: "green", onClick: () => navigate("/dashboard/transactions") },
+            { title: "Reportes", icon: BarChart3, color: "purple", onClick: () => navigate("/dashboard/reports") },
+          ].map((action) => (
+            <button key={action.title} onClick={action.onClick}
+              className={`p-2 text-left bg-${action.color}-50 hover:bg-${action.color}-100 rounded-sm border border-${action.color}-200 transition-colors`}>
+              <action.icon className={`w-4 h-4 text-${action.color}-600 mb-1`} />
+              <p className="text-sm font-medium text-text-primary">{action.title}</p>
+            </button>
           ))}
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };
