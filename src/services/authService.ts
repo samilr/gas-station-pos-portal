@@ -70,5 +70,19 @@ export const authService = {
       console.error('Error validando token:', error);
       return false;
     }
-  }
+  },
+
+  async forgotPassword(data: {
+    adminUsername: string;
+    adminPassword: string;
+    sellerUsername: string;
+    sellerPassword: string;
+  }): Promise<{ successful: boolean; error?: string }> {
+    try {
+      const response = await apiPost(buildApiUrl('auth/forgot-password'), data);
+      return { successful: response.successful, error: response.error };
+    } catch (error) {
+      return { successful: false, error: 'Error al reiniciar contraseña' };
+    }
+  },
 };

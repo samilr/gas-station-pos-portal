@@ -1,5 +1,5 @@
 import { buildApiUrl } from '../config/api';
-import { apiGet, apiPost, ApiResponse } from './apiInterceptor';
+import { apiGet, apiPost, apiDelete, ApiResponse } from './apiInterceptor';
 import { IActionLog, IErrorLog } from '../types/logs';
 
 export interface PaginationMeta {
@@ -110,5 +110,26 @@ export const logService = {
         error: error instanceof Error ? error.message : 'Error desconocido'
       };
     }
-  }
+  },
+  // Eliminar action log
+  async deleteActionLog(id: number): Promise<ApiResponse<any>> {
+    return apiDelete(buildApiUrl(`audit/actions/${id}`));
+  },
+
+  // Eliminar error log
+  async deleteErrorLog(id: number): Promise<ApiResponse<any>> {
+    return apiDelete(buildApiUrl(`audit/errors/${id}`));
+  },
+
+  // Obtener action logs paginados (nuevo endpoint)
+  async getAuditActionLogs(page = 1, limit = 50): Promise<any> {
+    const response = await apiGet<any>(buildApiUrl(`audit/actions?page=${page}&limit=${limit}`));
+    return response;
+  },
+
+  // Obtener error logs paginados (nuevo endpoint)
+  async getAuditErrorLogs(page = 1, limit = 50): Promise<any> {
+    const response = await apiGet<any>(buildApiUrl(`audit/errors?page=${page}&limit=${limit}`));
+    return response;
+  },
 };

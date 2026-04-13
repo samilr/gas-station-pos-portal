@@ -95,6 +95,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     //'sites.view', 'sites.create', 'sites.edit',
     //'terminals.view', 'terminals.create', 'terminals.edit',
     //'devices.view', 'devices.create', 'devices.edit',
+    'dispensers.view',
     'analytics.view',
     // Categorías restringidas para MANAGER
     //'pos.view',        // Puede ver Puntos de Venta

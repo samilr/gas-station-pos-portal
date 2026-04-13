@@ -1,5 +1,5 @@
 import { buildApiUrl } from '../config/api';
-import { apiGet } from './apiInterceptor';
+import { apiGet, apiPut, apiDelete } from './apiInterceptor';
 
 export interface FuelTransaction {
   transaction_id: number;
@@ -115,6 +115,33 @@ class FuelTransactionService {
         error: error instanceof Error ? error.message : 'Error desconocido'
       };
     }
+  }
+  async getRecentFuelTransactions(): Promise<FuelTransactionsResponse> {
+    try {
+      const response = await apiGet<any>(buildApiUrl('fuel-transactions'));
+      return {
+        successful: response.successful,
+        data: Array.isArray(response.data) ? response.data : [],
+        error: response.error,
+      };
+    } catch (error) {
+      return { successful: false, data: [], error: 'Error de conexión' };
+    }
+  }
+
+  async getFuelTransactionById(id: number): Promise<{ successful: boolean; data: FuelTransaction | null; error?: string }> {
+    const response = await apiGet<FuelTransaction>(buildApiUrl(`fuel-transactions/${id}`));
+    return { successful: response.successful, data: response.data || null, error: response.error };
+  }
+
+  async updateFuelTransaction(id: number, data: Partial<FuelTransaction>): Promise<{ successful: boolean; error?: string }> {
+    const response = await apiPut(buildApiUrl(`fuel-transactions/${id}`), data);
+    return { successful: response.successful, error: response.error };
+  }
+
+  async deleteFuelTransaction(id: number): Promise<{ successful: boolean; error?: string }> {
+    const response = await apiDelete(buildApiUrl(`fuel-transactions/${id}`));
+    return { successful: response.successful, error: response.error };
   }
 }
 
