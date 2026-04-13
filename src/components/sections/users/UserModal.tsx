@@ -350,24 +350,24 @@ const UserModal: React.FC<UserModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-sm max-w-lg w-full max-h-[90vh] overflow-y-auto">
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+          <div className="flex items-center space-x-2">
             {isEditing ? (
-              <Edit className="w-6 h-6 text-green-600" />
+              <Edit className="w-4 h-4 text-green-600" />
             ) : (
-              <UserPlus className="w-6 h-6 text-blue-600" />
+              <UserPlus className="w-4 h-4 text-blue-600" />
             )}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-base font-semibold text-gray-900">
                 {isViewing
                   ? "Ver Usuario"
                   : isEditing
                   ? "Editar Usuario"
                   : "Crear Nuevo Usuario"}
               </h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-xs text-text-muted">
                 {isViewing
                   ? `Viendo: ${user?.name}`
                   : isEditing
@@ -378,25 +378,25 @@ const UserModal: React.FC<UserModalProps> = ({
           </div>
           <button
             onClick={handleClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-1 hover:bg-gray-100 rounded-sm transition-colors"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-4 h-4 text-gray-500" />
           </button>
         </div>
 
         {/* Modal Content */}
-        <div className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="p-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             {/* Basic Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900 flex items-center space-x-2">
-                <User className="w-5 h-5 text-gray-600" />
+            <div className="space-y-3">
+              <h3 className="text-base font-semibold text-gray-900 flex items-center space-x-2">
+                <User className="w-4 h-4 text-gray-600" />
                 <span>Información Básica</span>
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                     Nombre Completo *
                   </label>
                   <input
@@ -406,7 +406,7 @@ const UserModal: React.FC<UserModalProps> = ({
                     onChange={handleInputChange}
                     required
                     disabled={isViewing}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
                       isViewing ? "bg-gray-100 cursor-not-allowed" : ""
                     }`}
                     placeholder="Ingresa el nombre completo"
@@ -414,7 +414,7 @@ const UserModal: React.FC<UserModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                     Nombre de Usuario *
                   </label>
                   <input
@@ -424,7 +424,7 @@ const UserModal: React.FC<UserModalProps> = ({
                     onChange={handleInputChange}
                     required
                     disabled={isViewing}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
                       isViewing ? "bg-gray-100 cursor-not-allowed" : ""
                     }`}
                     placeholder="Ingresa el nombre de usuario"
@@ -432,7 +432,7 @@ const UserModal: React.FC<UserModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                     Email *
                   </label>
                   <input
@@ -442,7 +442,7 @@ const UserModal: React.FC<UserModalProps> = ({
                     onChange={handleInputChange}
                     required
                     disabled={isViewing}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
                       isViewing ? "bg-gray-100 cursor-not-allowed" : ""
                     }`}
                     placeholder="nombre.apellido@isladom.com.do"
@@ -450,7 +450,7 @@ const UserModal: React.FC<UserModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                     Contraseña {!isEditing && "*"}
                   </label>
                   <div className="relative">
@@ -461,7 +461,7 @@ const UserModal: React.FC<UserModalProps> = ({
                       onChange={handleInputChange}
                       required={!isEditing && !isViewing}
                       disabled={isViewing}
-                      className={`w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      className={`w-full h-7 px-2 pr-8 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
                         isViewing ? "bg-gray-100 cursor-not-allowed" : ""
                       }`}
                       placeholder={
@@ -476,7 +476,7 @@ const UserModal: React.FC<UserModalProps> = ({
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       disabled={isViewing}
-                      className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
+                      className={`absolute right-2 top-1/2 transform -translate-y-1/2 ${
                         isViewing
                           ? "text-gray-300 cursor-not-allowed"
                           : "text-gray-400 hover:text-gray-600"
@@ -494,16 +494,16 @@ const UserModal: React.FC<UserModalProps> = ({
             </div>
 
             {/* Role and Permissions */}
-            <PermissionGate roles={[Role.ADMIN]}>                
-              <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900 flex items-center space-x-2">
-                <Shield className="w-5 h-5 text-gray-600" />
+            <PermissionGate roles={[Role.ADMIN]}>
+              <div className="space-y-3">
+              <h3 className="text-base font-semibold text-gray-900 flex items-center space-x-2">
+                <Shield className="w-4 h-4 text-gray-600" />
                 <span>Rol y Permisos</span>
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                     Rol *
                   </label>
                   <select
@@ -512,7 +512,7 @@ const UserModal: React.FC<UserModalProps> = ({
                     onChange={handleInputChange}
                     required
                     disabled={isViewing || !canEditUsers}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
                       isViewing || !canEditUsers
                         ? "bg-gray-100 cursor-not-allowed"
                         : ""
@@ -534,7 +534,7 @@ const UserModal: React.FC<UserModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                     Acceso al Portal
                   </label>
                   <select
@@ -542,7 +542,7 @@ const UserModal: React.FC<UserModalProps> = ({
                     value={formData.portal_access}
                     onChange={handleInputChange}
                     disabled={isViewing}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
                       isViewing ? "bg-gray-100 cursor-not-allowed" : ""
                     }`}
                   >
@@ -555,15 +555,15 @@ const UserModal: React.FC<UserModalProps> = ({
             </PermissionGate>
 
             {/* Work Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900 flex items-center space-x-2">
-                <Building className="w-5 h-5 text-gray-600" />
+            <div className="space-y-3">
+              <h3 className="text-base font-semibold text-gray-900 flex items-center space-x-2">
+                <Building className="w-4 h-4 text-gray-600" />
                 <span>Información Laboral</span>
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                     Grupo de Personal *
                   </label>
                   <select
@@ -572,7 +572,7 @@ const UserModal: React.FC<UserModalProps> = ({
                     onChange={handleInputChange}
                     required
                     disabled={isViewing}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
                       isViewing ? "bg-gray-100 cursor-not-allowed" : ""
                     }`}
                   >
@@ -585,7 +585,7 @@ const UserModal: React.FC<UserModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                     Código de empleado *
                   </label>
                   <input
@@ -595,7 +595,7 @@ const UserModal: React.FC<UserModalProps> = ({
                     onChange={handleInputChange}
                     required
                     disabled={isViewing}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
                       isViewing ? "bg-gray-100 cursor-not-allowed" : ""
                     }`}
                     placeholder="Ingresa el código de empleado"
@@ -603,7 +603,7 @@ const UserModal: React.FC<UserModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                     Sucursal *
                   </label>
                   <input
@@ -613,7 +613,7 @@ const UserModal: React.FC<UserModalProps> = ({
                     onChange={handleInputChange}
                     required
                     disabled={isViewing}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
                       isViewing ? "bg-gray-100 cursor-not-allowed" : ""
                     }`}
                     placeholder="Ingresa el ID del sitio"
@@ -621,7 +621,7 @@ const UserModal: React.FC<UserModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                     Turno
                   </label>
                   <select
@@ -629,7 +629,7 @@ const UserModal: React.FC<UserModalProps> = ({
                     value={formData.shift}
                     onChange={handleInputChange}
                     disabled={isViewing}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
                       isViewing ? "bg-gray-100 cursor-not-allowed" : ""
                     }`}
                   >
@@ -643,20 +643,20 @@ const UserModal: React.FC<UserModalProps> = ({
             </div>
 
             {/* Status Switches */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900 flex items-center space-x-2">
-                <Shield className="w-5 h-5 text-gray-600" />
+            <div className="space-y-3">
+              <h3 className="text-base font-semibold text-gray-900 flex items-center space-x-2">
+                <Shield className="w-4 h-4 text-gray-600" />
                 <span>Estado del Usuario</span>
               </h3>
 
               {/* Switches */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="flex items-center justify-between p-2 bg-gray-50 rounded-sm">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">
+                    <label className="text-2xs uppercase tracking-wide text-gray-500">
                       Conectado
                     </label>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-text-muted">
                       Indica si el usuario está conectado
                     </p>
                   </div>
@@ -696,12 +696,12 @@ const UserModal: React.FC<UserModalProps> = ({
                   </label>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between p-2 bg-gray-50 rounded-sm">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">
+                    <label className="text-2xs uppercase tracking-wide text-gray-500">
                       Activo
                     </label>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-text-muted">
                       Indica si el usuario está activo
                     </p>
                   </div>
@@ -744,11 +744,11 @@ const UserModal: React.FC<UserModalProps> = ({
             </div>
 
             {/* Form Actions */}
-            <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
+            <div className="flex items-center justify-end space-x-3 pt-3 border-t border-gray-200">
               <button
                 type="button"
                 onClick={handleClose}
-                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="h-7 px-3 text-sm rounded-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 {isViewing ? "Cerrar" : "Cancelar"}
               </button>
@@ -756,7 +756,7 @@ const UserModal: React.FC<UserModalProps> = ({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors"
+                  className="flex items-center space-x-2 h-7 px-3 text-sm rounded-sm font-medium bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white transition-colors"
                 >
                   {loading ? (
                     <>

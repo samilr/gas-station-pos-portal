@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import {
   Tag, Plus, RefreshCw, Search, AlertCircle, Radio, CheckCircle, XCircle,
 } from 'lucide-react';
@@ -12,6 +11,9 @@ import {
   prop,
 } from '../../../services/dispenserService';
 import { useHeader } from '../../../context/HeaderContext';
+import { CompactButton } from '../../ui';
+import StatusDot from '../../ui/StatusDot';
+import Toolbar from '../../ui/Toolbar';
 
 const TagsSection: React.FC = () => {
   const [tags, setTags] = useState<TagInfo[]>([]);
@@ -29,7 +31,7 @@ const TagsSection: React.FC = () => {
   const [adding, setAdding] = useState(false);
 
   useEffect(() => {
-    setSubtitle('Gestión de tags RFID del controlador PTS');
+    setSubtitle('Gestion de tags RFID del controlador PTS');
     return () => { setSubtitle(''); };
   }, [setSubtitle]);
 
@@ -74,9 +76,9 @@ const TagsSection: React.FC = () => {
       const tag = await readReaderTag(reader);
       if (tag) {
         setReadTag(tag);
-        toast.success(`Tag leído: ${tag}`);
+        toast.success(`Tag leido: ${tag}`);
       } else {
-        toast.error('No se detectó ningún tag en el lector');
+        toast.error('No se detecto ningun tag en el lector');
       }
     } catch {
       toast.error('Error al leer del lector RFID');
@@ -94,15 +96,15 @@ const TagsSection: React.FC = () => {
 
   if (loading && tags.length === 0) {
     return (
-      <div className="space-y-6">
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="h-8 bg-gray-200 rounded w-48 mb-2 animate-pulse" />
+      <div className="space-y-1">
+        <div className="bg-white rounded-sm p-3">
+          <div className="h-6 bg-gray-200 rounded w-48 mb-1 animate-pulse" />
           <div className="h-4 bg-gray-100 rounded w-64 animate-pulse" />
         </div>
-        <div className="bg-white rounded-lg shadow-sm p-12 flex items-center justify-center">
+        <div className="bg-white rounded-sm p-8 flex items-center justify-center">
           <div className="text-center">
-            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-gray-500 text-sm">Cargando tags RFID...</p>
+            <div className="w-6 h-6 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+            <p className="text-gray-500 text-xs">Cargando tags RFID...</p>
           </div>
         </div>
       </div>
@@ -110,131 +112,98 @@ const TagsSection: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Tags RFID</h1>
-            <p className="text-gray-600 text-sm mt-1">
-              {totalCount} tags registrados en el sistema
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={loadTags}
-              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
-            >
-              <RefreshCw className="w-5 h-5" />
-            </button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
-            >
-              <Plus className="w-4 h-4" />
-              Agregar Tag
-            </motion.button>
-          </div>
-        </div>
-
-        {/* Búsqueda */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Buscar por ID o nombre..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-      </div>
+    <div className="space-y-1">
+      {/* Toolbar */}
+      <Toolbar
+        chips={[{ label: 'Tags', value: totalCount, color: 'blue' }]}
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Buscar por ID o nombre..."
+      >
+        <CompactButton variant="icon" onClick={loadTags}>
+          <RefreshCw className="w-3.5 h-3.5" />
+        </CompactButton>
+        <CompactButton variant="primary" onClick={() => setShowAddModal(true)}>
+          <Plus className="w-3.5 h-3.5" />
+          Agregar Tag
+        </CompactButton>
+      </Toolbar>
 
       {/* Lector RFID */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex items-center gap-3 mb-3">
-          <Radio className="w-5 h-5 text-purple-600" />
-          <h2 className="text-lg font-semibold text-gray-900">Leer Tag desde Lector</h2>
+      <div className="bg-white rounded-sm shadow-sm p-2">
+        <div className="flex items-center gap-2 mb-1">
+          <Radio className="w-4 h-4 text-purple-600" />
+          <h2 className="text-xs font-semibold text-gray-900">Leer Tag desde Lector</h2>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1">
           {[1, 2, 3, 4].map((reader) => (
-            <button
+            <CompactButton
               key={reader}
+              variant="ghost"
               onClick={() => handleReadFromReader(reader)}
               disabled={readingReader !== null}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 hover:bg-gray-50 disabled:opacity-50 rounded-lg text-sm transition-colors"
             >
               {readingReader === reader ? (
-                <div className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
               ) : (
-                <Radio className="w-4 h-4 text-purple-500" />
+                <Radio className="w-3.5 h-3.5 text-purple-500" />
               )}
               Lector {reader}
-            </button>
+            </CompactButton>
           ))}
         </div>
         {readTag && (
-          <motion.div
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-3 bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2"
-          >
-            <Tag className="w-4 h-4 text-green-600" />
-            <span className="text-sm text-green-700">Tag detectado: <strong>{readTag}</strong></span>
-          </motion.div>
+          <div className="mt-1 bg-green-50 border border-green-200 rounded-sm p-1.5 flex items-center gap-1.5">
+            <Tag className="w-3.5 h-3.5 text-green-600" />
+            <span className="text-xs text-green-700">Tag detectado: <strong>{readTag}</strong></span>
+          </div>
         )}
       </div>
 
       {/* Tabla de tags */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="bg-white rounded-sm shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-12 flex items-center justify-center">
-            <div className="w-6 h-6 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          <div className="p-8 flex items-center justify-center">
+            <div className="w-5 h-5 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : filteredTags.length === 0 ? (
-          <div className="p-12 text-center text-gray-500">
-            <Tag className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p>{searchTerm ? 'No se encontraron tags con ese criterio' : 'No hay tags registrados'}</p>
+          <div className="p-8 text-center text-gray-500">
+            <Tag className="w-8 h-8 mx-auto mb-2 opacity-30" />
+            <p className="text-sm">{searchTerm ? 'No se encontraron tags con ese criterio' : 'No hay tags registrados'}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tag ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Presente</th>
+              <thead>
+                <tr className="h-8 text-xs uppercase tracking-wide bg-table-header">
+                  <th className="px-2 text-left font-medium text-gray-500">Tag ID</th>
+                  <th className="px-2 text-left font-medium text-gray-500">Nombre</th>
+                  <th className="px-2 text-left font-medium text-gray-500">Estado</th>
+                  <th className="px-2 text-left font-medium text-gray-500">Presente</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody>
                 {filteredTags.map((raw: any, idx: number) => {
                   const tagId = prop(raw, 'Tag') || '';
                   const tagName = prop(raw, 'Name') || '';
                   const tagValid = prop(raw, 'Valid');
                   const tagPresent = prop(raw, 'Present');
                   return (
-                    <tr key={tagId || idx} className="hover:bg-gray-50">
-                      <td className="px-6 py-3 text-sm font-mono text-gray-900">{tagId}</td>
-                      <td className="px-6 py-3 text-sm text-gray-700">{tagName}</td>
-                      <td className="px-6 py-3">
+                    <tr key={tagId || idx} className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover">
+                      <td className="px-2 text-sm font-mono text-gray-900 whitespace-nowrap">{tagId}</td>
+                      <td className="px-2 text-sm text-gray-700 whitespace-nowrap text-ellipsis overflow-hidden">{tagName}</td>
+                      <td className="px-2 whitespace-nowrap">
                         {tagValid ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded-full">
-                            <CheckCircle className="w-3 h-3" /> Válido
-                          </span>
+                          <StatusDot color="green" label="Valido" />
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-red-700 bg-red-50 px-2 py-0.5 rounded-full">
-                            <XCircle className="w-3 h-3" /> Bloqueado
-                          </span>
+                          <StatusDot color="red" label="Bloqueado" />
                         )}
                       </td>
-                      <td className="px-6 py-3">
+                      <td className="px-2 whitespace-nowrap">
                         {tagPresent ? (
-                          <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
+                          <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
                         ) : (
-                          <span className="w-2.5 h-2.5 rounded-full bg-gray-300 inline-block" />
+                          <span className="w-2 h-2 rounded-full bg-gray-300 inline-block" />
                         )}
                       </td>
                     </tr>
@@ -249,50 +218,44 @@ const TagsSection: React.FC = () => {
       {/* Modal Agregar Tag */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowAddModal(false)}>
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4"
+          <div
+            className="bg-white rounded-sm shadow-xl p-3 w-full max-w-md mx-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Agregar Tag RFID</h3>
-            <form onSubmit={handleAddTag} className="space-y-4">
+            <h3 className="text-sm font-semibold text-gray-900 mb-2">Agregar Tag RFID</h3>
+            <form onSubmit={handleAddTag} className="space-y-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">ID del Tag</label>
+                <label className="block text-xs font-medium text-gray-700 mb-0.5">ID del Tag</label>
                 <input
                   type="text"
                   value={newTagId}
                   onChange={(e) => setNewTagId(e.target.value)}
                   placeholder="Ej: A1B2C3D4"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 font-mono"
+                  className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500 font-mono"
                   autoFocus
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                <label className="block text-xs font-medium text-gray-700 mb-0.5">Nombre</label>
                 <input
                   type="text"
                   value={newTagName}
                   onChange={(e) => setNewTagName(e.target.value)}
-                  placeholder="Ej: Vehículo Empresa 001"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ej: Vehiculo Empresa 001"
+                  className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500"
                 />
               </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg">
+              <div className="flex justify-end gap-1 pt-1">
+                <CompactButton variant="ghost" type="button" onClick={() => setShowAddModal(false)}>
                   Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={adding || !newTagId.trim()}
-                  className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 rounded-lg flex items-center gap-2"
-                >
-                  {adding && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                </CompactButton>
+                <CompactButton variant="primary" type="submit" disabled={adding || !newTagId.trim()}>
+                  {adding && <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />}
                   Agregar
-                </button>
+                </CompactButton>
               </div>
             </form>
-          </motion.div>
+          </div>
         </div>
       )}
     </div>

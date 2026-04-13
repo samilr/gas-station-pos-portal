@@ -55,35 +55,35 @@ const ConfirmActionModal: React.FC<ConfirmActionModalProps> = ({
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4"
+            className="bg-white rounded-sm shadow-xl p-4 w-full max-w-lg mx-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-red-600" />
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                  <AlertTriangle className="w-4 h-4 text-red-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+                <h3 className="text-base font-semibold text-gray-900">{title}</h3>
               </div>
               <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-gray-600 text-sm mb-6">{message}</p>
+            <p className="text-xs text-text-muted mb-3">{message}</p>
 
             <div className="flex justify-end gap-3">
               <button
                 onClick={onClose}
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="h-7 px-3 text-sm rounded-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleConfirm}
                 disabled={loading}
-                className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2 ${COLOR_MAP[confirmColor]}`}
+                className={`h-7 px-3 text-sm rounded-sm font-medium text-white transition-colors flex items-center gap-2 ${COLOR_MAP[confirmColor]}`}
               >
                 {loading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
                 {confirmLabel}

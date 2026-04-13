@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { CreditCard, Plus, Edit2, Trash2, RefreshCw } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Plus, Edit2, Trash2, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { paymentService } from '../../../services/paymentService';
 import { IPayment } from '../../../types/payment';
 import PaymentModal from './PaymentModal';
+import { CompactButton } from '../../ui';
+import StatusDot from '../../ui/StatusDot';
+import Toolbar from '../../ui/Toolbar';
 
 const paymentTypeLabels: Record<number, string> = {
-  1: 'Efectivo', 2: 'Tarjeta Crédito', 3: 'Tarjeta Débito',
+  1: 'Efectivo', 2: 'Tarjeta Credito', 3: 'Tarjeta Debito',
   4: 'Transferencia', 5: 'Cheque', 6: 'Tickets', 7: 'Gift Card', 8: 'Otro'
 };
 
@@ -26,62 +28,69 @@ const PaymentsSection: React.FC = () => {
   useEffect(() => { load(); }, [load]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm(`¿Eliminar método de pago "${id}"?`)) return;
+    if (!confirm(`¿Eliminar metodo de pago "${id}"?`)) return;
     const r = await paymentService.deletePayment(id);
-    if (r.successful) { toast.success('Método de pago eliminado'); load(); } else toast.error(r.error || 'Error');
+    if (r.successful) { toast.success('Metodo de pago eliminado'); load(); } else toast.error(r.error || 'Error');
   };
 
   return (
-    <div className="space-y-6">
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <CreditCard className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Métodos de Pago</h1>
-              <p className="text-sm text-gray-500">{payments.length} métodos configurados</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={() => setModal({ show: true, payment: null })}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm">
-              <Plus className="w-4 h-4" />Nuevo
-            </button>
-            <button onClick={load} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg">
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
-        </div>
-      </motion.div>
+    <div className="space-y-1">
+      <Toolbar
+        chips={[
+          { label: "Metodos", value: payments.length, color: "blue" },
+        ]}
+      >
+        <CompactButton variant="primary" onClick={() => setModal({ show: true, payment: null })}>
+          <Plus className="w-3.5 h-3.5" />Nuevo
+        </CompactButton>
+        <CompactButton variant="icon" onClick={load}>
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+        </CompactButton>
+      </Toolbar>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Table view instead of cards for compact density */}
+      <div className="bg-white rounded-sm border border-gray-200 overflow-hidden">
         {loading ? (
-          Array.from({ length: 4 }).map((_, i) => <div key={i} className="bg-white rounded-xl border border-gray-200 p-6 animate-pulse h-28" />)
-        ) : payments.map((p, i) => (
-          <motion.div key={p.paymentId} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow">
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <h3 className="font-semibold text-gray-900 text-sm">{p.name.trim()}</h3>
-                <p className="text-xs text-gray-400 font-mono mt-0.5">{p.paymentId.trim()}</p>
-              </div>
-              <div className="flex gap-1">
-                <button onClick={() => setModal({ show: true, payment: p })} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg"><Edit2 className="w-3.5 h-3.5" /></button>
-                <button onClick={() => handleDelete(p.paymentId)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
-              </div>
-            </div>
-            <div className="flex items-center justify-between text-xs text-gray-500">
-              <span className="bg-gray-100 px-2 py-1 rounded">{paymentTypeLabels[p.paymentType] || `Tipo ${p.paymentType}`}</span>
-              <span className={`px-2 py-1 rounded-full ${p.paymentActive || p.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                {p.paymentActive || p.active ? 'Activo' : 'Inactivo'}
-              </span>
-            </div>
-          </motion.div>
-        ))}
-        {!loading && payments.length === 0 && <p className="text-sm text-gray-400 col-span-3 text-center py-10">Sin métodos de pago</p>}
+          <div className="flex items-center justify-center h-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr className="h-8 text-xs uppercase tracking-wide bg-table-header border-b border-table-border">
+                  {['ID', 'Nombre', 'Tipo', 'Estado', 'Acciones'].map(h => (
+                    <th key={h} className="px-2 text-left text-xs font-medium text-gray-500">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {payments.map((p) => (
+                  <tr key={p.paymentId} className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover transition-colors">
+                    <td className="px-2 text-sm whitespace-nowrap font-mono text-gray-400">{p.paymentId.trim()}</td>
+                    <td className="px-2 text-sm whitespace-nowrap font-medium text-gray-900">{p.name.trim()}</td>
+                    <td className="px-2 text-sm whitespace-nowrap text-gray-500">{paymentTypeLabels[p.paymentType] || `Tipo ${p.paymentType}`}</td>
+                    <td className="px-2 text-sm whitespace-nowrap">
+                      <StatusDot
+                        color={(p.paymentActive || p.active) ? 'green' : 'gray'}
+                        label={(p.paymentActive || p.active) ? 'Activo' : 'Inactivo'}
+                      />
+                    </td>
+                    <td className="px-2 text-sm whitespace-nowrap">
+                      <div className="flex gap-1">
+                        <button onClick={() => setModal({ show: true, payment: p })} className="p-0.5 text-blue-600 hover:bg-blue-50 rounded-sm"><Edit2 className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => handleDelete(p.paymentId)} className="p-0.5 text-red-600 hover:bg-red-50 rounded-sm"><Trash2 className="w-3.5 h-3.5" /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {payments.length === 0 && (
+                  <tr><td colSpan={5} className="px-2 py-6 text-center text-sm text-gray-400">Sin metodos de pago</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {modal.show && <PaymentModal payment={modal.payment} onClose={() => setModal({ show: false, payment: null })} onSaved={() => { setModal({ show: false, payment: null }); load(); }} />}

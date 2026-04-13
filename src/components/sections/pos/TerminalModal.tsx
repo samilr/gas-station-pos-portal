@@ -75,7 +75,7 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
     const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : 
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked :
                type === 'number' ? Number(value) : value
     }));
   };
@@ -83,7 +83,7 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isViewing) return;
-    
+
     setLoading(true);
     try {
       if (isEditing && terminal) {
@@ -137,47 +137,47 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-sm max-w-lg w-full max-h-[90vh] overflow-y-auto">
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+          <div className="flex items-center space-x-2">
             {isEditing ? (
-              <Edit className="w-6 h-6 text-green-600" />
+              <Edit className="w-4 h-4 text-green-600" />
             ) : isViewing ? (
-              <Monitor className="w-6 h-6 text-blue-600" />
+              <Monitor className="w-4 h-4 text-blue-600" />
             ) : (
-              <Plus className="w-6 h-6 text-blue-600" />
+              <Plus className="w-4 h-4 text-blue-600" />
             )}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-base font-semibold text-gray-900">
                 {isViewing ? 'Ver Terminal' : isEditing ? 'Editar Terminal' : 'Crear Nueva Terminal'}
               </h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-xs text-text-muted">
                 {isViewing ? `Viendo: ${terminal?.name}` : isEditing ? `Editando: ${terminal?.name}` : 'Completa el formulario para crear una nueva terminal'}
               </p>
             </div>
           </div>
           <button
             onClick={handleClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-1 hover:bg-gray-100 rounded-sm transition-colors"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-4 h-4 text-gray-500" />
           </button>
         </div>
 
         {/* Modal Content */}
-        <div className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="p-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             {/* Basic Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900 flex items-center space-x-2">
-                <Monitor className="w-5 h-5 text-gray-600" />
+            <div className="space-y-3">
+              <h3 className="text-base font-semibold text-gray-900 flex items-center space-x-2">
+                <Monitor className="w-4 h-4 text-gray-600" />
                 <span>Información Básica</span>
               </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                     Nombre de la Terminal *
                   </label>
                   <input
@@ -187,15 +187,15 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
                     onChange={handleInputChange}
                     required
                     disabled={isViewing}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
                       isViewing ? 'bg-gray-100 cursor-not-allowed' : ''
                     }`}
                     placeholder="Ingresa el nombre de la terminal"
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                     Terminal *
                   </label>
                   <input
@@ -205,15 +205,15 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
                     onChange={handleInputChange}
                     required
                     disabled={isViewing}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
                       isViewing ? 'bg-gray-100 cursor-not-allowed' : ''
                     }`}
                     placeholder="Ingresa el ID de la terminal"
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                     ID del Sitio *
                   </label>
                   <input
@@ -223,7 +223,7 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
                     onChange={handleInputChange}
                     required
                     disabled={isViewing}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
                       isViewing ? 'bg-gray-100 cursor-not-allowed' : ''
                     }`}
                     placeholder="Ingresa el ID del sitio"
@@ -231,7 +231,7 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                     Sector
                   </label>
                   <select
@@ -239,7 +239,7 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
                     value={formData.sectorId || ''}
                     onChange={handleInputChange}
                     disabled={isViewing}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
                       isViewing ? 'bg-gray-100 cursor-not-allowed' : ''
                     }`}
                   >
@@ -252,11 +252,11 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
               </div>
 
               {/* Switches */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                <div className="flex items-center justify-between p-2 bg-gray-50 rounded-sm">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Conectada</label>
-                    <p className="text-xs text-gray-500">Indica si la terminal está conectada</p>
+                    <label className="text-2xs uppercase tracking-wide text-gray-500">Conectada</label>
+                    <p className="text-xs text-text-muted">Indica si la terminal está conectada</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -268,8 +268,8 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
                       className="sr-only peer"
                     />
                     <div className={`relative w-12 h-7 rounded-full transition-all duration-300 ease-in-out ${
-                      formData.connected 
-                        ? 'bg-blue-600' 
+                      formData.connected
+                        ? 'bg-blue-600'
                         : 'bg-gray-200 border-2 border-gray-300'
                     } ${isViewing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg'}`}>
                       <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-all duration-300 ease-in-out transform shadow-sm ${
@@ -284,10 +284,10 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
                   </label>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between p-2 bg-gray-50 rounded-sm">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Activa</label>
-                    <p className="text-xs text-gray-500">Indica si la terminal está activa</p>
+                    <label className="text-2xs uppercase tracking-wide text-gray-500">Activa</label>
+                    <p className="text-xs text-text-muted">Indica si la terminal está activa</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -299,8 +299,8 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
                       className="sr-only peer"
                     />
                     <div className={`relative w-12 h-7 rounded-full transition-all duration-300 ease-in-out ${
-                      formData.active 
-                        ? 'bg-blue-600' 
+                      formData.active
+                        ? 'bg-blue-600'
                         : 'bg-gray-200 border-2 border-gray-300'
                     } ${isViewing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg'}`}>
                       <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-all duration-300 ease-in-out transform shadow-sm ${
@@ -319,21 +319,21 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
 
             {/* Connection Information - Solo lectura */}
             {terminal && isViewing && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900 flex items-center space-x-2">
-                  <Clock className="w-5 h-5 text-gray-600" />
+              <div className="space-y-3">
+                <h3 className="text-base font-semibold text-gray-900 flex items-center space-x-2">
+                  <Clock className="w-4 h-4 text-gray-600" />
                   <span>Información de Conexión</span>
                 </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {/* Conexión Actual */}
                   {terminal.connected && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <h4 className="text-sm font-medium text-blue-900 mb-3 flex items-center space-x-2">
+                    <div className="bg-blue-50 border border-blue-200 rounded-sm p-3">
+                      <h4 className="text-xs font-medium text-blue-900 mb-2 flex items-center space-x-2">
                         <User className="w-4 h-4" />
                         <span>Conexión Actual</span>
                       </h4>
-                      <div className="space-y-2 text-sm">
+                      <div className="space-y-1 text-xs">
                         <div className="flex justify-between">
                           <span className="text-blue-700">Usuario:</span>
                           <span className="font-medium text-blue-900">
@@ -352,18 +352,18 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
                             {formatDate(terminal.connected_time)}
                           </span>
                         </div>
-                        
+
                       </div>
                     </div>
                   )}
 
                   {/* Última Conexión */}
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center space-x-2">
+                  <div className="bg-gray-50 border border-gray-200 rounded-sm p-3">
+                    <h4 className="text-xs font-medium text-gray-900 mb-2 flex items-center space-x-2">
                       <Smartphone className="w-4 h-4" />
                       <span>Última Conexión</span>
                     </h4>
-                    <div className="space-y-2 text-sm">
+                    <div className="space-y-1 text-xs">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Usuario:</span>
                         <span className="font-medium text-gray-900">
@@ -389,11 +389,11 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
             )}
 
             {/* Form Actions */}
-            <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
+            <div className="flex items-center justify-end space-x-3 pt-3 border-t border-gray-200">
               <button
                 type="button"
                 onClick={handleClose}
-                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="h-7 px-3 text-sm rounded-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 {isViewing ? 'Cerrar' : 'Cancelar'}
               </button>
@@ -401,7 +401,7 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors"
+                  className="flex items-center space-x-2 h-7 px-3 text-sm rounded-sm font-medium bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white transition-colors"
                 >
                   {loading ? (
                     <>

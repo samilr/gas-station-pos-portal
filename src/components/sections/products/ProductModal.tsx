@@ -94,7 +94,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
 
   const handleInputChange = (field: keyof ICreateProductDto, value: any) => {
     if (mode === 'view') return; // No permitir cambios en modo vista
-    
+
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -103,7 +103,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (mode === 'view') {
       onClose();
       return;
@@ -154,37 +154,37 @@ const ProductModal: React.FC<ProductModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-sm shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Package className="w-5 h-5 text-blue-600" />
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-blue-100 rounded-sm flex items-center justify-center">
+              <Package className="w-4 h-4 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">{getModalTitle()}</h2>
-              <p className="text-sm text-gray-500">{getModalDescription()}</p>
+              <h2 className="text-base font-semibold text-gray-900">{getModalTitle()}</h2>
+              <p className="text-xs text-text-muted">{getModalDescription()}</p>
             </div>
           </div>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <X className="w-6 h-6" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <form onSubmit={handleSubmit} className="p-4 space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Información Básica */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">
+            <div className="space-y-3">
+              <h3 className="text-base font-semibold text-gray-900 border-b border-gray-200 pb-1">
                 Información Básica
               </h3>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                   ID del Producto *
                 </label>
                 <input
@@ -192,13 +192,13 @@ const ProductModal: React.FC<ProductModalProps> = ({
                   value={formData.productId}
                   onChange={(e) => handleInputChange('productId', e.target.value)}
                   disabled={isDisabled}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                   Nombre *
                 </label>
                 <input
@@ -206,26 +206,26 @@ const ProductModal: React.FC<ProductModalProps> = ({
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   disabled={isDisabled}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                   Descripción
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   disabled={isDisabled}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  rows={2}
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                   Categoría *
                 </label>
                 <input
@@ -233,13 +233,13 @@ const ProductModal: React.FC<ProductModalProps> = ({
                   value={formData.categoryId}
                   onChange={(e) => handleInputChange('categoryId', e.target.value)}
                   disabled={isDisabled}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                   Grupo de Cuenta
                 </label>
                 <input
@@ -247,19 +247,19 @@ const ProductModal: React.FC<ProductModalProps> = ({
                   value={formData.accountGroupId}
                   onChange={(e) => handleInputChange('accountGroupId', e.target.value)}
                   disabled={isDisabled}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
                 />
               </div>
             </div>
 
             {/* Configuración */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">
+            <div className="space-y-3">
+              <h3 className="text-base font-semibold text-gray-900 border-b border-gray-200 pb-1">
                 Configuración
               </h3>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                   ID de Impuesto *
                 </label>
                 <input
@@ -267,13 +267,13 @@ const ProductModal: React.FC<ProductModalProps> = ({
                   value={formData.taxId}
                   onChange={(e) => handleInputChange('taxId', e.target.value)}
                   disabled={isDisabled}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                   Precio
                 </label>
                 <input
@@ -282,12 +282,12 @@ const ProductModal: React.FC<ProductModalProps> = ({
                   value={formData.price}
                   onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
                   disabled={isDisabled}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                   Método de Costeo *
                 </label>
                 <input
@@ -295,13 +295,13 @@ const ProductModal: React.FC<ProductModalProps> = ({
                   value={formData.costingMethod}
                   onChange={(e) => handleInputChange('costingMethod', parseInt(e.target.value) || 1)}
                   disabled={isDisabled}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                   Unidad de Entrada *
                 </label>
                 <input
@@ -309,13 +309,13 @@ const ProductModal: React.FC<ProductModalProps> = ({
                   value={formData.inputUnitId}
                   onChange={(e) => handleInputChange('inputUnitId', e.target.value)}
                   disabled={isDisabled}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                   Unidad de Salida *
                 </label>
                 <input
@@ -323,7 +323,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
                   value={formData.outputUnitId}
                   onChange={(e) => handleInputChange('outputUnitId', e.target.value)}
                   disabled={isDisabled}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
                   required
                 />
               </div>
@@ -331,13 +331,13 @@ const ProductModal: React.FC<ProductModalProps> = ({
           </div>
 
           {/* Opciones y Configuraciones */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-3">
+              <h3 className="text-base font-semibold text-gray-900 border-b border-gray-200 pb-1">
                 Opciones
               </h3>
-              
-              <div className="space-y-3">
+
+              <div className="space-y-2">
                 <label className="flex items-center">
                   <input
                     type="checkbox"
@@ -406,13 +406,13 @@ const ProductModal: React.FC<ProductModalProps> = ({
               </div>
             </div>
 
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">
+            <div className="space-y-3">
+              <h3 className="text-base font-semibold text-gray-900 border-b border-gray-200 pb-1">
                 Información Adicional
               </h3>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                   Ganancia Esperada
                 </label>
                 <input
@@ -421,12 +421,12 @@ const ProductModal: React.FC<ProductModalProps> = ({
                   value={formData.expectedProfit}
                   onChange={(e) => handleInputChange('expectedProfit', parseFloat(e.target.value) || 0)}
                   disabled={isDisabled}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                   Peso Neto (kg)
                 </label>
                 <input
@@ -435,12 +435,12 @@ const ProductModal: React.FC<ProductModalProps> = ({
                   value={formData.weightNet}
                   onChange={(e) => handleInputChange('weightNet', parseFloat(e.target.value) || 0)}
                   disabled={isDisabled}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                   Peso Bruto (kg)
                 </label>
                 <input
@@ -449,12 +449,12 @@ const ProductModal: React.FC<ProductModalProps> = ({
                   value={formData.weightGross}
                   onChange={(e) => handleInputChange('weightGross', parseFloat(e.target.value) || 0)}
                   disabled={isDisabled}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
                   Imagen
                 </label>
                 <input
@@ -462,7 +462,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
                   value={formData.image}
                   onChange={(e) => handleInputChange('image', e.target.value)}
                   disabled={isDisabled}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
                   placeholder="Nombre del archivo de imagen"
                 />
               </div>
@@ -470,18 +470,18 @@ const ProductModal: React.FC<ProductModalProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
+          <div className="flex items-center justify-end space-x-3 pt-3 border-t border-gray-200">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              className="h-7 px-3 text-sm rounded-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+              className={`flex items-center space-x-2 h-7 px-3 text-sm rounded-sm font-medium transition-colors ${
                 mode === 'view'
                   ? 'bg-gray-600 hover:bg-gray-700 text-white'
                   : 'bg-blue-600 hover:bg-blue-700 text-white'

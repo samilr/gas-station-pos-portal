@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Wrench, RefreshCw, Fuel, Gauge, Radio, MonitorSpeaker } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
@@ -12,6 +11,7 @@ import {
   prop,
 } from '../../../services/dispenserService';
 import { useHeader } from '../../../context/HeaderContext';
+import { CompactButton } from '../../ui';
 
 type Tab = 'pumps' | 'nozzles' | 'fuel-grades' | 'probes' | 'readers' | 'price-boards';
 
@@ -33,7 +33,7 @@ const safeJoin = (val: any): string => {
 
 const safeStr = (val: any): string => (val != null ? String(val) : '-');
 
-const safeBool = (val: any): string => val ? 'Sí' : 'No';
+const safeBool = (val: any): string => val ? 'Si' : 'No';
 
 const safeFixed = (val: any, digits: number): string => {
   const n = Number(val);
@@ -45,42 +45,33 @@ const HardwareSection: React.FC = () => {
   const { setSubtitle } = useHeader();
 
   useEffect(() => {
-    setSubtitle('Configuración de hardware del controlador PTS');
+    setSubtitle('Configuracion de hardware del controlador PTS');
     return () => { setSubtitle(''); };
   }, [setSubtitle]);
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Configuración de Hardware</h1>
-        <p className="text-gray-600 text-sm">Bombas, pistolas, grados de combustible, sondas, lectores y paneles de precios</p>
-
-        <div className="flex gap-1 mt-4 bg-gray-100 p-1 rounded-lg overflow-x-auto">
-          {TABS.map(({ key, label, icon: Icon }) => (
-            <button
-              key={key}
-              onClick={() => setActiveTab(key)}
-              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
-                activeTab === key ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {label}
-            </button>
-          ))}
-        </div>
+    <div className="space-y-1">
+      <div className="flex gap-0.5 bg-gray-100 p-0.5 rounded-sm overflow-x-auto">
+        {TABS.map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            onClick={() => setActiveTab(key)}
+            className={`flex items-center gap-1 h-7 px-2 text-xs font-medium rounded-sm transition-colors whitespace-nowrap ${
+              activeTab === key ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <Icon className="w-3.5 h-3.5" />
+            {label}
+          </button>
+        ))}
       </div>
 
-      <AnimatePresence mode="wait">
-        <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-          {activeTab === 'pumps' && <PumpsTab />}
-          {activeTab === 'nozzles' && <NozzlesTab />}
-          {activeTab === 'fuel-grades' && <FuelGradesTab />}
-          {activeTab === 'probes' && <ProbesTab />}
-          {activeTab === 'readers' && <ReadersTab />}
-          {activeTab === 'price-boards' && <PriceBoardsTab />}
-        </motion.div>
-      </AnimatePresence>
+      {activeTab === 'pumps' && <PumpsTab />}
+      {activeTab === 'nozzles' && <NozzlesTab />}
+      {activeTab === 'fuel-grades' && <FuelGradesTab />}
+      {activeTab === 'probes' && <ProbesTab />}
+      {activeTab === 'readers' && <ReadersTab />}
+      {activeTab === 'price-boards' && <PriceBoardsTab />}
     </div>
   );
 };
@@ -101,7 +92,7 @@ const PumpsTab: React.FC = () => {
         setPorts(data.Ports || []);
         setPumps(data.Pumps || []);
       }
-    } catch { toast.error('Error al cargar configuración de bombas'); }
+    } catch { toast.error('Error al cargar configuracion de bombas'); }
     finally { setLoading(false); }
   }, []);
 
@@ -109,13 +100,13 @@ const PumpsTab: React.FC = () => {
   if (loading) return <LoadingSkeleton />;
 
   return (
-    <div className="space-y-4">
-      <div className="bg-white rounded-lg shadow-sm">
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900">Puertos Serie</h3>
-          <button onClick={load} className="p-1.5 text-gray-500 hover:bg-gray-100 rounded">
-            <RefreshCw className="w-4 h-4" />
-          </button>
+    <div className="space-y-1">
+      <div className="bg-white rounded-sm shadow-sm">
+        <div className="h-8 px-2 border-b border-gray-200 flex items-center justify-between">
+          <h3 className="text-xs font-semibold text-gray-900">Puertos Serie</h3>
+          <CompactButton variant="icon" onClick={load}>
+            <RefreshCw className="w-3.5 h-3.5" />
+          </CompactButton>
         </div>
         <TableWrapper
           headers={['ID', 'Protocolo', 'Baud Rate']}
@@ -126,12 +117,12 @@ const PumpsTab: React.FC = () => {
           ])}
         />
       </div>
-      <div className="bg-white rounded-lg shadow-sm">
-        <div className="p-4 border-b border-gray-200">
-          <h3 className="font-semibold text-gray-900">Bombas ({pumps.length})</h3>
+      <div className="bg-white rounded-sm shadow-sm">
+        <div className="h-8 px-2 border-b border-gray-200 flex items-center">
+          <h3 className="text-xs font-semibold text-gray-900">Bombas ({pumps.length})</h3>
         </div>
         <TableWrapper
-          headers={['ID', 'Dirección', 'Puerto', 'Grados', 'Lock por Defecto', 'Auth Requerida']}
+          headers={['ID', 'Direccion', 'Puerto', 'Grados', 'Lock por Defecto', 'Auth Requerida']}
           rows={pumps.map((raw) => [
             safeStr(prop(raw, 'Id')),
             safeStr(prop(raw, 'Address')),
@@ -159,9 +150,9 @@ const NozzlesTab: React.FC = () => {
   if (loading) return <LoadingSkeleton />;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm">
-      <div className="p-4 border-b border-gray-200">
-        <h3 className="font-semibold text-gray-900">Configuración de Pistolas ({nozzles.length} bombas)</h3>
+    <div className="bg-white rounded-sm shadow-sm">
+      <div className="h-8 px-2 border-b border-gray-200 flex items-center">
+        <h3 className="text-xs font-semibold text-gray-900">Configuracion de Pistolas ({nozzles.length} bombas)</h3>
       </div>
       <TableWrapper
         headers={['Bomba', 'Grados de Combustible', 'Tanques']}
@@ -188,12 +179,12 @@ const FuelGradesTab: React.FC = () => {
   if (loading) return <LoadingSkeleton />;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm">
-      <div className="p-4 border-b border-gray-200">
-        <h3 className="font-semibold text-gray-900">Grados de Combustible</h3>
+    <div className="bg-white rounded-sm shadow-sm">
+      <div className="h-8 px-2 border-b border-gray-200 flex items-center">
+        <h3 className="text-xs font-semibold text-gray-900">Grados de Combustible</h3>
       </div>
       <TableWrapper
-        headers={['ID', 'Nombre', 'Precio (RD$)', 'Coef. Expansión']}
+        headers={['ID', 'Nombre', 'Precio (RD$)', 'Coef. Expansion']}
         rows={grades.map((raw) => [
           safeStr(prop(raw, 'Id')),
           safeStr(prop(raw, 'Name')),
@@ -218,12 +209,12 @@ const ProbesTab: React.FC = () => {
   if (loading) return <LoadingSkeleton />;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm">
-      <div className="p-4 border-b border-gray-200">
-        <h3 className="font-semibold text-gray-900">Sondas ATG</h3>
+    <div className="bg-white rounded-sm shadow-sm">
+      <div className="h-8 px-2 border-b border-gray-200 flex items-center">
+        <h3 className="text-xs font-semibold text-gray-900">Sondas ATG</h3>
       </div>
       <TableWrapper
-        headers={['ID', 'Tanque', 'Protocolo', 'Puerto', 'Dirección', 'Habilitada']}
+        headers={['ID', 'Tanque', 'Protocolo', 'Puerto', 'Direccion', 'Habilitada']}
         rows={probes.map((raw) => [
           safeStr(prop(raw, 'Id')),
           safeStr(prop(raw, 'TankId')),
@@ -250,12 +241,12 @@ const ReadersTab: React.FC = () => {
   if (loading) return <LoadingSkeleton />;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm">
-      <div className="p-4 border-b border-gray-200">
-        <h3 className="font-semibold text-gray-900">Lectores RFID</h3>
+    <div className="bg-white rounded-sm shadow-sm">
+      <div className="h-8 px-2 border-b border-gray-200 flex items-center">
+        <h3 className="text-xs font-semibold text-gray-900">Lectores RFID</h3>
       </div>
       <TableWrapper
-        headers={['ID', 'Protocolo', 'Puerto', 'Dirección', 'Bombas', 'Habilitado']}
+        headers={['ID', 'Protocolo', 'Puerto', 'Direccion', 'Bombas', 'Habilitado']}
         rows={readers.map((raw) => [
           safeStr(prop(raw, 'Id')),
           safeStr(prop(raw, 'Protocol')),
@@ -282,12 +273,12 @@ const PriceBoardsTab: React.FC = () => {
   if (loading) return <LoadingSkeleton />;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm">
-      <div className="p-4 border-b border-gray-200">
-        <h3 className="font-semibold text-gray-900">Paneles de Precios Digitales</h3>
+    <div className="bg-white rounded-sm shadow-sm">
+      <div className="h-8 px-2 border-b border-gray-200 flex items-center">
+        <h3 className="text-xs font-semibold text-gray-900">Paneles de Precios Digitales</h3>
       </div>
       <TableWrapper
-        headers={['ID', 'Protocolo', 'Puerto', 'Dirección', 'Grado', 'Habilitado']}
+        headers={['ID', 'Protocolo', 'Puerto', 'Direccion', 'Grado', 'Habilitado']}
         rows={boards.map((raw) => [
           safeStr(prop(raw, 'Id')),
           safeStr(prop(raw, 'Protocol')),
@@ -308,23 +299,23 @@ const PriceBoardsTab: React.FC = () => {
 const TableWrapper: React.FC<{ headers: string[]; rows: string[][] }> = ({ headers, rows }) => (
   <div className="overflow-x-auto">
     <table className="w-full">
-      <thead className="bg-gray-50 border-b border-gray-200">
-        <tr>
+      <thead>
+        <tr className="h-8 text-xs uppercase tracking-wide bg-table-header">
           {headers.map((h) => (
-            <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
+            <th key={h} className="px-2 text-left font-medium text-gray-500">{h}</th>
           ))}
         </tr>
       </thead>
-      <tbody className="divide-y divide-gray-200">
+      <tbody>
         {rows.length === 0 ? (
           <tr>
-            <td colSpan={headers.length} className="px-6 py-8 text-center text-gray-400 text-sm">Sin datos</td>
+            <td colSpan={headers.length} className="px-2 py-4 text-center text-gray-400 text-xs">Sin datos</td>
           </tr>
         ) : (
           rows.map((row, i) => (
-            <tr key={i} className="hover:bg-gray-50">
+            <tr key={i} className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover">
               {row.map((cell, j) => (
-                <td key={j} className="px-6 py-3 text-sm text-gray-700 whitespace-nowrap">{cell}</td>
+                <td key={j} className="px-2 text-sm text-gray-700 whitespace-nowrap text-ellipsis overflow-hidden">{cell}</td>
               ))}
             </tr>
           ))
@@ -335,8 +326,8 @@ const TableWrapper: React.FC<{ headers: string[]; rows: string[][] }> = ({ heade
 );
 
 const LoadingSkeleton: React.FC = () => (
-  <div className="bg-white rounded-lg shadow-sm p-8 flex items-center justify-center">
-    <div className="w-6 h-6 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+  <div className="bg-white rounded-sm shadow-sm p-4 flex items-center justify-center">
+    <div className="w-5 h-5 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
   </div>
 );
 

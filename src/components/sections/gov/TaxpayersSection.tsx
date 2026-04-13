@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Users, Search, Plus, Edit2, Trash2, RefreshCw, ChevronLeft, ChevronRight, Upload, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, Edit2, Trash2, RefreshCw, ChevronLeft, ChevronRight, Upload, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { taxpayerService } from '../../../services/taxpayerService';
 import { ITaxpayer } from '../../../types/taxpayer';
 import TaxpayerModal from './TaxpayerModal';
+import { CompactButton } from '../../ui';
+import StatusDot from '../../ui/StatusDot';
+import Toolbar from '../../ui/Toolbar';
 
 const LIMIT = 50;
 
@@ -40,10 +42,8 @@ const TaxpayersSection: React.FC = () => {
     }
   }, []);
 
-  // Carga inicial
   useEffect(() => { load(1, ''); }, [load]);
 
-  // Debounce del search — resetea a página 1 en cada búsqueda
   const handleSearchChange = (value: string) => {
     setSearchInput(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -83,7 +83,7 @@ const TaxpayersSection: React.FC = () => {
     setImporting(true);
     const res = await taxpayerService.importFromDGII();
     setImporting(false);
-    if (res.successful) toast.success('Sincronización iniciada correctamente');
+    if (res.successful) toast.success('Sincronizacion iniciada correctamente');
     else toast.error(res.error || 'Error al sincronizar');
   };
 
@@ -98,127 +98,83 @@ const TaxpayersSection: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Users className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Contribuyentes</h1>
-              <p className="text-sm text-gray-500">
-                {total > 0
-                  ? `${total.toLocaleString()} registros${search ? ` para "${search}"` : ''}`
-                  : 'Cargando...'}
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button onClick={handleImport} disabled={importing}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg text-sm font-medium transition-colors">
-              {importing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-              {importing ? 'Sincronizando...' : 'Sincronizar Contribuyentes con DGII'}
-            </button>
-            <button onClick={handleCreate}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
-              <Plus className="w-4 h-4" /> Nuevo
-            </button>
-            <button onClick={() => load(page, search)} disabled={loading}
-              className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm transition-colors">
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
-        </div>
-
-        {/* Search bar */}
-        <div className="mt-4 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <input
-            type="text"
-            placeholder="Buscar por RNC o nombre... (búsqueda en servidor)"
-            value={searchInput}
-            onChange={e => handleSearchChange(e.target.value)}
-            className="w-full pl-9 pr-10 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-          />
-          {searchInput && (
-            <button onClick={clearSearch}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      </motion.div>
+    <div className="space-y-1">
+      {/* Toolbar */}
+      <Toolbar
+        searchValue={searchInput}
+        onSearchChange={handleSearchChange}
+        searchPlaceholder="Buscar por RNC o nombre..."
+        chips={[
+          { label: "Total", value: total > 0 ? total.toLocaleString() : '...', color: "blue" },
+        ]}
+      >
+        {searchInput && (
+          <CompactButton variant="icon" onClick={clearSearch}>
+            <X className="w-3.5 h-3.5" />
+          </CompactButton>
+        )}
+        <CompactButton variant="ghost" onClick={handleImport} disabled={importing}>
+          {importing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+          {importing ? 'Sincronizando...' : 'Sincronizar DGII'}
+        </CompactButton>
+        <CompactButton variant="primary" onClick={handleCreate}>
+          <Plus className="w-3.5 h-3.5" /> Nuevo
+        </CompactButton>
+        <CompactButton variant="icon" onClick={() => load(page, search)} disabled={loading}>
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+        </CompactButton>
+      </Toolbar>
 
       {/* Table */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-
+      <div className="bg-white rounded-sm border border-gray-200 overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3" />
-              <p className="text-sm text-gray-500">Cargando contribuyentes...</p>
-            </div>
+          <div className="flex items-center justify-center h-40">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
+            <table className="min-w-full">
+              <thead>
+                <tr className="h-8 text-xs uppercase tracking-wide bg-table-header border-b border-table-border">
                   {['RNC / ID', 'Nombre', 'Tipo', 'Validado', 'Activo', 'Acciones'].map(h => (
-                    <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>
+                    <th key={h} className="px-2 text-left text-xs font-medium text-gray-500">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                <AnimatePresence mode="wait">
-                  {taxpayers.map((t, i) => (
-                    <motion.tr key={t.taxpayerId}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.015 }}
-                      className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono font-medium text-gray-900">{t.taxpayerId}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate" title={t.name}>{t.name.trim()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{t.type === 0 ? 'Persona Jurídica' : 'Persona Física'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2 py-0.5 text-xs rounded-full font-medium ${t.validated ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                          {t.validated ? '✓ Sí' : '✗ No'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2 py-0.5 text-xs rounded-full font-medium ${t.active ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
-                          {t.active ? 'Activo' : 'Inactivo'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => handleEdit(t)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar">
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => handleDelete(t.taxpayerId, t.name)}
-                            disabled={deletingId === t.taxpayerId}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50" title="Eliminar">
-                            {deletingId === t.taxpayerId
-                              ? <RefreshCw className="w-4 h-4 animate-spin" />
-                              : <Trash2 className="w-4 h-4" />}
-                          </button>
-                        </div>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </AnimatePresence>
+              <tbody>
+                {taxpayers.map((t) => (
+                  <tr key={t.taxpayerId}
+                    className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover transition-colors">
+                    <td className="px-2 text-sm whitespace-nowrap font-mono font-medium text-gray-900">{t.taxpayerId}</td>
+                    <td className="px-2 text-sm whitespace-nowrap text-ellipsis overflow-hidden max-w-[250px]" title={t.name}>{t.name.trim()}</td>
+                    <td className="px-2 text-sm whitespace-nowrap text-gray-500">{t.type === 0 ? 'Persona Juridica' : 'Persona Fisica'}</td>
+                    <td className="px-2 text-sm whitespace-nowrap">
+                      <StatusDot color={t.validated ? 'green' : 'red'} label={t.validated ? 'Si' : 'No'} />
+                    </td>
+                    <td className="px-2 text-sm whitespace-nowrap">
+                      <StatusDot color={t.active ? 'blue' : 'gray'} label={t.active ? 'Activo' : 'Inactivo'} />
+                    </td>
+                    <td className="px-2 text-sm whitespace-nowrap">
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => handleEdit(t)}
+                          className="p-0.5 text-blue-600 hover:bg-blue-50 rounded-sm" title="Editar">
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => handleDelete(t.taxpayerId, t.name)}
+                          disabled={deletingId === t.taxpayerId}
+                          className="p-0.5 text-red-600 hover:bg-red-50 rounded-sm disabled:opacity-50" title="Eliminar">
+                          {deletingId === t.taxpayerId
+                            ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            : <Trash2 className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
                 {taxpayers.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-6 py-16 text-center">
-                      <Users className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                      <p className="text-sm text-gray-400">
-                        {search ? `Sin resultados para "${search}"` : 'No hay contribuyentes'}
-                      </p>
+                    <td colSpan={6} className="px-2 py-6 text-center text-sm text-gray-400">
+                      {search ? `Sin resultados para "${search}"` : 'No hay contribuyentes'}
                     </td>
                   </tr>
                 )}
@@ -229,37 +185,35 @@ const TaxpayersSection: React.FC = () => {
 
         {/* Pagination */}
         {!loading && totalPages > 0 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50 gap-3">
-            {/* Info */}
-            <div className="text-sm text-gray-600">
-              Página <span className="font-semibold">{page}</span> de{' '}
+          <div className="flex items-center justify-between px-2 py-1 border-t border-gray-200 text-xs text-gray-600">
+            <div>
+              Pag. <span className="font-semibold">{page}</span> de{' '}
               <span className="font-semibold">{totalPages.toLocaleString()}</span>
-              {' · '}
-              <span className="font-semibold">{total.toLocaleString()}</span> contribuyentes
-              {search && <span className="ml-1 text-blue-600">· filtrados</span>}
+              {' / '}
+              <span className="font-semibold">{total.toLocaleString()}</span> registros
+              {search && <span className="ml-1 text-blue-600">filtrados</span>}
             </div>
 
-            {/* Page numbers */}
             <div className="flex items-center gap-1">
               <button
                 onClick={() => goToPage(page - 1)}
                 disabled={!hasPrev || loading}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                <ChevronLeft className="w-4 h-4" /> Anterior
+                className="flex items-center gap-0.5 px-2 py-0.5 text-xs rounded-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                <ChevronLeft className="w-3 h-3" /> Ant.
               </button>
 
-              <div className="flex items-center gap-1 mx-1">
+              <div className="flex items-center gap-0.5">
                 {pageNumbers().map((p, i) =>
                   p === '...'
-                    ? <span key={`dots-${i}`} className="px-2 text-gray-400 text-sm">…</span>
+                    ? <span key={`dots-${i}`} className="px-1 text-gray-400 text-xs">...</span>
                     : <button
                         key={p}
                         onClick={() => goToPage(p as number)}
                         disabled={loading}
-                        className={`min-w-[32px] h-8 rounded-lg text-sm font-medium transition-colors ${
+                        className={`min-w-[24px] h-6 rounded-sm text-xs font-medium transition-colors ${
                           p === page
-                            ? 'bg-blue-600 text-white shadow-sm'
-                            : 'bg-white border border-gray-300 hover:bg-gray-50 text-gray-700'
+                            ? 'bg-blue-600 text-white'
+                            : 'hover:bg-gray-100 text-gray-700'
                         }`}>
                         {p}
                       </button>
@@ -269,30 +223,29 @@ const TaxpayersSection: React.FC = () => {
               <button
                 onClick={() => goToPage(page + 1)}
                 disabled={!hasNext || loading}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                Siguiente <ChevronRight className="w-4 h-4" />
+                className="flex items-center gap-0.5 px-2 py-0.5 text-xs rounded-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                Sig. <ChevronRight className="w-3 h-3" />
               </button>
-            </div>
 
-            {/* Go to page */}
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span>Ir a:</span>
-              <input
-                type="number" min={1} max={totalPages}
-                defaultValue={page}
-                key={page}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') {
-                    const val = parseInt((e.target as HTMLInputElement).value);
-                    if (val >= 1 && val <= totalPages) goToPage(val);
-                  }
-                }}
-                className="w-16 px-2 py-1.5 border border-gray-300 rounded-lg text-center focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <div className="flex items-center gap-1 ml-2 text-xs text-gray-600">
+                <span>Ir a:</span>
+                <input
+                  type="number" min={1} max={totalPages}
+                  defaultValue={page}
+                  key={page}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      const val = parseInt((e.target as HTMLInputElement).value);
+                      if (val >= 1 && val <= totalPages) goToPage(val);
+                    }
+                  }}
+                  className="w-14 h-6 px-1 text-xs border border-gray-300 rounded-sm text-center"
+                />
+              </div>
             </div>
           </div>
         )}
-      </motion.div>
+      </div>
 
       {showModal && (
         <TaxpayerModal

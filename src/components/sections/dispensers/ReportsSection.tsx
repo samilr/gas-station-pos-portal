@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileText, Search, Download, Fuel, Droplets, Truck, AlertCircle,
 } from 'lucide-react';
@@ -13,6 +12,8 @@ import {
 import { mapFuelProductName } from '../../../utils/fuelProductMapping';
 import type { ReportDateFilter } from '../../../types/dispenser';
 import { useHeader } from '../../../context/HeaderContext';
+import { CompactButton } from '../../ui';
+import Toolbar from '../../ui/Toolbar';
 
 type ReportType = 'pump-transactions' | 'tank-measurements' | 'in-tank-deliveries';
 
@@ -123,23 +124,16 @@ const ReportsSection: React.FC = () => {
     new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP' }).format(n);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Reportes PTS</h1>
-        <p className="text-gray-600 text-sm">Reportes de transacciones, mediciones de tanque y entregas</p>
-      </div>
-
+    <div className="space-y-1">
       {/* Filtros */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Tipo de reporte */}
+      <div className="bg-white rounded-sm shadow-sm p-2">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Reporte</label>
+            <label className="block text-xs font-medium text-gray-700 mb-0.5">Tipo de Reporte</label>
             <select
               value={reportType}
               onChange={(e) => { setReportType(e.target.value as ReportType); setHasSearched(false); }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+              className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500"
             >
               {REPORT_TYPES.map(({ key, label }) => (
                 <option key={key} value={key}>{label}</option>
@@ -147,165 +141,150 @@ const ReportsSection: React.FC = () => {
             </select>
           </div>
 
-          {/* Fecha inicio */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Desde</label>
+            <label className="block text-xs font-medium text-gray-700 mb-0.5">Desde</label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+              className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
-          {/* Fecha fin */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Hasta</label>
+            <label className="block text-xs font-medium text-gray-700 mb-0.5">Hasta</label>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+              className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
-          {/* Botones */}
-          <div className="flex items-end gap-2">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+          <div className="flex items-end gap-1">
+            <CompactButton
+              variant="primary"
               onClick={handleSearch}
               disabled={loading}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg text-sm font-medium"
+              className="flex-1 justify-center"
             >
               {loading ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
-                <Search className="w-4 h-4" />
+                <Search className="w-3.5 h-3.5" />
               )}
               Generar
-            </motion.button>
+            </CompactButton>
             {hasResults && (
-              <button
-                onClick={exportCSV}
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 hover:bg-gray-50 rounded-lg text-sm"
-              >
-                <Download className="w-4 h-4" />
+              <CompactButton variant="ghost" onClick={exportCSV}>
+                <Download className="w-3.5 h-3.5" />
                 CSV
-              </button>
+              </CompactButton>
             )}
           </div>
         </div>
       </div>
 
       {/* Resultados */}
-      <AnimatePresence mode="wait">
-        {hasSearched && (
-          <motion.div
-            key={reportType}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="bg-white rounded-lg shadow-sm overflow-hidden"
-          >
-            {loading ? (
-              <div className="p-12 flex items-center justify-center">
-                <div className="w-6 h-6 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-              </div>
-            ) : !hasResults ? (
-              <div className="p-12 text-center text-gray-500">
-                <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p>No se encontraron resultados para este período</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                {reportType === 'pump-transactions' && (
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        {['Bomba', 'Pistola', 'Combustible', 'Volumen (G.)', 'Precio', 'Monto', 'Trans.', 'Fecha', 'Tag'].map((h) => (
-                          <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {pumpTransactions.map((raw: any, i: number) => (
-                        <tr key={i} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm">{prop(raw, 'Pump')}</td>
-                          <td className="px-4 py-3 text-sm">{prop(raw, 'Nozzle')}</td>
-                          <td className="px-4 py-3 text-sm">{mapFuelProductName(prop(raw, 'FuelGradeName'))}</td>
-                          <td className="px-4 py-3 text-sm">{Number(prop(raw, 'Volume') || 0).toFixed(3)}</td>
-                          <td className="px-4 py-3 text-sm">{formatCurrency(prop(raw, 'Price') || 0)}</td>
-                          <td className="px-4 py-3 text-sm font-medium">{formatCurrency(prop(raw, 'Amount') || 0)}</td>
-                          <td className="px-4 py-3 text-sm">{prop(raw, 'Transaction')}</td>
-                          <td className="px-4 py-3 text-sm whitespace-nowrap">{formatDate(prop(raw, 'DateTime') || '')}</td>
-                          <td className="px-4 py-3 text-sm font-mono">{prop(raw, 'Tag') || '-'}</td>
-                        </tr>
+      {hasSearched && (
+        <div className="bg-white rounded-sm shadow-sm overflow-hidden">
+          {loading ? (
+            <div className="p-8 flex items-center justify-center">
+              <div className="w-5 h-5 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : !hasResults ? (
+            <div className="p-8 text-center text-gray-500">
+              <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              <p className="text-sm">No se encontraron resultados para este periodo</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              {reportType === 'pump-transactions' && (
+                <table className="w-full">
+                  <thead>
+                    <tr className="h-8 text-xs uppercase tracking-wide bg-table-header">
+                      {['Bomba', 'Pistola', 'Combustible', 'Volumen (G.)', 'Precio', 'Monto', 'Trans.', 'Fecha', 'Tag'].map((h) => (
+                        <th key={h} className="px-2 text-left font-medium text-gray-500">{h}</th>
                       ))}
-                    </tbody>
-                  </table>
-                )}
-
-                {reportType === 'tank-measurements' && (
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        {['Sonda', 'Fecha', 'Altura (mm)', 'Volumen (G.)', 'Agua (mm)', 'Temp (°C)'].map((h) => (
-                          <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
-                        ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pumpTransactions.map((raw: any, i: number) => (
+                      <tr key={i} className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover">
+                        <td className="px-2 text-sm whitespace-nowrap">{prop(raw, 'Pump')}</td>
+                        <td className="px-2 text-sm whitespace-nowrap">{prop(raw, 'Nozzle')}</td>
+                        <td className="px-2 text-sm whitespace-nowrap">{mapFuelProductName(prop(raw, 'FuelGradeName'))}</td>
+                        <td className="px-2 text-sm whitespace-nowrap">{Number(prop(raw, 'Volume') || 0).toFixed(3)}</td>
+                        <td className="px-2 text-sm whitespace-nowrap">{formatCurrency(prop(raw, 'Price') || 0)}</td>
+                        <td className="px-2 text-sm whitespace-nowrap font-medium">{formatCurrency(prop(raw, 'Amount') || 0)}</td>
+                        <td className="px-2 text-sm whitespace-nowrap">{prop(raw, 'Transaction')}</td>
+                        <td className="px-2 text-sm whitespace-nowrap">{formatDate(prop(raw, 'DateTime') || '')}</td>
+                        <td className="px-2 text-sm whitespace-nowrap font-mono">{prop(raw, 'Tag') || '-'}</td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {tankMeasurements.map((raw: any, i: number) => (
-                        <tr key={i} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm">{prop(raw, 'Probe')}</td>
-                          <td className="px-4 py-3 text-sm whitespace-nowrap">{formatDate(prop(raw, 'DateTime') || '')}</td>
-                          <td className="px-4 py-3 text-sm">{Number(prop(raw, 'ProductHeight') || 0).toFixed(1)}</td>
-                          <td className="px-4 py-3 text-sm">{Number(prop(raw, 'ProductVolume') || 0).toFixed(1)}</td>
-                          <td className="px-4 py-3 text-sm">{Number(prop(raw, 'WaterHeight') || 0).toFixed(1)}</td>
-                          <td className="px-4 py-3 text-sm">{Number(prop(raw, 'Temperature') || 0).toFixed(1)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+                    ))}
+                  </tbody>
+                </table>
+              )}
 
-                {reportType === 'in-tank-deliveries' && (
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        {['Tanque', 'Fecha', 'Vol. Inicio (G.)', 'Vol. Final (G.)', 'Entregado (G.)', 'Combustible'].map((h) => (
-                          <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
-                        ))}
+              {reportType === 'tank-measurements' && (
+                <table className="w-full">
+                  <thead>
+                    <tr className="h-8 text-xs uppercase tracking-wide bg-table-header">
+                      {['Sonda', 'Fecha', 'Altura (mm)', 'Volumen (G.)', 'Agua (mm)', 'Temp (C)'].map((h) => (
+                        <th key={h} className="px-2 text-left font-medium text-gray-500">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tankMeasurements.map((raw: any, i: number) => (
+                      <tr key={i} className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover">
+                        <td className="px-2 text-sm whitespace-nowrap">{prop(raw, 'Probe')}</td>
+                        <td className="px-2 text-sm whitespace-nowrap">{formatDate(prop(raw, 'DateTime') || '')}</td>
+                        <td className="px-2 text-sm whitespace-nowrap">{Number(prop(raw, 'ProductHeight') || 0).toFixed(1)}</td>
+                        <td className="px-2 text-sm whitespace-nowrap">{Number(prop(raw, 'ProductVolume') || 0).toFixed(1)}</td>
+                        <td className="px-2 text-sm whitespace-nowrap">{Number(prop(raw, 'WaterHeight') || 0).toFixed(1)}</td>
+                        <td className="px-2 text-sm whitespace-nowrap">{Number(prop(raw, 'Temperature') || 0).toFixed(1)}</td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {deliveries.map((raw: any, i: number) => (
-                        <tr key={i} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm">{prop(raw, 'Tank')}</td>
-                          <td className="px-4 py-3 text-sm whitespace-nowrap">{formatDate(prop(raw, 'DateTime') || '')}</td>
-                          <td className="px-4 py-3 text-sm">{Number(prop(raw, 'StartVolume') || 0).toFixed(1)}</td>
-                          <td className="px-4 py-3 text-sm">{Number(prop(raw, 'EndVolume') || 0).toFixed(1)}</td>
-                          <td className="px-4 py-3 text-sm font-medium text-green-700">{Number(prop(raw, 'DeliveredVolume') || 0).toFixed(1)}</td>
-                          <td className="px-4 py-3 text-sm">{mapFuelProductName(prop(raw, 'FuelGradeName'))}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            )}
+                    ))}
+                  </tbody>
+                </table>
+              )}
 
-            {hasResults && (
-              <div className="p-4 border-t border-gray-200 text-sm text-gray-500">
-                {reportType === 'pump-transactions' && `${pumpTransactions.length} transacciones encontradas`}
-                {reportType === 'tank-measurements' && `${tankMeasurements.length} mediciones encontradas`}
-                {reportType === 'in-tank-deliveries' && `${deliveries.length} entregas encontradas`}
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+              {reportType === 'in-tank-deliveries' && (
+                <table className="w-full">
+                  <thead>
+                    <tr className="h-8 text-xs uppercase tracking-wide bg-table-header">
+                      {['Tanque', 'Fecha', 'Vol. Inicio (G.)', 'Vol. Final (G.)', 'Entregado (G.)', 'Combustible'].map((h) => (
+                        <th key={h} className="px-2 text-left font-medium text-gray-500">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {deliveries.map((raw: any, i: number) => (
+                      <tr key={i} className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover">
+                        <td className="px-2 text-sm whitespace-nowrap">{prop(raw, 'Tank')}</td>
+                        <td className="px-2 text-sm whitespace-nowrap">{formatDate(prop(raw, 'DateTime') || '')}</td>
+                        <td className="px-2 text-sm whitespace-nowrap">{Number(prop(raw, 'StartVolume') || 0).toFixed(1)}</td>
+                        <td className="px-2 text-sm whitespace-nowrap">{Number(prop(raw, 'EndVolume') || 0).toFixed(1)}</td>
+                        <td className="px-2 text-sm whitespace-nowrap font-medium text-green-700">{Number(prop(raw, 'DeliveredVolume') || 0).toFixed(1)}</td>
+                        <td className="px-2 text-sm whitespace-nowrap">{mapFuelProductName(prop(raw, 'FuelGradeName'))}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+
+          {hasResults && (
+            <div className="p-2 border-t border-gray-200 text-xs text-gray-500">
+              {reportType === 'pump-transactions' && `${pumpTransactions.length} transacciones encontradas`}
+              {reportType === 'tank-measurements' && `${tankMeasurements.length} mediciones encontradas`}
+              {reportType === 'in-tank-deliveries' && `${deliveries.length} entregas encontradas`}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

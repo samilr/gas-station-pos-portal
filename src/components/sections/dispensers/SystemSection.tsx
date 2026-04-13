@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import {
   Battery, Cpu, Clock, MapPin, RefreshCw, AlertCircle, Power, Save, Wifi,
 } from 'lucide-react';
@@ -16,6 +15,8 @@ import type { PtsPacket, DateTimeData, GpsData } from '../../../types/dispenser'
 import { useHeader } from '../../../context/HeaderContext';
 import ConfirmActionModal from './ConfirmActionModal';
 import PtsConnectionSettings from './PtsConnectionSettings';
+import { CompactButton } from '../../ui';
+import Toolbar from '../../ui/Toolbar';
 
 const SystemSection: React.FC = () => {
   const [infoPackets, setInfoPackets] = useState<PtsPacket[]>([]);
@@ -32,7 +33,7 @@ const SystemSection: React.FC = () => {
   const [savingDateTime, setSavingDateTime] = useState(false);
 
   useEffect(() => {
-    setSubtitle('Información y configuración del controlador PTS');
+    setSubtitle('Informacion y configuracion del controlador PTS');
     return () => { setSubtitle(''); };
   }, [setSubtitle]);
 
@@ -55,7 +56,7 @@ const SystemSection: React.FC = () => {
         setEditUtcOffset(prop(dt, 'UTCOffset') ?? -4);
       }
     } catch (err) {
-      toast.error('Error al cargar información del sistema');
+      toast.error('Error al cargar informacion del sistema');
     } finally {
       setLoading(false);
     }
@@ -63,7 +64,6 @@ const SystemSection: React.FC = () => {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // Extraer datos de los packets del sistema (tolerante a camelCase)
   const getPacketData = (type: string): any => {
     const pkt = infoPackets.find((p) => p.Type === type);
     return pkt?.Data || null;
@@ -105,150 +105,127 @@ const SystemSection: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-12 flex items-center justify-center">
+      <div className="bg-white rounded-sm shadow-sm p-8 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-gray-500 text-sm">Cargando información del sistema...</p>
+          <div className="w-6 h-6 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+          <p className="text-gray-500 text-xs">Cargando informacion del sistema...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Sistema PTS</h1>
-            <p className="text-gray-600 text-sm mt-1">Información y configuración del controlador</p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={loadData}
-              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
-            >
-              <RefreshCw className="w-5 h-5" />
-            </button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setShowRestart(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
-            >
-              <Power className="w-4 h-4" />
-              Reiniciar PTS
-            </motion.button>
-          </div>
-        </div>
+    <div className="space-y-1">
+      {/* Toolbar */}
+      <Toolbar>
+        <CompactButton variant="icon" onClick={loadData}>
+          <RefreshCw className="w-3.5 h-3.5" />
+        </CompactButton>
+        <CompactButton variant="danger" onClick={() => setShowRestart(true)}>
+          <Power className="w-3.5 h-3.5" />
+          Reiniciar PTS
+        </CompactButton>
+      </Toolbar>
+
+      {/* Info table */}
+      <div className="bg-white rounded-sm shadow-sm overflow-hidden">
+        <table className="w-full">
+          <thead>
+            <tr className="h-8 text-xs uppercase tracking-wide bg-table-header">
+              <th className="px-2 text-left font-medium text-gray-500 w-1/3">Parametro</th>
+              <th className="px-2 text-left font-medium text-gray-500">Valor</th>
+              <th className="px-2 text-left font-medium text-gray-500">Detalle</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover">
+              <td className="px-2 text-sm whitespace-nowrap"><Battery className="w-3.5 h-3.5 text-green-600 inline mr-1" />Bateria</td>
+              <td className="px-2 text-sm whitespace-nowrap font-medium">{batteryVolts} V</td>
+              <td className="px-2 text-xs text-gray-500 whitespace-nowrap">{voltage != null ? `${voltage} mV` : ''}</td>
+            </tr>
+            <tr className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover">
+              <td className="px-2 text-sm whitespace-nowrap"><Cpu className="w-3.5 h-3.5 text-blue-600 inline mr-1" />Temperatura CPU</td>
+              <td className="px-2 text-sm whitespace-nowrap font-medium">{cpuTemp}C</td>
+              <td className="px-2 text-xs whitespace-nowrap">
+                {Number(cpuTemp) > 70 ? <span className="text-red-600">Temperatura alta</span> : <span className="text-gray-500">Normal</span>}
+              </td>
+            </tr>
+            <tr className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover">
+              <td className="px-2 text-sm whitespace-nowrap"><Wifi className="w-3.5 h-3.5 text-purple-600 inline mr-1" />ID Controlador</td>
+              <td className="px-2 text-sm whitespace-nowrap font-medium text-ellipsis overflow-hidden">{uniqueIdValue}</td>
+              <td className="px-2 text-xs text-gray-500 whitespace-nowrap text-ellipsis overflow-hidden">{configIdValue ? `Config: ${configIdValue}` : ''}</td>
+            </tr>
+            <tr className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover">
+              <td className="px-2 text-sm whitespace-nowrap"><Cpu className="w-3.5 h-3.5 text-indigo-600 inline mr-1" />Firmware</td>
+              <td className="px-2 text-sm whitespace-nowrap font-medium">{firmwareDate ? new Date(firmwareDate).toLocaleDateString('es-DO') : '-'}</td>
+              <td className="px-2 text-xs text-gray-500 whitespace-nowrap text-ellipsis overflow-hidden">{pumpProtocols.join(', ') || ''}</td>
+            </tr>
+            <tr className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover">
+              <td className="px-2 text-sm whitespace-nowrap"><AlertCircle className="w-3.5 h-3.5 text-gray-600 inline mr-1" />Unidades</td>
+              <td className="px-2 text-sm whitespace-nowrap font-medium">{volumeUnit || tempUnit ? `Vol: ${volumeUnit}, Temp: ${tempUnit}` : '-'}</td>
+              <td className="px-2 text-xs text-gray-500 whitespace-nowrap"></td>
+            </tr>
+            <tr className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover">
+              <td className="px-2 text-sm whitespace-nowrap"><MapPin className="w-3.5 h-3.5 text-red-500 inline mr-1" />GPS</td>
+              <td className="px-2 text-sm whitespace-nowrap font-medium text-ellipsis overflow-hidden">
+                {gps ? `${(prop(gps, 'Latitude') ?? 0).toFixed(4)}${prop(gps, 'NorthSouthIndicator') || ''}, ${(prop(gps, 'Longitude') ?? 0).toFixed(4)}${prop(gps, 'EastWestIndicator') || ''}` : '-'}
+              </td>
+              <td className="px-2 text-xs text-gray-500 whitespace-nowrap text-ellipsis overflow-hidden">
+                {gps ? `Estado: ${prop(gps, 'Status') || '-'} | Modo: ${prop(gps, 'Mode') || '-'}` : 'Sin datos GPS'}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      {/* Info Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Batería */}
-        <InfoCard
-          icon={<Battery className="w-5 h-5 text-green-600" />}
-          title="Batería"
-          value={`${batteryVolts} V`}
-          subtitle={voltage != null ? `${voltage} mV` : ''}
-        />
-
-        {/* CPU */}
-        <InfoCard
-          icon={<Cpu className="w-5 h-5 text-blue-600" />}
-          title="Temperatura CPU"
-          value={`${cpuTemp}°C`}
-          subtitle={Number(cpuTemp) > 70 ? 'Temperatura alta' : 'Normal'}
-          alert={Number(cpuTemp) > 70}
-        />
-
-        {/* ID Único */}
-        <InfoCard
-          icon={<Wifi className="w-5 h-5 text-purple-600" />}
-          title="ID Controlador"
-          value={uniqueIdValue}
-          subtitle={configIdValue ? `Config: ${configIdValue}` : ''}
-        />
-
-        {/* Firmware */}
-        <InfoCard
-          icon={<Cpu className="w-5 h-5 text-indigo-600" />}
-          title="Firmware"
-          value={firmwareDate ? new Date(firmwareDate).toLocaleDateString('es-DO') : '-'}
-          subtitle={pumpProtocols.join(', ') || ''}
-        />
-
-        {/* Unidades */}
-        <InfoCard
-          icon={<AlertCircle className="w-5 h-5 text-gray-600" />}
-          title="Unidades de Medida"
-          value={volumeUnit || tempUnit ? `Vol: ${volumeUnit}, Temp: ${tempUnit}` : '-'}
-          subtitle=""
-        />
-
-        {/* GPS */}
-        <InfoCard
-          icon={<MapPin className="w-5 h-5 text-red-500" />}
-          title="GPS"
-          value={gps ? `${(prop(gps, 'Latitude') ?? 0).toFixed(4)}°${prop(gps, 'NorthSouthIndicator') || ''}, ${(prop(gps, 'Longitude') ?? 0).toFixed(4)}°${prop(gps, 'EastWestIndicator') || ''}` : '-'}
-          subtitle={gps ? `Estado: ${prop(gps, 'Status') || '-'} | Modo: ${prop(gps, 'Mode') || '-'}` : 'Sin datos GPS'}
-        />
-      </div>
-
-      {/* Conexión PTS */}
+      {/* Conexion PTS */}
       <PtsConnectionSettings />
 
       {/* Fecha y Hora */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Clock className="w-5 h-5 text-blue-600" />
-          <h2 className="text-lg font-semibold text-gray-900">Fecha y Hora del Sistema</h2>
+      <div className="bg-white rounded-sm shadow-sm p-3">
+        <div className="flex items-center gap-2 mb-2">
+          <Clock className="w-4 h-4 text-blue-600" />
+          <h2 className="text-sm font-semibold text-gray-900">Fecha y Hora del Sistema</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha y Hora</label>
+            <label className="block text-xs font-medium text-gray-700 mb-0.5">Fecha y Hora</label>
             <input
               type="datetime-local"
               value={editDateTime}
               onChange={(e) => setEditDateTime(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Offset UTC</label>
+            <label className="block text-xs font-medium text-gray-700 mb-0.5">Offset UTC</label>
             <input
               type="number"
               value={editUtcOffset}
               onChange={(e) => setEditUtcOffset(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sincronización NTP</label>
-            <div className="flex items-center gap-3 mt-2">
+            <label className="block text-xs font-medium text-gray-700 mb-0.5">Sincronizacion NTP</label>
+            <div className="flex items-center gap-2 mt-1">
               <button
                 onClick={() => setEditAutoSync(!editAutoSync)}
-                className={`relative w-11 h-6 rounded-full transition-colors ${editAutoSync ? 'bg-blue-600' : 'bg-gray-300'}`}
+                className={`relative w-9 h-5 rounded-full transition-colors ${editAutoSync ? 'bg-blue-600' : 'bg-gray-300'}`}
               >
-                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform shadow ${editAutoSync ? 'translate-x-5' : ''}`} />
+                <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform shadow ${editAutoSync ? 'translate-x-4' : ''}`} />
               </button>
-              <span className="text-sm text-gray-600">{editAutoSync ? 'Activada' : 'Desactivada'}</span>
+              <span className="text-xs text-gray-600">{editAutoSync ? 'Activada' : 'Desactivada'}</span>
             </div>
           </div>
         </div>
 
-        <div className="mt-4 flex justify-end">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={handleSaveDateTime}
-            disabled={savingDateTime}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg text-sm font-medium"
-          >
-            {savingDateTime ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
+        <div className="mt-2 flex justify-end">
+          <CompactButton variant="primary" onClick={handleSaveDateTime} disabled={savingDateTime}>
+            {savingDateTime ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-3.5 h-3.5" />}
             Guardar Fecha/Hora
-          </motion.button>
+          </CompactButton>
         </div>
       </div>
 
@@ -258,37 +235,15 @@ const SystemSection: React.FC = () => {
         onClose={() => setShowRestart(false)}
         onConfirm={async () => {
           await restartSystem();
-          toast.success('Reinicio del PTS iniciado. El sistema estará offline por ~60 segundos.');
+          toast.success('Reinicio del PTS iniciado. El sistema estara offline por ~60 segundos.');
         }}
         title="Reiniciar Controlador PTS"
-        message="¿Está seguro de reiniciar el controlador PTS? La conexión se perderá por aproximadamente 60 segundos y todas las operaciones se detendrán."
+        message="Esta seguro de reiniciar el controlador PTS? La conexion se perdera por aproximadamente 60 segundos y todas las operaciones se detendran."
         confirmLabel="Reiniciar"
         confirmColor="red"
       />
     </div>
   );
 };
-
-// Card de info reutilizable
-const InfoCard: React.FC<{
-  icon: React.ReactNode;
-  title: string;
-  value: string;
-  subtitle: string;
-  alert?: boolean;
-}> = ({ icon, title, value, subtitle, alert }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 10 }}
-    animate={{ opacity: 1, y: 0 }}
-    className={`bg-white rounded-lg shadow-sm p-5 border-2 ${alert ? 'border-red-300' : 'border-transparent'}`}
-  >
-    <div className="flex items-center gap-3 mb-2">
-      {icon}
-      <span className="text-sm font-medium text-gray-500">{title}</span>
-    </div>
-    <p className="text-lg font-semibold text-gray-900 truncate">{value}</p>
-    {subtitle && <p className="text-xs text-gray-500 mt-1 truncate">{subtitle}</p>}
-  </motion.div>
-);
 
 export default SystemSection;
