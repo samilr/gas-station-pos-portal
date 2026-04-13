@@ -10,6 +10,7 @@ import type {
   PumpVisualState,
 } from '../../../types/dispenser';
 import { getPumpVisualState, isPumpLocked, lockPump, unlockPump } from '../../../services/dispenserService';
+import { mapFuelProductName } from '../../../utils/fuelProductMapping';
 
 interface DispenserCardProps {
   pumpNumber: number;
@@ -69,18 +70,18 @@ const DispenserCard: React.FC<DispenserCardProps> = ({
 
     if (state === 'dispensing') {
       const d = packet.Data as PumpFillingStatusData;
-      return { fuel: d.FuelGradeName, volume: d.Volume, amount: d.Amount, tag: null };
+      return { fuel: mapFuelProductName(d.FuelGradeName), volume: d.Volume, amount: d.Amount, tag: null };
     }
 
     if (state === 'end-of-transaction') {
       const d = packet.Data as PumpEndOfTransactionStatusData;
-      return { fuel: d.FuelGradeName, volume: d.Volume, amount: d.Amount, tag: d.Tag || null };
+      return { fuel: mapFuelProductName(d.FuelGradeName), volume: d.Volume, amount: d.Amount, tag: d.Tag || null };
     }
 
     if (state === 'available' || state === 'locked') {
       const d = packet.Data as PumpIdleStatusData;
       if (d.LastTransaction > 0) {
-        return { fuel: d.LastFuelGradeName, volume: d.LastVolume, amount: d.LastAmount, tag: null };
+        return { fuel: mapFuelProductName(d.LastFuelGradeName), volume: d.LastVolume, amount: d.LastAmount, tag: null };
       }
     }
 

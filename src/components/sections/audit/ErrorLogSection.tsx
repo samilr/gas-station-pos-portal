@@ -64,17 +64,17 @@ const ErrorLogSection: React.FC = () => {
   const filteredLogs = (Array.isArray(errorLogs) ? errorLogs : []).filter(
     (log) => {
       const matchesSearch =
-        (log.error_code || "")
+        (log.errorCode || "")
           .toLowerCase()
           .includes(searchTerm.toLowerCase()) ||
         (log.message || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
         (log.context || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (log.staft_id?.toString() || "").includes(searchTerm);
+        (log.staftId?.toString() || "").includes(searchTerm);
 
       const matchesSeverity =
-        severityFilter === "" || log.error_code === severityFilter;
+        severityFilter === "" || log.errorCode === severityFilter;
       const matchesEnvironment =
-        environmentFilter === "" || log.site_id === environmentFilter;
+        environmentFilter === "" || log.siteId === environmentFilter;
 
       return matchesSearch && matchesSeverity && matchesEnvironment;
     }
@@ -129,7 +129,7 @@ const ErrorLogSection: React.FC = () => {
       setSelectedLocation({
         lat: log.latitude,
         lng: log.longitude,
-        title: `${log.error_code || 'Error'} - ${log.message || 'Sin mensaje'}`
+        title: `${log.errorCode || 'Error'} - ${log.message || 'Sin mensaje'}`
       });
       setShowLocationMap(true);
     }
@@ -142,10 +142,10 @@ const ErrorLogSection: React.FC = () => {
 
   // Obtener valores únicos para filtros (de la página actual)
   const uniqueSeverities = Array.from(
-    new Set(errorLogs.map((log) => log.error_code).filter(Boolean))
+    new Set(errorLogs.map((log) => log.errorCode).filter(Boolean))
   );
   const uniqueEnvironments = Array.from(
-    new Set(errorLogs.map((log) => log.site_id).filter(Boolean))
+    new Set(errorLogs.map((log) => log.siteId).filter(Boolean))
   );
 
   if (loading) {
@@ -345,10 +345,10 @@ const ErrorLogSection: React.FC = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredLogs.map((log, index) => {
-                const { date, time } = formatDateToSantoDomingo(log.created_at);
+                const { date, time } = formatDateToSantoDomingo(log.createdAt);
                 return (
                   <motion.tr
-                    key={log.error_id}
+                    key={log.errorId}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
@@ -358,7 +358,7 @@ const ErrorLogSection: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <User className="w-4 h-4 text-gray-400 mr-2" />
-                        <span className="text-sm font-medium text-gray-900">{log.staft_id || 'N/A'}</span>
+                        <span className="text-sm font-medium text-gray-900">{log.staftId || 'N/A'}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -375,12 +375,12 @@ const ErrorLogSection: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-700">{log.error_code || 'N/A'}</span>
+                      <span className="text-sm text-gray-700">{log.errorCode || 'N/A'}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <span className="text-sm text-gray-500">
-                          {log.site_id || "N/A"}
+                          {log.siteId || "N/A"}
                         </span>
                       </div>
                     </td>
@@ -512,7 +512,7 @@ const ErrorLogSection: React.FC = () => {
                 <AlertTriangle className="w-6 h-6 text-red-600" />
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">Detalles del Error</h3>
-                  <p className="text-sm text-gray-600">{selectedError.error_code || 'Sin código'}</p>
+                  <p className="text-sm text-gray-600">{selectedError.errorCode || 'Sin código'}</p>
                 </div>
               </div>
               <button
@@ -532,23 +532,23 @@ const ErrorLogSection: React.FC = () => {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Código de Error:</span>
-                      <span className="text-sm font-medium">{selectedError.error_code || 'N/A'}</span>
+                      <span className="text-sm font-medium">{selectedError.errorCode || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Codigo Vendedor:</span>
-                      <span className="text-sm font-medium">{selectedError.staft_id || 'N/A'}</span>
+                      <span className="text-sm font-medium">{selectedError.staftId || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Sucursal:</span>
-                      <span className="text-sm font-medium">{selectedError.site_id || 'N/A'}</span>
+                      <span className="text-sm font-medium">{selectedError.siteId || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Device ID:</span>
-                      <span className="text-sm font-medium">{selectedError.device_id || 'N/A'}</span>
+                      <span className="text-sm font-medium">{selectedError.deviceId || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Terminal:</span>
-                      <span className="text-sm font-medium">{selectedError.terminal_id || 'N/A'}</span>
+                      <span className="text-sm font-medium">{selectedError.terminalId || 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -559,18 +559,18 @@ const ErrorLogSection: React.FC = () => {
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Fecha de Creación:</span>
                       <span className="text-sm font-medium">
-                        {selectedError.created_at ? formatDateToSantoDomingo(selectedError.created_at).date : 'N/A'}
+                        {selectedError.createdAt ? formatDateToSantoDomingo(selectedError.createdAt).date : 'N/A'}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Hora:</span>
                       <span className="text-sm font-medium">
-                        {selectedError.created_at ? formatDateToSantoDomingo(selectedError.created_at).time : 'N/A'}
+                        {selectedError.createdAt ? formatDateToSantoDomingo(selectedError.createdAt).time : 'N/A'}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">IP Address:</span>
-                      <span className="text-sm font-medium">{selectedError.ip_address || 'N/A'}</span>
+                      <span className="text-sm font-medium">{selectedError.ipAddress || 'N/A'}</span>
                     </div>
                     {selectedError.latitude && selectedError.longitude && (
                       <div className="flex justify-between">

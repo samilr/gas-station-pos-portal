@@ -17,6 +17,40 @@ export interface PaginatedLogsResponse<T> {
   pagination: PaginationMeta;
 }
 
+// La API devuelve { successful, data: [...], pagination: { page, limit, total, totalPages, hasNext, hasPrev } }
+// Usamos fetch directo para obtener la respuesta completa sin que apiGet modifique la estructura.
+async function fetchPaginatedLogs<T>(url: string): Promise<PaginatedLogsResponse<T>> {
+  const response = await fetch(url, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'X-site-ID': 'PORTAL',
+      'Authorization': `Bearer ${localStorage.getItem('token') || localStorage.getItem('authToken')}`,
+    },
+  });
+  const json = await response.json();
+
+  const items: T[] = json.data || [];
+  const pagination = json.pagination || {};
+  const total = pagination.total ?? 0;
+  const page = pagination.page || 1;
+  const limit = pagination.limit || 50;
+  const totalPages = pagination.totalPages || (limit > 0 ? Math.ceil(total / limit) : 1);
+
+  return {
+    successful: json.successful !== false,
+    data: items,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNext: pagination.hasNext ?? page < totalPages,
+      hasPrev: pagination.hasPrev ?? page > 1,
+    },
+  };
+}
+
 export interface LogsResponse {
   actionLogs: IActionLog[];
   errorLogs: IErrorLog[];
@@ -37,10 +71,8 @@ export const logService = {
     if (params?.limit) queryParams.append('limit', String(params.limit));
 
     const query = queryParams.toString();
-    const url = `${buildApiUrl('action-log')}${query ? `?${query}` : ''}`;
-
-    const response = await apiGet<IActionLog[]>(url) as any;
-    return response;
+    const url = `${buildApiUrl('audit/actions')}${query ? `?${query}` : ''}`;
+    return fetchPaginatedLogs<IActionLog>(url);
   },
 
   // Obtener logs de errores
@@ -57,16 +89,14 @@ export const logService = {
     if (params?.limit) queryParams.append('limit', String(params.limit));
 
     const query = queryParams.toString();
-    const url = `${buildApiUrl('error-log')}${query ? `?${query}` : ''}`;
-
-    const response = await apiGet<IErrorLog[]>(url) as any;
-    return response;
+    const url = `${buildApiUrl('audit/errors')}${query ? `?${query}` : ''}`;
+    return fetchPaginatedLogs<IErrorLog>(url);
   },
 
   // Marcar error como resuelto
   async resolveError(errorId: string, resolvedBy: string): Promise<ApiResponse<boolean>> {
     return await apiPost<boolean>(
-      buildApiUrl(`logs/errors/${errorId}/resolve`),
+      buildApiUrl(`audit/errors/${errorId}/resolve`),
       { resolvedBy }
     );
   },
@@ -83,7 +113,7 @@ export const logService = {
       if (params?.fromDate) queryParams.append('fromDate', params.fromDate);
       if (params?.toDate) queryParams.append('toDate', params.toDate);
 
-      const response = await fetch(`${buildApiUrl('logs')}/${type}/export?${queryParams}`, {
+      const response = await fetch(`${buildApiUrl('audit')}/${type}/export?${queryParams}`, {
         method: 'GET',
         headers: {
           'X-site-ID': 'PORTAL',

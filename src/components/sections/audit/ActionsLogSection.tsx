@@ -47,13 +47,13 @@ const ActionsLogSection: React.FC = () => {
   // Filtros locales (solo sobre la página actual)
   const filteredLogs = (Array.isArray(actionLogs) ? actionLogs : []).filter(log => {
     const matchesSearch =
-      (log.staft_id?.toString() || '').includes(searchTerm) ||
-      (log.site_id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (log.staftId?.toString() || '').includes(searchTerm) ||
+      (log.siteId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (log.action || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (log.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (log.ip_address || '').includes(searchTerm);
+      (log.ipAddress || '').includes(searchTerm);
 
-    const matchesUser = userFilter === '' || log.staft_id?.toString() === userFilter;
+    const matchesUser = userFilter === '' || log.staftId?.toString() === userFilter;
     const matchesAction = actionFilter === '' || log.action === actionFilter;
 
     return matchesSearch && matchesUser && matchesAction;
@@ -116,7 +116,7 @@ const ActionsLogSection: React.FC = () => {
   };
 
   // Obtener valores únicos para filtros (de la página actual)
-  const uniqueUsers = Array.from(new Set(actionLogs.map(log => log.staft_id?.toString()).filter(Boolean)));
+  const uniqueUsers = Array.from(new Set(actionLogs.map(log => log.staftId?.toString()).filter(Boolean)));
   const uniqueActions = Array.from(new Set(actionLogs.map(log => log.action).filter(Boolean)));
 
   // Índices para el texto "Mostrando X a Y de Z"
@@ -311,7 +311,7 @@ const ActionsLogSection: React.FC = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredLogs.map((log, index) => {
-                const { date, time } = formatDateToSantoDomingo(log.created_at);
+                const { date, time } = formatDateToSantoDomingo(log.createdAt);
                 return (
                   <motion.tr
                     key={log.actionId}
@@ -324,7 +324,7 @@ const ActionsLogSection: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <User className="w-4 h-4 text-gray-400 mr-2" />
-                        <span className="text-sm font-medium text-gray-900">{log.staft_id || 'N/A'}</span>
+                        <span className="text-sm font-medium text-gray-900">{log.staftId || 'N/A'}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -339,10 +339,10 @@ const ActionsLogSection: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-700">{log.site_id || 'N/A'}</span>
+                      <span className="text-sm text-gray-700">{log.siteId || 'N/A'}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-700">{log.ip_address || 'N/A'}</span>
+                      <span className="text-sm text-gray-700">{log.ipAddress || 'N/A'}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -496,23 +496,23 @@ const ActionsLogSection: React.FC = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Staff ID:</span>
-                      <span className="text-sm font-medium">{selectedAction.staft_id || 'N/A'}</span>
+                      <span className="text-sm font-medium">{selectedAction.staftId || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Site ID:</span>
-                      <span className="text-sm font-medium">{selectedAction.site_id || 'N/A'}</span>
+                      <span className="text-sm font-medium">{selectedAction.siteId || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Device ID:</span>
-                      <span className="text-sm font-medium">{selectedAction.device_id || 'N/A'}</span>
+                      <span className="text-sm font-medium">{selectedAction.deviceId || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Terminal ID:</span>
-                      <span className="text-sm font-medium">{selectedAction.terminal_id || 'N/A'}</span>
+                      <span className="text-sm font-medium">{selectedAction.terminalId || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">IP Address:</span>
-                      <span className="text-sm font-medium">{selectedAction.ip_address || 'N/A'}</span>
+                      <span className="text-sm font-medium">{selectedAction.ipAddress || 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -523,13 +523,13 @@ const ActionsLogSection: React.FC = () => {
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Fecha de Creación:</span>
                       <span className="text-sm font-medium">
-                        {selectedAction.created_at ? formatDateToSantoDomingo(selectedAction.created_at).date : 'N/A'}
+                        {selectedAction.createdAt ? formatDateToSantoDomingo(selectedAction.createdAt).date : 'N/A'}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Hora:</span>
                       <span className="text-sm font-medium">
-                        {selectedAction.created_at ? formatDateToSantoDomingo(selectedAction.created_at).time : 'N/A'}
+                        {selectedAction.createdAt ? formatDateToSantoDomingo(selectedAction.createdAt).time : 'N/A'}
                       </span>
                     </div>
                     {selectedAction.latitude && selectedAction.longitude && (

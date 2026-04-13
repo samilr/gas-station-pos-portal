@@ -2,32 +2,30 @@ import { buildApiUrl } from '../config/api';
 import { apiGet, apiPut, apiDelete } from './apiInterceptor';
 
 export interface FuelTransaction {
-  transaction_id: number;
-  trans_number: string | null;
+  transactionId: number;
   pump: number;
   nozzle: number;
-  hardware_transaction_id: number;
+  hardwareTransactionId: number;
   volume: number;
   amount: number;
   price: number;
-  total_volume: number;
-  total_amount: number;
-  transaction_date: string;
+  totalVolume: number;
+  totalAmount: number;
+  transactionDate: string;
+  transactionDateStart: string;
   tag: string | null;
-  pts_id: string;
-  fuel_grade_id: number;
-  fuel_grade_name: string;
-  product_name: string;
+  ptsId: string;
+  fuelGradeId: number;
+  fuelGradeName: string;
   tank: number;
-  user_id: number;
-  transaction_date_start: string;
-  tc_volume: number;
-  flow_rate: number;
-  is_offline: boolean;
-  pump_transactions_uploaded: number;
-  pump_transactions_total: number;
-  configuration_id: string;
-  created_at: string;
+  userId: number;
+  tcVolume: number;
+  flowRate: number;
+  isOffline: boolean;
+  pumpTransactionsUploaded: number;
+  pumpTransactionsTotal: number;
+  configurationId: string;
+  createdAt: string;
 }
 
 export interface FuelTransactionsPagination {
@@ -62,7 +60,7 @@ class FuelTransactionService {
     sortOrder?: 'asc' | 'desc';
   }): Promise<FuelTransactionsResponse> {
     try {
-      let url = buildApiUrl('pts-controllers/pump-transactions');
+      let url = buildApiUrl('fuel-transactions');
       
       if (params) {
         const queryParams = new URLSearchParams();
@@ -83,24 +81,20 @@ class FuelTransactionService {
       }
       
       const response = await apiGet<any>(url);
-      
-      // Si la respuesta tiene paginación, extraerla
+
       let pagination: FuelTransactionsPagination | undefined;
       let data: FuelTransaction[] = [];
-      
+
       if (response.successful) {
-        if (response.data && Array.isArray(response.data)) {
-          // Si es un array directo
-          data = response.data;
-        } else if (response.data && response.data.data) {
-          // Si tiene estructura { data: [], pagination: {} }
-          data = response.data.data || [];
-          if (response.data.pagination) {
-            pagination = response.data.pagination;
-          }
+        // El interceptor devuelve el body completo cuando detecta `pagination`
+        // Estructura: { data: [...], pagination: { page, limit, total, totalPages, hasNext, hasPrev } }
+        const body = response.data;
+        data = Array.isArray(body?.data) ? body.data : (Array.isArray(body) ? body : []);
+        if (body?.pagination) {
+          pagination = body.pagination;
         }
       }
-      
+
       return {
         successful: response.successful,
         data: data,

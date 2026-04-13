@@ -300,6 +300,28 @@ export async function updateTanksConfig(tanks: TankConfig[]): Promise<void> {
 }
 
 // ============================================================
+// PTS Connection Settings
+// ============================================================
+
+export interface PtsSettings {
+  baseUrl: string;
+  username: string;
+  password: string;
+  pumpCount: number;
+}
+
+export async function getPtsSettings(): Promise<PtsSettings | null> {
+  const res = await apiGet<any>(buildApiUrl('dispensers/settings'));
+  if (!res.successful) return null;
+  return res.data;
+}
+
+export async function updatePtsSettings(data: Partial<PtsSettings>): Promise<void> {
+  const res = await apiPut<any>(buildApiUrl('dispensers/settings'), data);
+  if (!res.successful) throw new Error(res.error || 'Error al actualizar configuración PTS');
+}
+
+// ============================================================
 // Módulo 5 — Sistema
 // ============================================================
 
@@ -539,14 +561,12 @@ export async function getFuelTransactions(params?: FuelTransactionsParams): Prom
 
   if (!res.successful) return { data: [], pagination: null };
 
-  // La respuesta puede venir como { data: [...], pagination: {...} } o directamente un array
-  if (res.data?.data && res.data?.pagination) {
-    return { data: res.data.data, pagination: res.data.pagination };
-  }
-  if (Array.isArray(res.data)) {
-    return { data: res.data, pagination: null };
-  }
-  return { data: [], pagination: null };
+  // El interceptor devuelve el body completo cuando detecta `pagination`
+  // Estructura: { data: [...], pagination: { page, limit, total, totalPages, hasNext, hasPrev } }
+  const body = res.data;
+  const data = Array.isArray(body?.data) ? body.data : (Array.isArray(body) ? body : []);
+  const pagination = body?.pagination || null;
+  return { data, pagination };
 }
 
 export async function getFuelTransactionById(id: number): Promise<FuelTransaction | null> {

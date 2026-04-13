@@ -44,7 +44,7 @@ const NOZZLE_FUEL_GRADE_MAP: Record<number, { id: number; code: string }> = {
 };
 
 const POLLING_INTERVAL = 2000;
-const PUMP_COUNT = 18;
+
 
 const STATE_LABEL: Record<PumpVisualState, string> = {
   available: 'Disponible',
@@ -101,8 +101,7 @@ const ControlSection: React.FC = () => {
     try {
       setError(null);
       const packets = await getAllPumpStatuses();
-      const map = new Map<number, PumpStatusPacket | null>();
-      for (let i = 1; i <= PUMP_COUNT; i++) map.set(i, null);
+      const map = new Map<number, PumpStatusPacket>();
       packets.forEach((pkt) => {
         const num = getPumpNumber(pkt as PumpStatusPacket);
         map.set(num, pkt as PumpStatusPacket);
@@ -134,8 +133,7 @@ const ControlSection: React.FC = () => {
   };
 
   const selectAll = () => {
-    const all = new Set<number>();
-    for (let i = 1; i <= PUMP_COUNT; i++) all.add(i);
+    const all = new Set<number>(pumpStatuses.keys());
     setSelectedPumps(all);
   };
 
@@ -341,6 +339,22 @@ const ControlSection: React.FC = () => {
   const hasDispensingSelected = getSelectedPackets().some(
     ({ packet }) => getPumpVisualState(packet) === 'dispensing'
   );
+
+  if (loading && pumpStatuses.size === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="h-8 bg-gray-200 rounded w-64 mb-2 animate-pulse" />
+          <div className="h-4 bg-gray-100 rounded w-80 animate-pulse" />
+        </div>
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-2">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="rounded-lg p-3 bg-gray-200 animate-pulse h-20" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

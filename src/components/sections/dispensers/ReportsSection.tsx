@@ -10,6 +10,7 @@ import {
   getInTankDeliveriesReport,
   prop,
 } from '../../../services/dispenserService';
+import { mapFuelProductName } from '../../../utils/fuelProductMapping';
 import type { ReportDateFilter } from '../../../types/dispenser';
 import { useHeader } from '../../../context/HeaderContext';
 
@@ -232,7 +233,7 @@ const ReportsSection: React.FC = () => {
                         <tr key={i} className="hover:bg-gray-50">
                           <td className="px-4 py-3 text-sm">{prop(raw, 'Pump')}</td>
                           <td className="px-4 py-3 text-sm">{prop(raw, 'Nozzle')}</td>
-                          <td className="px-4 py-3 text-sm">{prop(raw, 'FuelGradeName')}</td>
+                          <td className="px-4 py-3 text-sm">{mapFuelProductName(prop(raw, 'FuelGradeName'))}</td>
                           <td className="px-4 py-3 text-sm">{Number(prop(raw, 'Volume') || 0).toFixed(3)}</td>
                           <td className="px-4 py-3 text-sm">{formatCurrency(prop(raw, 'Price') || 0)}</td>
                           <td className="px-4 py-3 text-sm font-medium">{formatCurrency(prop(raw, 'Amount') || 0)}</td>
@@ -286,7 +287,7 @@ const ReportsSection: React.FC = () => {
                           <td className="px-4 py-3 text-sm">{Number(prop(raw, 'StartVolume') || 0).toFixed(1)}</td>
                           <td className="px-4 py-3 text-sm">{Number(prop(raw, 'EndVolume') || 0).toFixed(1)}</td>
                           <td className="px-4 py-3 text-sm font-medium text-green-700">{Number(prop(raw, 'DeliveredVolume') || 0).toFixed(1)}</td>
-                          <td className="px-4 py-3 text-sm">{prop(raw, 'FuelGradeName')}</td>
+                          <td className="px-4 py-3 text-sm">{mapFuelProductName(prop(raw, 'FuelGradeName'))}</td>
                         </tr>
                       ))}
                     </tbody>

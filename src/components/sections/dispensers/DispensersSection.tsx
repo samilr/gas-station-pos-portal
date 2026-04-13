@@ -22,9 +22,9 @@ import type {
   PumpVisualState,
 } from '../../../types/dispenser';
 import { useHeader } from '../../../context/HeaderContext';
+import { mapFuelProductName } from '../../../utils/fuelProductMapping';
 
 const POLLING_INTERVAL = 2000;
-const PUMP_COUNT = 18;
 
 const STATE_TEXT: Record<PumpVisualState, string> = {
   available: 'Disponible',
@@ -52,13 +52,6 @@ const DispensersSection: React.FC = () => {
   const [filterState, setFilterState] = useState<string>('all');
   const { setSubtitle } = useHeader();
 
-  // Inicializar el mapa
-  useEffect(() => {
-    const initial = new Map<number, PumpStatusPacket | null>();
-    for (let i = 1; i <= PUMP_COUNT; i++) initial.set(i, null);
-    setPumpStatuses(initial);
-  }, []);
-
   useEffect(() => {
     setSubtitle('Monitoreo en tiempo real del estado de las dispensadoras');
     return () => { setSubtitle(''); };
@@ -72,9 +65,7 @@ const DispensersSection: React.FC = () => {
     try {
       const packets = await getAllPumpStatuses();
 
-      const newStatuses = new Map<number, PumpStatusPacket | null>();
-      for (let i = 1; i <= PUMP_COUNT; i++) newStatuses.set(i, null);
-
+      const newStatuses = new Map<number, PumpStatusPacket>();
       packets.forEach((packet) => {
         const num = getPumpNumber(packet as PumpStatusPacket);
         newStatuses.set(num, packet as PumpStatusPacket);
@@ -166,23 +157,23 @@ const DispensersSection: React.FC = () => {
     switch (packet.Type) {
       case 'PumpFillingStatus': {
         const d = packet.Data as PumpFillingStatusData;
-        return { fuel: d.FuelGradeName, volume: d.Volume, amount: d.Amount, lastDateTime: d.DateTimeStart };
+        return { fuel: mapFuelProductName(d.FuelGradeName), volume: d.Volume, amount: d.Amount, lastDateTime: d.DateTimeStart };
       }
       case 'PumpEndOfTransactionStatus': {
         const d = packet.Data as PumpEndOfTransactionStatusData;
-        return { fuel: d.FuelGradeName, volume: d.Volume, amount: d.Amount, lastDateTime: d.DateTime };
+        return { fuel: mapFuelProductName(d.FuelGradeName), volume: d.Volume, amount: d.Amount, lastDateTime: d.DateTime };
       }
       case 'PumpIdleStatus': {
         const d = packet.Data as PumpIdleStatusData;
         if (d.LastTransaction > 0) {
-          return { fuel: d.LastFuelGradeName, volume: d.LastVolume, amount: d.LastAmount, lastDateTime: d.LastDateTime };
+          return { fuel: mapFuelProductName(d.LastFuelGradeName), volume: d.LastVolume, amount: d.LastAmount, lastDateTime: d.LastDateTime };
         }
         break;
       }
       case 'PumpOfflineStatus': {
         const d = packet.Data as PumpOfflineStatusData;
         if (d.LastTransaction > 0) {
-          return { fuel: d.LastFuelGradeName, volume: d.LastVolume, amount: d.LastAmount, lastDateTime: d.LastDateTime };
+          return { fuel: mapFuelProductName(d.LastFuelGradeName), volume: d.LastVolume, amount: d.LastAmount, lastDateTime: d.LastDateTime };
         }
         break;
       }
@@ -195,6 +186,22 @@ const DispensersSection: React.FC = () => {
     if (filterState === 'all') return true;
     return getPumpVisualState(packet) === filterState;
   });
+
+  if (loading && pumpStatuses.size === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="h-8 bg-gray-200 rounded w-64 mb-2 animate-pulse" />
+          <div className="h-4 bg-gray-100 rounded w-96 animate-pulse" />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="rounded-lg p-4 bg-gray-200 animate-pulse h-32" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

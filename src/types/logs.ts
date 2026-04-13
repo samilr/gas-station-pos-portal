@@ -1,29 +1,29 @@
 export interface IActionLog {
   actionId: number;
-  staft_id?: number;
-  site_id?: string;
+  staftId?: number | null;
+  siteId?: string | null;
   action?: string;
   description?: string;
-  ip_address?: string;
-  device_id?: string;
-  terminal_id?: number;
-  latitude?: string;
-  longitude?: string;
-  created_at: Date;
+  ipAddress?: string | null;
+  deviceId?: string | null;
+  terminalId?: number | null;
+  latitude?: string | null;
+  longitude?: string | null;
+  createdAt: string;
 }
 
 export interface IErrorLog {
-  error_id: number;
-  staft_id?: number;
-  site_id?: string;
-  error_code?: string;
+  errorId: number;
+  staftId?: number | null;
+  siteId?: string | null;
+  errorCode?: string;
   message: string;
   stacktrace?: string;
   context?: string;
-  device_id?: string;
-  terminal_id?: number;
-  latitude?: string;
-  longitude?: string;
-  created_at: Date;
-  ip_address?: string;
+  deviceId?: string | null;
+  terminalId?: number | null;
+  latitude?: string | null;
+  longitude?: string | null;
+  ipAddress?: string | null;
+  createdAt: string;
 }

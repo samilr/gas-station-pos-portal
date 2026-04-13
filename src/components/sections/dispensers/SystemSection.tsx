@@ -15,6 +15,7 @@ import {
 import type { PtsPacket, DateTimeData, GpsData } from '../../../types/dispenser';
 import { useHeader } from '../../../context/HeaderContext';
 import ConfirmActionModal from './ConfirmActionModal';
+import PtsConnectionSettings from './PtsConnectionSettings';
 
 const SystemSection: React.FC = () => {
   const [infoPackets, setInfoPackets] = useState<PtsPacket[]>([]);
@@ -193,6 +194,9 @@ const SystemSection: React.FC = () => {
           subtitle={gps ? `Estado: ${prop(gps, 'Status') || '-'} | Modo: ${prop(gps, 'Mode') || '-'}` : 'Sin datos GPS'}
         />
       </div>
+
+      {/* Conexión PTS */}
+      <PtsConnectionSettings />
 
       {/* Fecha y Hora */}
       <div className="bg-white rounded-lg shadow-sm p-6">
