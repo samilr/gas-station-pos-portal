@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { Bell, Search, LogOut, User, Settings, Shield, HelpCircle, AlertCircle, Info, CheckCircle, Loader2 } from 'lucide-react';
-import { sectionTitles } from './menuConfig';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Bell, LogOut, User, Shield, HelpCircle, AlertCircle, Info, CheckCircle, Loader2, RefreshCw, Clock, ChevronRight, Wifi, WifiOff } from 'lucide-react';
+import { sectionTitles, menuItems } from './menuConfig';
 
 interface TopBarProps {
   activeSection: string;
@@ -11,31 +11,33 @@ interface TopBarProps {
 const TopBar: React.FC<TopBarProps> = ({ activeSection }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
+  const location = useLocation();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  const title = sectionTitles[activeSection] || 'Portal Administrativo';
   const userInitial = user?.name?.charAt(0)?.toUpperCase() || 'U';
 
-  // Cmd+K shortcut
+  // Live clock (updates every second)
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        searchRef.current?.focus();
-      }
-      if (e.key === 'Escape') {
-        setSearchQuery('');
-        searchRef.current?.blur();
-      }
+    const interval = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Online/offline status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   // Click outside
@@ -64,35 +66,105 @@ const TopBar: React.FC<TopBarProps> = ({ activeSection }) => {
     }
   };
 
+  const handleRefresh = () => {
+    // Dispatch a custom event so sections can listen and refresh their data
+    window.dispatchEvent(new CustomEvent('app:refresh'));
+    // Fallback: force reload the current route's data by revisiting
+    navigate(location.pathname, { replace: true });
+  };
+
+  // Build breadcrumb from activeSection
+  const buildBreadcrumb = () => {
+    const topLevel = activeSection.split('.')[0];
+    let moduleItem = menuItems.find(item => item.id === topLevel);
+    if (!moduleItem) {
+      moduleItem = menuItems.find(item =>
+        item.subItems?.some(sub => sub.id === activeSection)
+      );
+    }
+    const moduleLabel = moduleItem?.label;
+    const subItemLabel = activeSection.includes('.')
+      ? sectionTitles[activeSection] || activeSection.split('.')[1]
+      : null;
+    return { moduleLabel, subItemLabel };
+  };
+
+  const { moduleLabel, subItemLabel } = buildBreadcrumb();
+
+  // Format time in Santo Domingo timezone
+  const timeString = currentTime.toLocaleTimeString('es-DO', {
+    timeZone: 'America/Santo_Domingo',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+  const dateString = currentTime.toLocaleDateString('es-DO', {
+    timeZone: 'America/Santo_Domingo',
+    day: '2-digit',
+    month: 'short',
+  });
+
   return (
     <header className="h-10 bg-white border-b border-gray-200 flex items-center px-3 flex-shrink-0 z-10">
-      {/* Left: title */}
-      <div className="flex-shrink-0">
-        <span className="text-md font-semibold text-text-primary">{title}</span>
+      {/* Left: breadcrumb */}
+      <div className="flex items-center gap-1.5 flex-shrink-0 min-w-0">
+        <span className="text-md font-semibold text-text-primary whitespace-nowrap">
+          {moduleLabel || sectionTitles[activeSection] || 'Portal'}
+        </span>
+        {subItemLabel && (
+          <>
+            <ChevronRight className="w-3 h-3 text-text-muted flex-shrink-0" />
+            <span className="text-sm text-text-secondary truncate">{subItemLabel}</span>
+          </>
+        )}
       </div>
 
-      {/* Center: search */}
-      <div className="flex-1 flex justify-center">
-        <div className="relative w-[280px]">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted" />
-          <input
-            ref={searchRef}
-            type="text"
-            placeholder="Buscar y conectar  ⌘K"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-7 pl-7 pr-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-50"
-          />
+      {/* Center spacer */}
+      <div className="flex-1" />
+
+      {/* Right: functional widgets */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {/* Connection status */}
+        <div
+          className="flex items-center gap-1 text-xs text-text-secondary px-2 h-7 rounded-sm border border-gray-200"
+          title={isOnline ? 'Conectado' : 'Sin conexión'}
+        >
+          {isOnline ? (
+            <>
+              <Wifi className="w-3 h-3 text-green-500" />
+              <span className="hidden md:inline">Online</span>
+            </>
+          ) : (
+            <>
+              <WifiOff className="w-3 h-3 text-red-500" />
+              <span className="hidden md:inline">Offline</span>
+            </>
+          )}
         </div>
-      </div>
 
-      {/* Right: icons */}
-      <div className="flex items-center gap-1 flex-shrink-0">
+        {/* Live clock */}
+        <div className="flex items-center gap-1.5 text-xs text-text-secondary px-2 h-7 rounded-sm border border-gray-200 font-mono" title="Hora local (Santo Domingo)">
+          <Clock className="w-3 h-3 text-text-muted" />
+          <span className="hidden sm:inline text-text-muted">{dateString}</span>
+          <span className="font-semibold text-text-primary">{timeString}</span>
+        </div>
+
+        {/* Refresh current page */}
+        <button
+          onClick={handleRefresh}
+          className="h-7 w-7 flex items-center justify-center rounded-sm hover:bg-gray-100 transition-colors"
+          title="Recargar datos (F5)"
+        >
+          <RefreshCw className="w-[14px] h-[14px] text-text-secondary" />
+        </button>
+
         {/* Notifications */}
         <div className="relative" ref={notifRef}>
           <button
             onClick={() => { setShowNotifications(!showNotifications); setShowUserMenu(false); }}
             className="h-7 w-7 flex items-center justify-center rounded-sm hover:bg-gray-100 transition-colors relative"
+            title="Notificaciones"
           >
             <Bell className="w-[14px] h-[14px] text-text-secondary" />
             <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full" />
@@ -133,19 +205,12 @@ const TopBar: React.FC<TopBarProps> = ({ activeSection }) => {
           )}
         </div>
 
-        {/* Settings */}
-        <button
-          onClick={() => navigate('/dashboard/settings/general')}
-          className="h-7 w-7 flex items-center justify-center rounded-sm hover:bg-gray-100 transition-colors"
-        >
-          <Settings className="w-[14px] h-[14px] text-text-secondary" />
-        </button>
-
         {/* User avatar */}
         <div className="relative" ref={userMenuRef}>
           <button
             onClick={() => { setShowUserMenu(!showUserMenu); setShowNotifications(false); }}
             className="relative h-[22px] w-[22px] bg-blue-600 rounded-full flex items-center justify-center ml-1"
+            title={user?.name}
           >
             <span className="text-white text-2xs font-medium">{userInitial}</span>
             <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white" />
