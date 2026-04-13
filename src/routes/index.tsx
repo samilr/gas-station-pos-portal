@@ -12,12 +12,28 @@ import DevicesSection from '../components/sections/pos/DevicesSection';
 import SitesSection from '../components/sections/sites/SitesSection';
 import GenericSection from '../components/sections/GenericSection';
 import SettingsGeneralSection from '../components/sections/settings/SettingsGeneralSection';
+import PaymentsSection from '../components/sections/settings/PaymentsSection';
+import AppConfigSection from '../components/sections/settings/AppConfigSection';
 import ProductsSection from '../components/sections/products/ProductsSection';
+import BarcodesSection from '../components/sections/products/BarcodesSection';
 import ActionsLogSection from '../components/sections/audit/ActionsLogSection';
 import ErrorLogSection from '../components/sections/audit/ErrorLogSection';
 import AnalyticsSection from '../components/sections/analytics/AnalyticsSection';
 import DispensersSection from '../components/sections/dispensers/DispensersSection';
+import ControlSection from '../components/sections/dispensers/ControlSection';
+import PricesSection from '../components/sections/dispensers/PricesSection';
+import TanksSection from '../components/sections/dispensers/TanksSection';
+import SystemSection from '../components/sections/dispensers/SystemSection';
+import HardwareSection from '../components/sections/dispensers/HardwareSection';
+import TagsSection from '../components/sections/dispensers/TagsSection';
+import ReportsSection from '../components/sections/dispensers/ReportsSection';
 import FuelTransactionsSection from '../components/sections/dispensers/FuelTransactionsSection';
+import RolesSection from '../components/sections/users/RolesSection';
+import StaftGroupsSection from '../components/sections/users/StaftGroupsSection';
+import TaxpayersSection from '../components/sections/gov/TaxpayersSection';
+import TaxesSection from '../components/sections/gov/TaxesSection';
+import CfConfigSection from '../components/sections/gov/CfConfigSection';
+import ZatacaSection from '../components/sections/zataca/ZatacaSection';
 import { 
   Database, 
   Shield, 
@@ -170,6 +186,14 @@ export const router = createBrowserRouter([
             element: <PermissionRoute permission="users.view"><UsersSection /></PermissionRoute>
           },
           {
+            path: 'roles',
+            element: <PermissionRoute permission="users.view"><RolesSection /></PermissionRoute>
+          },
+          {
+            path: 'staft-groups',
+            element: <PermissionRoute permission="users.view"><StaftGroupsSection /></PermissionRoute>
+          },
+          {
             path: 'profile',
             element: <UserProfile />
           },
@@ -316,6 +340,14 @@ export const router = createBrowserRouter([
                 />
               </PermissionRoute>
             )
+          },
+          {
+            path: 'barcodes',
+            element: (
+              <PermissionRoute permission="products.view">
+                <BarcodesSection />
+              </PermissionRoute>
+            )
           }
         ]
       },
@@ -362,6 +394,34 @@ export const router = createBrowserRouter([
           {
             path: 'monitor',
             element: <PermissionRoute permission="dispensers.view"><DispensersSection /></PermissionRoute>
+          },
+          {
+            path: 'control',
+            element: <PermissionRoute permission="dispensers.view"><ControlSection /></PermissionRoute>
+          },
+          {
+            path: 'prices',
+            element: <PermissionRoute permission="dispensers.view"><PricesSection /></PermissionRoute>
+          },
+          {
+            path: 'tanks',
+            element: <PermissionRoute permission="dispensers.view"><TanksSection /></PermissionRoute>
+          },
+          {
+            path: 'system',
+            element: <PermissionRoute permission="dispensers.view"><SystemSection /></PermissionRoute>
+          },
+          {
+            path: 'hardware',
+            element: <PermissionRoute permission="dispensers.view"><HardwareSection /></PermissionRoute>
+          },
+          {
+            path: 'tags',
+            element: <PermissionRoute permission="dispensers.view"><TagsSection /></PermissionRoute>
+          },
+          {
+            path: 'reports',
+            element: <PermissionRoute permission="dispensers.view"><ReportsSection /></PermissionRoute>
           },
           {
             path: 'transactions',
@@ -610,6 +670,62 @@ export const router = createBrowserRouter([
                 />
               </PermissionRoute>
             )
+          },
+          {
+            path: 'payments',
+            element: (
+              <PermissionRoute permission="settings.view">
+                <PaymentsSection />
+              </PermissionRoute>
+            )
+          },
+          {
+            path: 'appconfig',
+            element: (
+              <PermissionRoute permission="settings.view">
+                <AppConfigSection />
+              </PermissionRoute>
+            )
+          }
+        ]
+      },
+      // Rutas de Gobierno / Fiscal
+      {
+        path: 'gov',
+        children: [
+          {
+            index: true,
+            element: <PermissionRoute permission="settings.view" fallback={<Navigate to="/dashboard" replace />}>
+              <Navigate to="taxpayers" replace />
+            </PermissionRoute>
+          },
+          {
+            path: 'taxpayers',
+            element: <PermissionRoute permission="settings.view"><TaxpayersSection /></PermissionRoute>
+          },
+          {
+            path: 'taxes',
+            element: <PermissionRoute permission="settings.view"><TaxesSection /></PermissionRoute>
+          },
+          {
+            path: 'cf-config',
+            element: <PermissionRoute permission="settings.view"><CfConfigSection /></PermissionRoute>
+          }
+        ]
+      },
+      // Rutas de Zataca
+      {
+        path: 'zataca',
+        children: [
+          {
+            index: true,
+            element: <PermissionRoute permission="settings.view" fallback={<Navigate to="/dashboard" replace />}>
+              <Navigate to="main" replace />
+            </PermissionRoute>
+          },
+          {
+            path: 'main',
+            element: <PermissionRoute permission="settings.view"><ZatacaSection /></PermissionRoute>
           }
         ]
       }

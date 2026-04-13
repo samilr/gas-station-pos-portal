@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FuelIcon, Lock } from 'lucide-react';
-import { PumpStatusPacket, PumpFillingStatus, PumpIdleStatus } from '../../../services/dispenserService';
-import dispenserService from '../../../services/dispenserService';
+import { Fuel, Lock, Unlock, Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
+import type {
+  PumpStatusPacket,
+  PumpFillingStatusData,
+  PumpIdleStatusData,
+  PumpEndOfTransactionStatusData,
+  PumpVisualState,
+} from '../../../types/dispenser';
+import { getPumpVisualState, isPumpLocked, lockPump, unlockPump } from '../../../services/dispenserService';
 import { mapFuelProductName } from '../../../utils/fuelProductMapping';
 
 interface DispenserCardProps {
@@ -14,102 +20,69 @@ interface DispenserCardProps {
   onStatusChange?: () => void;
 }
 
-const DispenserCard: React.FC<DispenserCardProps> = ({ 
-  pumpNumber, 
-  packet, 
+const STATE_CONFIG: Record<PumpVisualState, { bg: string; label: string }> = {
+  available:          { bg: 'bg-green-500',  label: 'Disponible' },
+  dispensing:         { bg: 'bg-orange-500', label: 'Dispensando' },
+  locked:             { bg: 'bg-red-500',    label: 'Bloqueada' },
+  offline:            { bg: 'bg-gray-300',   label: 'Offline' },
+  'end-of-transaction': { bg: 'bg-blue-500', label: 'Fin Transacción' },
+};
+
+const DispenserCard: React.FC<DispenserCardProps> = ({
+  pumpNumber,
+  packet,
   isLoading = false,
   error,
-  onStatusChange
+  onStatusChange,
 }) => {
   const [isLocking, setIsLocking] = useState(false);
 
-  // Determinar el estado de la dispensadora
-  const getStatus = () => {
-    if (error || !packet) return 'error';
-    // Verificar si está offline primero
-    if (packet.Type === 'PumpOfflineStatus') return 'offline';
-    // Verificar si está bloqueada
-    if (dispenserService.isPumpLocked(packet)) return 'blocked';
-    if (packet.Type === 'PumpFillingStatus') return 'dispensing';
-    if (packet.Type === 'PumpIdleStatus') return 'available';
-    return 'error';
-  };
+  const state: PumpVisualState = error ? 'offline' : getPumpVisualState(packet);
+  const locked = isPumpLocked(packet);
+  const { bg, label } = STATE_CONFIG[state];
+  const hasData = !!packet && state !== 'offline';
 
-  const status = getStatus();
-  const isLocked = dispenserService.isPumpLocked(packet);
-  const fillingData = packet?.Type === 'PumpFillingStatus' 
-    ? (packet.Data as PumpFillingStatus) 
-    : null;
-  const idleData = packet?.Type === 'PumpIdleStatus' 
-    ? (packet.Data as PumpIdleStatus) 
-    : null;
-
-  // Manejar bloqueo/desbloqueo
   const handleLockToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    
     if (isLocking) return;
-    
+
     try {
       setIsLocking(true);
-      
-      if (isLocked) {
-        await dispenserService.unlockPump(pumpNumber);
-        toast.success(`Dispensadora ${pumpNumber} desbloqueada`, {
-          duration: 2000,
-          icon: '🔓',
-        });
+      if (locked) {
+        await unlockPump(pumpNumber);
+        toast.success(`Dispensadora ${pumpNumber} desbloqueada`, { duration: 2000 });
       } else {
-        await dispenserService.lockPump(pumpNumber);
-        toast.success(`Dispensadora ${pumpNumber} bloqueada`, {
-          duration: 2000,
-          icon: '🔒',
-        });
+        await lockPump(pumpNumber);
+        toast.success(`Dispensadora ${pumpNumber} bloqueada`, { duration: 2000 });
       }
-      
-      // Refrescar el estado después de un breve delay
-      setTimeout(() => {
-        if (onStatusChange) {
-          onStatusChange();
-        }
-      }, 500);
+      setTimeout(() => onStatusChange?.(), 500);
     } catch (err) {
       console.error('Error al cambiar estado de bloqueo:', err);
-      toast.error(`Error al ${isLocked ? 'desbloquear' : 'bloquear'} dispensadora ${pumpNumber}`, {
-        duration: 3000,
-        icon: '❌',
-      });
+      toast.error(`Error al ${locked ? 'desbloquear' : 'bloquear'} dispensadora ${pumpNumber}`, { duration: 3000 });
     } finally {
       setIsLocking(false);
     }
   };
 
-  // Obtener color de fondo según el estado
-  const getBgColor = () => {
-    if (!packet || status === 'offline' || status === 'error') return 'bg-gray-200';
-    if (status === 'available') return 'bg-green-500';
-    if (status === 'dispensing') return 'bg-orange-500';
-    return 'bg-red-500'; // blocked
-  };
-
-  // Obtener datos para mostrar
+  // Extraer datos para mostrar según el estado
   const getDisplayData = () => {
     if (!packet) return null;
 
-    if (status === 'dispensing' && fillingData) {
-      return {
-        fuel: mapFuelProductName(fillingData.FuelGradeName),
-        volume: fillingData.Volume.toFixed(2),
-        amount: fillingData.Amount.toFixed(2)
-      };
+    if (state === 'dispensing') {
+      const d = packet.Data as PumpFillingStatusData;
+      return { fuel: mapFuelProductName(d.FuelGradeName), volume: d.Volume, amount: d.Amount, tag: null };
     }
 
-    if (status === 'available' && idleData && idleData.LastTransaction > 0) {
-      return {
-        fuel: mapFuelProductName(idleData.LastFuelGradeName),
-        volume: idleData.LastVolume.toFixed(2),
-        amount: idleData.LastAmount.toFixed(2)
-      };
+    if (state === 'end-of-transaction') {
+      const d = packet.Data as PumpEndOfTransactionStatusData;
+      return { fuel: mapFuelProductName(d.FuelGradeName), volume: d.Volume, amount: d.Amount, tag: d.Tag || null };
+    }
+
+    if (state === 'available' || state === 'locked') {
+      const d = packet.Data as PumpIdleStatusData;
+      if (d.LastTransaction > 0) {
+        return { fuel: mapFuelProductName(d.LastFuelGradeName), volume: d.LastVolume, amount: d.LastAmount, tag: null };
+      }
     }
 
     return null;
@@ -117,45 +90,64 @@ const DispenserCard: React.FC<DispenserCardProps> = ({
 
   const displayData = getDisplayData();
 
+  const formatCurrency = (n: number) =>
+    new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP', minimumFractionDigits: 2 }).format(n);
+
   return (
     <motion.div
-      whileHover={{ scale: 1.02 }}
-      className={`relative rounded-lg p-4 shadow-sm ${getBgColor()} ${status === 'dispensing' ? 'animate-pulse' : ''}`}
+      whileHover={{ scale: 1.03 }}
+      className={`relative rounded-lg p-4 shadow-sm ${bg} ${state === 'dispensing' ? 'animate-pulse' : ''}`}
     >
+      {/* Header: número + lock */}
       <div className="flex items-center justify-between mb-2">
-        <span className={`font-bold text-lg ${packet ? 'text-white' : 'text-gray-700'}`}>
+        <span className={`font-bold text-lg ${hasData ? 'text-white' : 'text-gray-700'}`}>
           #{pumpNumber}
         </span>
         <button
           onClick={handleLockToggle}
-          disabled={isLocking || isLoading || !packet}
-          className={`transition-opacity disabled:opacity-50 disabled:cursor-not-allowed ${packet ? 'text-white opacity-75 hover:opacity-100' : 'text-gray-500'}`}
-          title={isLocked ? 'Desbloquear dispensadora' : 'Bloquear dispensadora'}
+          disabled={isLocking || isLoading || !packet || state === 'dispensing'}
+          className={`transition-opacity disabled:opacity-40 disabled:cursor-not-allowed ${hasData ? 'text-white opacity-75 hover:opacity-100' : 'text-gray-500'}`}
+          title={locked ? 'Desbloquear dispensadora' : 'Bloquear dispensadora'}
         >
           {isLocking ? (
-            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-          ) : (
+            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          ) : locked ? (
             <Lock className="w-4 h-4" />
+          ) : (
+            <Unlock className="w-4 h-4" />
           )}
         </button>
       </div>
-      <div className={packet ? 'text-white' : 'text-gray-600'}>
-        <FuelIcon 
-          className={`w-12 h-12 mx-auto mb-2 opacity-90 ${status === 'dispensing' ? 'animate-bounce' : ''}`} 
-        />
+
+      {/* Icono central */}
+      <div className={hasData ? 'text-white' : 'text-gray-500'}>
+        <Fuel className={`w-10 h-10 mx-auto mb-2 opacity-90 ${state === 'dispensing' ? 'animate-bounce' : ''}`} />
+
+        {/* Estado */}
+        <p className="text-xs text-center font-medium opacity-90 mb-1">{label}</p>
+
+        {/* Datos */}
         {displayData && (
           <>
-            <p className="text-xs opacity-90 mb-1">{displayData.fuel}</p>
-            <div className="flex justify-between text-xs">
-              <span>{displayData.volume} G.</span>
-              <span>RD${displayData.amount}</span>
+            <p className="text-xs text-center opacity-80 truncate">{displayData.fuel}</p>
+            <div className="flex justify-between text-xs mt-1">
+              <span>{displayData.volume.toFixed(3)} G.</span>
+              <span>{formatCurrency(displayData.amount)}</span>
             </div>
+            {displayData.tag && (
+              <div className="flex items-center gap-1 mt-1 text-xs opacity-80">
+                <Tag className="w-3 h-3" />
+                <span className="truncate">{displayData.tag}</span>
+              </div>
+            )}
           </>
         )}
       </div>
+
+      {/* Overlay de carga */}
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg">
-          <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
         </div>
       )}
     </motion.div>
@@ -163,4 +155,3 @@ const DispenserCard: React.FC<DispenserCardProps> = ({
 };
 
 export default DispenserCard;
-

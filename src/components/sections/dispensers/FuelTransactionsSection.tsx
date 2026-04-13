@@ -150,7 +150,7 @@ const FuelTransactionsSection: React.FC = () => {
   // Obtener valores únicos para los filtros
   const uniquePumps = Array.from(new Set(transactions.map(t => t.pump))).sort((a, b) => a - b);
   const uniqueNozzles = Array.from(new Set(transactions.map(t => t.nozzle))).sort((a, b) => a - b);
-  const uniqueFuelGrades = Array.from(new Set(transactions.map(t => t.fuel_grade_id))).sort((a, b) => a - b);
+  const uniqueFuelGrades = Array.from(new Set(transactions.map(t => t.fuelGradeId))).sort((a, b) => a - b);
 
   if (loading && transactions.length === 0) {
     return (
@@ -250,10 +250,10 @@ const FuelTransactionsSection: React.FC = () => {
               >
                 <option value="">Todos</option>
                 {uniqueFuelGrades.map((gradeId) => {
-                  const transaction = transactions.find(t => t.fuel_grade_id === gradeId);
+                  const transaction = transactions.find(t => t.fuelGradeId === gradeId);
                   return (
                     <option key={gradeId} value={gradeId}>
-                      {mapFuelProductName(transaction?.fuel_grade_name) || `Grade ${gradeId}`}
+                      {mapFuelProductName(transaction?.fuelGradeName) || `Grado ${gradeId}`}
                     </option>
                   );
                 })}
@@ -334,18 +334,18 @@ const FuelTransactionsSection: React.FC = () => {
               <tbody className="divide-y divide-gray-200">
                 {transactions.map((transaction, index) => (
                   <motion.tr
-                    key={transaction.transaction_id}
+                    key={transaction.transactionId}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.02 }}
                     className="hover:bg-gray-50 transition-colors"
                   >
                     <td className="px-6 py-3 text-sm text-gray-900">
-                      {transaction.transaction_id}
+                      {transaction.transactionId}
                     </td>
                     <td className="px-6 py-3 text-sm">
-                      <div className="text-gray-900">{formatDate(transaction.transaction_date)}</div>
-                      <div className="text-gray-500">{formatTime(transaction.transaction_date)}</div>
+                      <div className="text-gray-900">{formatDate(transaction.transactionDate)}</div>
+                      <div className="text-gray-500">{formatTime(transaction.transactionDate)}</div>
                     </td>
                     <td className="px-6 py-3 text-sm text-gray-900">
                       <div className="flex items-center space-x-2">
@@ -357,9 +357,9 @@ const FuelTransactionsSection: React.FC = () => {
                       Nozzle {transaction.nozzle}
                     </td>
                     <td className="px-6 py-3 text-sm">
-                      <div className="text-gray-900 font-medium">{mapFuelProductName(transaction.fuel_grade_name) || transaction.product_name}</div>
-                      {transaction.fuel_grade_name && (
-                        <div className="text-gray-500 text-xs">{transaction.fuel_grade_name}</div>
+                      <div className="text-gray-900 font-medium">{mapFuelProductName(transaction.fuelGradeName)}</div>
+                      {transaction.fuelGradeName && (
+                        <div className="text-gray-500 text-xs">Código: {transaction.fuelGradeName}</div>
                       )}
                     </td>
                     <td className="px-6 py-3 text-sm text-gray-900">
@@ -372,7 +372,7 @@ const FuelTransactionsSection: React.FC = () => {
                       {formatCurrency(transaction.amount)}
                     </td>
                     <td className="px-6 py-3 text-sm">
-                      {transaction.is_offline ? (
+                      {transaction.isOffline ? (
                         <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">
                           Offline
                         </span>

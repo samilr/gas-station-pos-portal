@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useNavigation } from '../../hooks/useNavigation';
-import { LayoutDashboard, Users, Settings, BarChart3, FileText, ChevronDown, ChevronUp, TrendingUp, Activity, AlertTriangle, Sliders, Receipt, Package, Monitor, Smartphone, Building2, FuelIcon, Store, DollarSign } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, BarChart3, FileText, ChevronDown, ChevronUp, TrendingUp, Activity, AlertTriangle, Sliders, Receipt, Package, Monitor, Smartphone, Building2, FuelIcon, Store, DollarSign, Landmark, Zap, CreditCard, Shield, BookUser, Gauge, DollarSign as PriceIcon, Container, Cpu, Wrench, Tag, ClipboardList, History } from 'lucide-react';
 import { usePermissions } from '../../hooks/usePermissions';
 
 interface SidebarProps {
@@ -78,14 +78,21 @@ const menuItems: MenuItem[] = [
       { id: 'pos.devices', label: 'Dispositivos', icon: Smartphone, permission: 'devices.view' },
     ]
   },
-  { 
-    id: 'dispensers', 
-    label: 'Dispensadoras', 
+  {
+    id: 'dispensers',
+    label: 'Dispensadoras',
     icon: FuelIcon,
     permission: 'dispensers.view',
     subItems: [
-      { id: 'dispensers.monitor', label: 'Monitoreo', icon: FuelIcon, permission: 'dispensers.view' },
-      { id: 'dispensers.transactions', label: 'Transacciones', icon: Receipt, permission: 'dispensers.view' },
+      { id: 'dispensers.monitor', label: 'Monitoreo', icon: Gauge, permission: 'dispensers.view' },
+      { id: 'dispensers.control', label: 'Control', icon: Sliders, permission: 'dispensers.view' },
+      { id: 'dispensers.prices', label: 'Precios', icon: PriceIcon, permission: 'dispensers.view' },
+      { id: 'dispensers.tanks', label: 'Tanques', icon: Container, permission: 'dispensers.view' },
+      { id: 'dispensers.system', label: 'Sistema', icon: Cpu, permission: 'dispensers.view' },
+      { id: 'dispensers.hardware', label: 'Hardware', icon: Wrench, permission: 'dispensers.view' },
+      { id: 'dispensers.tags', label: 'Tags RFID', icon: Tag, permission: 'dispensers.view' },
+      { id: 'dispensers.reports', label: 'Reportes', icon: ClipboardList, permission: 'dispensers.view' },
+      { id: 'dispensers.transactions', label: 'Transacciones', icon: History, permission: 'dispensers.view' },
     ]
   },
   { 
@@ -95,6 +102,8 @@ const menuItems: MenuItem[] = [
     permission: 'users.view',
     subItems: [
       { id: 'users.list', label: 'Lista de Usuarios', icon: Users, permission: 'users.view' },
+      { id: 'users.roles', label: 'Roles', icon: Shield, permission: 'users.view' },
+      { id: 'users.staft-groups', label: 'Grupos de Cajeros', icon: BookUser, permission: 'users.view' },
     ]
   },
   { 
@@ -106,12 +115,34 @@ const menuItems: MenuItem[] = [
       { id: 'sites.list', label: 'Lista de Sucursales', icon: Building2, permission: 'sites.view' },
     ]
   },
+  {
+    id: 'gov',
+    label: 'Gobierno / Fiscal',
+    icon: Landmark,
+    permission: 'settings.view',
+    categoryPermission: 'settings.view',
+    subItems: [
+      { id: 'gov.taxpayers', label: 'Contribuyentes', icon: Users, permission: 'settings.view' },
+      { id: 'gov.taxes', label: 'Impuestos', icon: Receipt, permission: 'settings.view' },
+      { id: 'gov.cf-config', label: 'Config Fiscal (CF)', icon: Shield, permission: 'settings.view' },
+    ]
+  },
+  {
+    id: 'zataca',
+    label: 'Zataca',
+    icon: Zap,
+    permission: 'settings.view',
+    categoryPermission: 'settings.view',
+    subItems: [
+      { id: 'zataca.main', label: 'Gestión Zataca', icon: Zap, permission: 'settings.view' },
+    ]
+  },
   { 
     id: 'logs', 
     label: 'LOG', 
     icon: FileText,
     permission: 'logs.view',
-  categoryPermission: 'logs.view', // Solo ADMIN y AUDIT pueden ver esta categoría
+    categoryPermission: 'logs.view',
     subItems: [
       { id: 'logs.actions', label: 'Actions Log', icon: Activity, permission: 'logs.view' },
       { id: 'logs.errors', label: 'Error Log', icon: AlertTriangle, permission: 'logs.view' },
@@ -122,9 +153,12 @@ const menuItems: MenuItem[] = [
     label: 'Configuración', 
     icon: Settings,
     permission: 'settings.view',
-    categoryPermission: 'settings.view', // Solo ADMIN puede ver esta categoría
+    categoryPermission: 'settings.view',
     subItems: [
       { id: 'settings.general', label: 'General', icon: Sliders, permission: 'settings.view' },
+      { id: 'settings.payments', label: 'Métodos de Pago', icon: CreditCard, permission: 'settings.view' },
+      { id: 'settings.appconfig', label: 'App Config Móvil', icon: Smartphone, permission: 'settings.view' },
+      { id: 'products.barcodes', label: 'Barcodes', icon: Package, permission: 'settings.view' },
     ]
   },
 ];

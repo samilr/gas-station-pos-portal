@@ -14,7 +14,7 @@ export const ENV_CONFIG = {
   
   // Configuración específica por ambiente
   DEVELOPMENT: {
-    API_BASE_URL: 'http://localhost:3000/api', // Para desarrollo local
+    API_BASE_URL: 'http://localhost:5274/api', // Para desarrollo local
     LOG_LEVEL: 'debug',
     ENABLE_MOCK_DATA: true,
   },
@@ -26,7 +26,7 @@ export const ENV_CONFIG = {
   },
   
   TEST: {
-    API_BASE_URL: 'http://localhost:3000/api',
+    API_BASE_URL: 'http://localhost:5274/api',
     LOG_LEVEL: 'warn',
     ENABLE_MOCK_DATA: true,
   }

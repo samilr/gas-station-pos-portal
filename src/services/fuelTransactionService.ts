@@ -1,33 +1,31 @@
 import { buildApiUrl } from '../config/api';
-import { apiGet } from './apiInterceptor';
+import { apiGet, apiPut, apiDelete } from './apiInterceptor';
 
 export interface FuelTransaction {
-  transaction_id: number;
-  trans_number: string | null;
+  transactionId: number;
   pump: number;
   nozzle: number;
-  hardware_transaction_id: number;
+  hardwareTransactionId: number;
   volume: number;
   amount: number;
   price: number;
-  total_volume: number;
-  total_amount: number;
-  transaction_date: string;
+  totalVolume: number;
+  totalAmount: number;
+  transactionDate: string;
+  transactionDateStart: string;
   tag: string | null;
-  pts_id: string;
-  fuel_grade_id: number;
-  fuel_grade_name: string;
-  product_name: string;
+  ptsId: string;
+  fuelGradeId: number;
+  fuelGradeName: string;
   tank: number;
-  user_id: number;
-  transaction_date_start: string;
-  tc_volume: number;
-  flow_rate: number;
-  is_offline: boolean;
-  pump_transactions_uploaded: number;
-  pump_transactions_total: number;
-  configuration_id: string;
-  created_at: string;
+  userId: number;
+  tcVolume: number;
+  flowRate: number;
+  isOffline: boolean;
+  pumpTransactionsUploaded: number;
+  pumpTransactionsTotal: number;
+  configurationId: string;
+  createdAt: string;
 }
 
 export interface FuelTransactionsPagination {
@@ -62,7 +60,7 @@ class FuelTransactionService {
     sortOrder?: 'asc' | 'desc';
   }): Promise<FuelTransactionsResponse> {
     try {
-      let url = buildApiUrl('pts-controllers/pump-transactions');
+      let url = buildApiUrl('fuel-transactions');
       
       if (params) {
         const queryParams = new URLSearchParams();
@@ -83,24 +81,20 @@ class FuelTransactionService {
       }
       
       const response = await apiGet<any>(url);
-      
-      // Si la respuesta tiene paginación, extraerla
+
       let pagination: FuelTransactionsPagination | undefined;
       let data: FuelTransaction[] = [];
-      
+
       if (response.successful) {
-        if (response.data && Array.isArray(response.data)) {
-          // Si es un array directo
-          data = response.data;
-        } else if (response.data && response.data.data) {
-          // Si tiene estructura { data: [], pagination: {} }
-          data = response.data.data || [];
-          if (response.data.pagination) {
-            pagination = response.data.pagination;
-          }
+        // El interceptor devuelve el body completo cuando detecta `pagination`
+        // Estructura: { data: [...], pagination: { page, limit, total, totalPages, hasNext, hasPrev } }
+        const body = response.data;
+        data = Array.isArray(body?.data) ? body.data : (Array.isArray(body) ? body : []);
+        if (body?.pagination) {
+          pagination = body.pagination;
         }
       }
-      
+
       return {
         successful: response.successful,
         data: data,
@@ -115,6 +109,33 @@ class FuelTransactionService {
         error: error instanceof Error ? error.message : 'Error desconocido'
       };
     }
+  }
+  async getRecentFuelTransactions(): Promise<FuelTransactionsResponse> {
+    try {
+      const response = await apiGet<any>(buildApiUrl('fuel-transactions'));
+      return {
+        successful: response.successful,
+        data: Array.isArray(response.data) ? response.data : [],
+        error: response.error,
+      };
+    } catch (error) {
+      return { successful: false, data: [], error: 'Error de conexión' };
+    }
+  }
+
+  async getFuelTransactionById(id: number): Promise<{ successful: boolean; data: FuelTransaction | null; error?: string }> {
+    const response = await apiGet<FuelTransaction>(buildApiUrl(`fuel-transactions/${id}`));
+    return { successful: response.successful, data: response.data || null, error: response.error };
+  }
+
+  async updateFuelTransaction(id: number, data: Partial<FuelTransaction>): Promise<{ successful: boolean; error?: string }> {
+    const response = await apiPut(buildApiUrl(`fuel-transactions/${id}`), data);
+    return { successful: response.successful, error: response.error };
+  }
+
+  async deleteFuelTransaction(id: number): Promise<{ successful: boolean; error?: string }> {
+    const response = await apiDelete(buildApiUrl(`fuel-transactions/${id}`));
+    return { successful: response.successful, error: response.error };
   }
 }
 

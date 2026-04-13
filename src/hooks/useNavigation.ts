@@ -76,6 +76,13 @@ export const useNavigation = () => {
     'sites.inactive': '/dashboard/sites/inactive',
     'dispensers': '/dashboard/dispensers',
     'dispensers.monitor': '/dashboard/dispensers/monitor',
+    'dispensers.control': '/dashboard/dispensers/control',
+    'dispensers.prices': '/dashboard/dispensers/prices',
+    'dispensers.tanks': '/dashboard/dispensers/tanks',
+    'dispensers.system': '/dashboard/dispensers/system',
+    'dispensers.hardware': '/dashboard/dispensers/hardware',
+    'dispensers.tags': '/dashboard/dispensers/tags',
+    'dispensers.reports': '/dashboard/dispensers/reports',
     'dispensers.transactions': '/dashboard/dispensers/transactions',
     'logs': '/dashboard/logs',
     'logs.actions': '/dashboard/logs/actions',
@@ -98,7 +105,22 @@ export const useNavigation = () => {
     'settings': '/dashboard/settings',
     'settings.general': '/dashboard/settings/general',
     'settings.api': '/dashboard/settings/api',
-    'settings.theme': '/dashboard/settings/theme'
+    'settings.theme': '/dashboard/settings/theme',
+    'settings.payments': '/dashboard/settings/payments',
+    'settings.appconfig': '/dashboard/settings/appconfig',
+    // Gov
+    'gov': '/dashboard/gov',
+    'gov.taxpayers': '/dashboard/gov/taxpayers',
+    'gov.taxes': '/dashboard/gov/taxes',
+    'gov.cf-config': '/dashboard/gov/cf-config',
+    // Zataca
+    'zataca': '/dashboard/zataca',
+    'zataca.main': '/dashboard/zataca/main',
+    // Products extras
+    'products.barcodes': '/dashboard/products/barcodes',
+    // Users extras
+    'users.roles': '/dashboard/users/roles',
+    'users.staft-groups': '/dashboard/users/staft-groups',
   };
 
   return {

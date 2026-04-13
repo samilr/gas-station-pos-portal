@@ -1,29 +1,24 @@
 /**
  * Tabla de mapeo de productos de combustible
- * Mapea los códigos de producto que vienen de la API a nombres internos
+ * Mapea los códigos de producto (FuelGradeName del PTS) a nombres legibles
  */
 export const FUEL_PRODUCT_MAPPING: Record<string, string> = {
-  '1-025': 'GASOLINA V-POWER',
   '1-001': 'GASOLINA REGULAR',
-  '2-025': 'DISEL V-POWER',
-  '2-001': 'DISEL REGULAR',
+  '1-025': 'GASOLINA V-POWER',
+  '2-001': 'DIESEL REGULAR',
+  '2-025': 'DIESEL V-POWER',
 };
 
 /**
- * Reemplaza el nombre del producto según la tabla de mapeo
+ * Reemplaza el código del producto según la tabla de mapeo
  * Si el producto no está en la tabla, retorna el nombre original
- * 
- * @param productName - Nombre del producto original
- * @returns Nombre del producto mapeado o el original si no existe mapeo
+ *
+ * @param productCode - Código del producto (ej: "1-025")
+ * @returns Nombre del producto legible (ej: "GASOLINA V-POWER")
  */
-export const mapFuelProductName = (productName: string | undefined | null): string => {
-  if (!productName) return '';
-  
-  // Buscar en la tabla de mapeo
-  const mappedName = FUEL_PRODUCT_MAPPING[productName.trim()];
-  
-  // Si existe mapeo, retornar el nombre mapeado, sino retornar el original
-  return mappedName || productName;
+export const mapFuelProductName = (productCode: string | undefined | null): string => {
+  if (!productCode) return '';
+
+  const mappedName = FUEL_PRODUCT_MAPPING[productCode.trim()];
+  return mappedName || productCode;
 };
-
-

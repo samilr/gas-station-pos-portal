@@ -115,9 +115,11 @@ export const apiRequest = async <T = any>(
     }
 
     // Respuesta exitosa
+    // Si el body tiene `pagination`, lo devolvemos completo para que los servicios
+    // puedan acceder a los metadatos de paginación. Si no, extraemos solo data.data.
     return {
       successful: true,
-      data: data.data || data
+      data: data.pagination ? data : (data.data ?? data)
     };
   } catch (error) {
     console.error(`Error in API request to ${url}:`, error);

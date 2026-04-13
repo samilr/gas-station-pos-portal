@@ -142,8 +142,8 @@ export const useErrorLogs = () => {
       const response = await logService.resolveError(errorId, resolvedBy);
       if (response.successful) {
         setErrorLogs(prev => prev.map(log =>
-          log.error_id.toString() === errorId
-            ? { ...log, resolved: true, resolved_by: resolvedBy, resolved_at: new Date() }
+          log.errorId.toString() === errorId
+            ? { ...log, resolved: true, resolvedBy: resolvedBy, resolvedAt: new Date() }
             : log
         ));
         return true;
