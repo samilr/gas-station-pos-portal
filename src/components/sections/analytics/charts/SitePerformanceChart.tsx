@@ -1,5 +1,6 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { Building2 } from 'lucide-react';
 import { formatCurrency } from '../../../../utils/transactionUtils';
 
 interface SitePerformanceChartProps {
@@ -8,15 +9,14 @@ interface SitePerformanceChartProps {
 }
 
 const SitePerformanceChart: React.FC<SitePerformanceChartProps> = ({ data, title }) => {
-  // Procesar datos por sitio
   const processData = () => {
     if (!data || data.length === 0) return [];
 
-    const siteMap: { [key: string]: { 
-      siteId: string; 
-      siteName: string; 
-      sales: number; 
-      transactions: number; 
+    const siteMap: { [key: string]: {
+      siteId: string;
+      siteName: string;
+      sales: number;
+      transactions: number;
       averageTicket: number;
       efficiency: number;
     } } = {};
@@ -40,20 +40,15 @@ const SitePerformanceChart: React.FC<SitePerformanceChartProps> = ({ data, title
       siteMap[siteId].transactions += 1;
     });
 
-    // Calcular métricas
     Object.values(siteMap).forEach(site => {
       site.averageTicket = site.transactions > 0 ? site.sales / site.transactions : 0;
-      // Eficiencia basada en ventas por transacción (métrica personalizada)
       site.efficiency = site.transactions > 0 ? site.sales / site.transactions : 0;
     });
 
-    return Object.values(siteMap)
-      .sort((a, b) => b.sales - a.sales)
-      .slice(0, 10); // Top 10 sitios
+    return Object.values(siteMap).sort((a, b) => b.sales - a.sales).slice(0, 10);
   };
 
   const getSiteName = (siteId: string) => {
-    // Mapeo de IDs de sitio a nombres (esto debería venir de una API o configuración)
     const siteNames: { [key: string]: string } = {
       'SITE001': 'Sucursal Centro',
       'SITE002': 'Sucursal Norte',
@@ -71,44 +66,44 @@ const SitePerformanceChart: React.FC<SitePerformanceChartProps> = ({ data, title
 
   const chartData = processData();
 
-  // Colores para las barras (gradiente de rendimiento)
   const getBarColor = (index: number) => {
-    const colors = [
-      '#10B981', // Verde para top performers
-      '#3B82F6', // Azul
-      '#8B5CF6', // Púrpura
-      '#F59E0B', // Amarillo
-      '#EF4444', // Rojo
-      '#06B6D4', // Cian
-      '#84CC16', // Lima
-      '#F97316', // Naranja
-      '#EC4899', // Rosa
-      '#6B7280'  // Gris
-    ];
+    const colors = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6B7280'];
     return colors[index % colors.length];
   };
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
-      const data = payload[0].payload;
+      const d = payload[0].payload;
       return (
-        <div className="bg-gray-900 text-white p-3 rounded-lg shadow-lg">
-          <p className="font-semibold">{data.siteName}</p>
-          <p className="text-green-400">Ventas: {formatCurrency(data.sales)}</p>
-          <p className="text-blue-400">Transacciones: {data.transactions}</p>
-          <p className="text-purple-400">Ticket Promedio: {formatCurrency(data.averageTicket)}</p>
-          <p className="text-yellow-400">Eficiencia: {data.efficiency.toFixed(2)}</p>
+        <div className="bg-white border border-gray-200 rounded-sm p-2 shadow-md text-xs">
+          <p className="font-semibold text-text-primary">{d.siteName}</p>
+          <p className="text-text-secondary">Ventas: <strong className="text-text-primary">{formatCurrency(d.sales)}</strong></p>
+          <p className="text-text-secondary">Transacciones: <strong className="text-text-primary">{d.transactions}</strong></p>
+          <p className="text-text-secondary">Ticket Promedio: <strong className="text-text-primary">{formatCurrency(d.averageTicket)}</strong></p>
+          <p className="text-text-secondary">Eficiencia: <strong className="text-text-primary">{d.efficiency.toFixed(2)}</strong></p>
         </div>
       );
     }
     return null;
   };
 
+  const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <div className="bg-white rounded-sm border border-table-border">
+      <div className="flex items-center gap-2 px-3 h-8 bg-table-header border-b border-table-border">
+        <Building2 className="w-3.5 h-3.5 text-blue-600" />
+        <span className="text-xs font-semibold text-text-primary uppercase tracking-wide">{title}</span>
+      </div>
+      <div className="p-3">{children}</div>
+    </div>
+  );
+
   if (chartData.length === 0) {
     return (
-      <div className="h-64 flex items-center justify-center">
-        <p className="text-gray-500">No hay datos de sitios disponibles</p>
-      </div>
+      <Shell>
+        <div className="h-40 flex items-center justify-center">
+          <p className="text-xs text-text-muted">No hay datos de sitios disponibles</p>
+        </div>
+      </Shell>
     );
   }
 
@@ -116,81 +111,50 @@ const SitePerformanceChart: React.FC<SitePerformanceChartProps> = ({ data, title
   const topSite = chartData[0];
 
   return (
-    <div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} layout="horizontal">
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis 
-              type="number"
-              stroke="#666"
-              fontSize={12}
-              tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-            />
-            <YAxis 
-              type="category"
-              dataKey="siteName" 
-              stroke="#666"
-              fontSize={12}
-              width={120}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="sales" radius={[0, 4, 4, 0]}>
-              {chartData.map((_, index) => (
-                <Cell key={`cell-${index}`} fill={getBarColor(index)} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-      
-      {/* Métricas de rendimiento */}
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-3 bg-green-50 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-green-600 font-medium">Top Performer</p>
-              <p className="text-lg font-bold text-green-900">{topSite.siteName}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-green-600">{formatCurrency(topSite.sales)}</p>
-              <p className="text-xs text-green-500">{topSite.transactions} trans.</p>
-            </div>
-          </div>
-        </div>
+    <Shell>
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart data={chartData} layout="horizontal">
+          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+          <XAxis
+            type="number"
+            stroke="#666"
+            tick={{ fontSize: 11 }}
+            tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+          />
+          <YAxis
+            type="category"
+            dataKey="siteName"
+            stroke="#666"
+            tick={{ fontSize: 11 }}
+            width={120}
+          />
+          <Tooltip content={<CustomTooltip />} contentStyle={{ fontSize: 12, padding: 8, border: '1px solid #e5e7eb', borderRadius: 2, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+          <Bar dataKey="sales">
+            {chartData.map((_, index) => (
+              <Cell key={`cell-${index}`} fill={getBarColor(index)} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
 
-        <div className="p-3 bg-blue-50 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-blue-600 font-medium">Ventas Totales</p>
-              <p className="text-lg font-bold text-blue-900">{formatCurrency(totalSales)}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-blue-600">{chartData.length} sitios</p>
-              <p className="text-xs text-blue-500">activos</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-3 bg-purple-50 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-purple-600 font-medium">Promedio por Sitio</p>
-              <p className="text-lg font-bold text-purple-900">
-                {formatCurrency(totalSales / chartData.length)}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-purple-600">
-                {Math.round((topSite.sales / totalSales) * 100)}%
-              </p>
-              <p className="text-xs text-purple-500">del total</p>
-            </div>
-          </div>
-        </div>
+      <div className="mt-2 flex flex-wrap gap-3">
+        <span className="flex items-center gap-1 text-xs text-text-secondary">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+          Top Performer <strong className="text-text-primary">{topSite.siteName}</strong>
+          <span className="text-text-muted">({formatCurrency(topSite.sales)})</span>
+        </span>
+        <span className="flex items-center gap-1 text-xs text-text-secondary">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+          Ventas Totales <strong className="text-text-primary">{formatCurrency(totalSales)}</strong>
+          <span className="text-text-muted">({chartData.length} sitios)</span>
+        </span>
+        <span className="flex items-center gap-1 text-xs text-text-secondary">
+          <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+          Promedio por Sitio <strong className="text-text-primary">{formatCurrency(totalSales / chartData.length)}</strong>
+          <span className="text-text-muted">({Math.round((topSite.sales / totalSales) * 100)}% top)</span>
+        </span>
       </div>
-    </div>
+    </Shell>
   );
 };
 

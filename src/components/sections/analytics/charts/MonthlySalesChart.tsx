@@ -1,5 +1,6 @@
 import React from 'react';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { Calendar } from 'lucide-react';
 import { formatCurrency } from '../../../../utils/transactionUtils';
 
 interface MonthlySalesChartProps {
@@ -8,14 +9,13 @@ interface MonthlySalesChartProps {
 }
 
 const MonthlySalesChart: React.FC<MonthlySalesChartProps> = ({ data, title }) => {
-  // Procesar datos mensuales
   const processData = () => {
     if (!data || data.length === 0) return [];
 
-    const monthlyData: { [key: string]: { 
-      month: string; 
-      sales: number; 
-      transactions: number; 
+    const monthlyData: { [key: string]: {
+      month: string;
+      sales: number;
+      transactions: number;
       averageTicket: number;
       monthNumber: number;
     } } = {};
@@ -39,7 +39,6 @@ const MonthlySalesChart: React.FC<MonthlySalesChartProps> = ({ data, title }) =>
       monthlyData[monthKey].transactions += 1;
     });
 
-    // Calcular ticket promedio
     Object.values(monthlyData).forEach(month => {
       month.averageTicket = month.transactions > 0 ? month.sales / month.transactions : 0;
     });
@@ -51,28 +50,39 @@ const MonthlySalesChart: React.FC<MonthlySalesChartProps> = ({ data, title }) =>
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
-      const data = payload[0].payload;
+      const d = payload[0].payload;
       return (
-        <div className="bg-gray-900 text-white p-3 rounded-lg shadow-lg">
-          <p className="font-semibold">{data.month}</p>
-          <p className="text-green-400">Ventas: {formatCurrency(data.sales)}</p>
-          <p className="text-blue-400">Transacciones: {data.transactions}</p>
-          <p className="text-purple-400">Ticket Promedio: {formatCurrency(data.averageTicket)}</p>
+        <div className="bg-white border border-gray-200 rounded-sm p-2 shadow-md text-xs">
+          <p className="font-semibold text-text-primary">{d.month}</p>
+          <p className="text-text-secondary">Ventas: <strong className="text-text-primary">{formatCurrency(d.sales)}</strong></p>
+          <p className="text-text-secondary">Transacciones: <strong className="text-text-primary">{d.transactions}</strong></p>
+          <p className="text-text-secondary">Ticket Promedio: <strong className="text-text-primary">{formatCurrency(d.averageTicket)}</strong></p>
         </div>
       );
     }
     return null;
   };
 
+  const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <div className="bg-white rounded-sm border border-table-border">
+      <div className="flex items-center gap-2 px-3 h-8 bg-table-header border-b border-table-border">
+        <Calendar className="w-3.5 h-3.5 text-blue-600" />
+        <span className="text-xs font-semibold text-text-primary uppercase tracking-wide">{title}</span>
+      </div>
+      <div className="p-3">{children}</div>
+    </div>
+  );
+
   if (chartData.length === 0) {
     return (
-      <div className="h-64 flex items-center justify-center">
-        <p className="text-gray-500">No hay datos mensuales disponibles</p>
-      </div>
+      <Shell>
+        <div className="h-40 flex items-center justify-center">
+          <p className="text-xs text-text-muted">No hay datos mensuales disponibles</p>
+        </div>
+      </Shell>
     );
   }
 
-  // Calcular crecimiento mensual
   const calculateGrowth = () => {
     if (chartData.length < 2) return 0;
     const current = chartData[chartData.length - 1].sales;
@@ -83,100 +93,65 @@ const MonthlySalesChart: React.FC<MonthlySalesChartProps> = ({ data, title }) =>
   const growth = calculateGrowth();
   const isPositiveGrowth = growth > 0;
 
+  const bestMonth = chartData.reduce((max, month) => month.sales > max.sales ? month : max);
+  const avgMonthlySales = chartData.reduce((sum, month) => sum + month.sales, 0) / chartData.length;
+  const avgTicket = chartData.reduce((sum, month) => sum + month.averageTicket, 0) / chartData.length;
+
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+    <Shell>
+      <div className="flex flex-wrap items-center gap-3 mb-2">
         {chartData.length >= 2 && (
-          <div className={`flex items-center px-3 py-1 rounded-full text-sm ${
-            isPositiveGrowth 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-red-100 text-red-800'
-          }`}>
-            <span className="mr-1">
-              {isPositiveGrowth ? '↗' : '↘'}
-            </span>
-            {Math.abs(growth).toFixed(1)}% vs mes anterior
-          </div>
+          <span className="flex items-center gap-1 text-xs text-text-secondary">
+            <span className={`w-1.5 h-1.5 rounded-full ${isPositiveGrowth ? 'bg-green-500' : 'bg-red-500'}`} />
+            vs mes anterior <strong className="text-text-primary">{isPositiveGrowth ? '+' : ''}{growth.toFixed(1)}%</strong>
+          </span>
         )}
+        <span className="flex items-center gap-1 text-xs text-text-secondary">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+          Mejor Mes <strong className="text-text-primary">{bestMonth.month}</strong>
+        </span>
+        <span className="flex items-center gap-1 text-xs text-text-secondary">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+          Promedio Mensual <strong className="text-text-primary">{formatCurrency(avgMonthlySales)}</strong>
+        </span>
+        <span className="flex items-center gap-1 text-xs text-text-secondary">
+          <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+          Ticket Promedio <strong className="text-text-primary">{formatCurrency(avgTicket)}</strong>
+        </span>
       </div>
-      
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis 
-              dataKey="month" 
-              stroke="#666"
-              fontSize={12}
-            />
-            <YAxis 
-              yAxisId="sales"
-              stroke="#666"
-              fontSize={12}
-              tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-            />
-            <YAxis 
-              yAxisId="ticket"
-              orientation="right"
-              stroke="#666"
-              fontSize={12}
-              tickFormatter={(value) => `$${value.toFixed(0)}`}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend />
-            <Bar 
-              yAxisId="sales"
-              dataKey="sales" 
-              fill="#3B82F6" 
-              name="Ventas"
-              radius={[2, 2, 0, 0]}
-            />
-            <Line 
-              yAxisId="ticket"
-              type="monotone" 
-              dataKey="averageTicket" 
-              stroke="#8B5CF6" 
-              strokeWidth={3}
-              dot={{ fill: '#8B5CF6', strokeWidth: 2, r: 4 }}
-              name="Ticket Promedio"
-            />
-          </ComposedChart>
-        </ResponsiveContainer>
-      </div>
-      
-      {/* Resumen mensual */}
-      <div className="mt-4 grid grid-cols-3 gap-4">
-        <div className="text-center p-3 bg-blue-50 rounded-lg">
-          <p className="text-sm text-blue-600 font-medium">Mejor Mes</p>
-          <p className="text-lg font-bold text-blue-900">
-            {chartData.length > 0 ? chartData.reduce((max, month) => 
-              month.sales > max.sales ? month : max
-            ).month : 'N/A'}
-          </p>
-        </div>
-        <div className="text-center p-3 bg-green-50 rounded-lg">
-          <p className="text-sm text-green-600 font-medium">Promedio Mensual</p>
-          <p className="text-lg font-bold text-green-900">
-            {formatCurrency(
-              chartData.length > 0 
-                ? chartData.reduce((sum, month) => sum + month.sales, 0) / chartData.length 
-                : 0
-            )}
-          </p>
-        </div>
-        <div className="text-center p-3 bg-purple-50 rounded-lg">
-          <p className="text-sm text-purple-600 font-medium">Ticket Promedio</p>
-          <p className="text-lg font-bold text-purple-900">
-            {formatCurrency(
-              chartData.length > 0 
-                ? chartData.reduce((sum, month) => sum + month.averageTicket, 0) / chartData.length 
-                : 0
-            )}
-          </p>
-        </div>
-      </div>
-    </div>
+
+      <ResponsiveContainer width="100%" height={300}>
+        <ComposedChart data={chartData}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+          <XAxis dataKey="month" stroke="#666" tick={{ fontSize: 11 }} />
+          <YAxis
+            yAxisId="sales"
+            stroke="#666"
+            tick={{ fontSize: 11 }}
+            tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+          />
+          <YAxis
+            yAxisId="ticket"
+            orientation="right"
+            stroke="#666"
+            tick={{ fontSize: 11 }}
+            tickFormatter={(value) => `$${value.toFixed(0)}`}
+          />
+          <Tooltip content={<CustomTooltip />} contentStyle={{ fontSize: 12, padding: 8, border: '1px solid #e5e7eb', borderRadius: 2, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+          <Legend wrapperStyle={{ fontSize: 11 }} />
+          <Bar yAxisId="sales" dataKey="sales" fill="#3B82F6" name="Ventas" />
+          <Line
+            yAxisId="ticket"
+            type="monotone"
+            dataKey="averageTicket"
+            stroke="#8B5CF6"
+            strokeWidth={2}
+            dot={{ fill: '#8B5CF6', strokeWidth: 2, r: 3 }}
+            name="Ticket Promedio"
+          />
+        </ComposedChart>
+      </ResponsiveContainer>
+    </Shell>
   );
 };
 

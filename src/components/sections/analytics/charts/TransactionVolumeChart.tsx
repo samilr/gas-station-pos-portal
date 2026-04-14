@@ -1,5 +1,6 @@
 import React from 'react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { Activity } from 'lucide-react';
 import { formatNumber } from '../../../../utils/dashboardUtils';
 
 
@@ -9,13 +10,12 @@ interface TransactionVolumeChartProps {
 }
 
 const TransactionVolumeChart: React.FC<TransactionVolumeChartProps> = ({ data, title }) => {
-  // Procesar datos por día
   const processData = () => {
     if (!data || data.length === 0) return [];
 
-    const dailyData: { [key: string]: { 
-      date: string; 
-      transactions: number; 
+    const dailyData: { [key: string]: {
+      date: string;
+      transactions: number;
       uniqueCustomers: number;
       dayOfWeek: string;
     } } = {};
@@ -35,7 +35,6 @@ const TransactionVolumeChart: React.FC<TransactionVolumeChartProps> = ({ data, t
       }
 
       dailyData[dateKey].transactions += 1;
-      // Asumiendo que tenemos un campo de customer ID
       if (transaction.customerId) {
         dailyData[dateKey].uniqueCustomers += 1;
       }
@@ -47,98 +46,102 @@ const TransactionVolumeChart: React.FC<TransactionVolumeChartProps> = ({ data, t
         const dateB = new Date(b.date.split('/').reverse().join('-'));
         return dateA.getTime() - dateB.getTime();
       })
-      .slice(-30); // Últimos 30 días
+      .slice(-30);
   };
 
   const chartData = processData();
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
-      const data = payload[0].payload;
+      const d = payload[0].payload;
       return (
-        <div className="bg-gray-900 text-white p-3 rounded-lg shadow-lg">
-          <p className="font-semibold">{data.date} ({data.dayOfWeek})</p>
-          <p className="text-blue-400">Transacciones: {data.transactions}</p>
-          <p className="text-green-400">Clientes únicos: {data.uniqueCustomers}</p>
-          <p className="text-gray-400">Promedio por cliente: {(data.transactions / data.uniqueCustomers).toFixed(2)}</p>
+        <div className="bg-white border border-gray-200 rounded-sm p-2 shadow-md text-xs">
+          <p className="font-semibold text-text-primary">{d.date} ({d.dayOfWeek})</p>
+          <p className="text-text-secondary">Transacciones: <strong className="text-text-primary">{d.transactions}</strong></p>
+          <p className="text-text-secondary">Clientes únicos: <strong className="text-text-primary">{d.uniqueCustomers}</strong></p>
+          {d.uniqueCustomers > 0 && (
+            <p className="text-text-secondary">Promedio por cliente: <strong className="text-text-primary">{(d.transactions / d.uniqueCustomers).toFixed(2)}</strong></p>
+          )}
         </div>
       );
     }
     return null;
   };
 
+  const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <div className="bg-white rounded-sm border border-table-border">
+      <div className="flex items-center gap-2 px-3 h-8 bg-table-header border-b border-table-border">
+        <Activity className="w-3.5 h-3.5 text-blue-600" />
+        <span className="text-xs font-semibold text-text-primary uppercase tracking-wide">{title}</span>
+      </div>
+      <div className="p-3">{children}</div>
+    </div>
+  );
+
   if (chartData.length === 0) {
     return (
-      <div className="h-64 flex items-center justify-center">
-        <p className="text-gray-500">No hay datos de volumen disponibles</p>
-      </div>
+      <Shell>
+        <div className="h-40 flex items-center justify-center">
+          <p className="text-xs text-text-muted">No hay datos de volumen disponibles</p>
+        </div>
+      </Shell>
     );
   }
 
-  // Calcular métricas
   const totalTransactions = chartData.reduce((sum, day) => sum + day.transactions, 0);
   const averageDaily = totalTransactions / chartData.length;
   const peakDay = chartData.reduce((max, day) => day.transactions > max.transactions ? day : max);
   const lowDay = chartData.reduce((min, day) => day.transactions < min.transactions ? day : min);
 
   return (
-    <div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis 
-              dataKey="date" 
-              stroke="#666"
-              fontSize={12}
-              interval={Math.floor(chartData.length / 8)}
-            />
-            <YAxis 
-              stroke="#666"
-              fontSize={12}
-              tickFormatter={(value) => formatNumber(value)}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Area 
-              type="monotone" 
-              dataKey="transactions" 
-              stroke="#3B82F6" 
-              fill="url(#volumeGradient)"
-              strokeWidth={2}
-            />
-            <defs>
-              <linearGradient id="volumeGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1}/>
-              </linearGradient>
-            </defs>
-          </AreaChart>
-        </ResponsiveContainer>
+    <Shell>
+      <div className="flex flex-wrap items-center gap-3 mb-2">
+        <span className="flex items-center gap-1 text-xs text-text-secondary">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+          Total <strong className="text-text-primary">{formatNumber(totalTransactions)}</strong>
+        </span>
+        <span className="flex items-center gap-1 text-xs text-text-secondary">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+          Promedio Diario <strong className="text-text-primary">{averageDaily.toFixed(2)}</strong>
+        </span>
+        <span className="flex items-center gap-1 text-xs text-text-secondary">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+          Día Pico <strong className="text-text-primary">{peakDay.date}</strong>
+          <span className="text-text-muted">({peakDay.transactions})</span>
+        </span>
+        <span className="flex items-center gap-1 text-xs text-text-secondary">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+          Día Bajo <strong className="text-text-primary">{lowDay.date}</strong>
+          <span className="text-text-muted">({lowDay.transactions})</span>
+        </span>
       </div>
-      
-      {/* Métricas de volumen */}
-      <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="text-center p-3 bg-blue-50 rounded-lg">
-          <p className="text-sm text-blue-600 font-medium">Total</p>
-          <p className="text-lg font-bold text-blue-900">{formatNumber(totalTransactions)}</p>
-        </div>
-        <div className="text-center p-3 bg-green-50 rounded-lg">
-          <p className="text-sm text-green-600 font-medium">Promedio Diario</p>
-          <p className="text-lg font-bold text-green-900">{averageDaily.toFixed(2)}</p>
-        </div>
-        <div className="text-center p-3 bg-orange-50 rounded-lg">
-          <p className="text-sm text-orange-600 font-medium">Día Pico</p>
-          <p className="text-lg font-bold text-orange-900">{peakDay.date}</p>
-          <p className="text-xs text-orange-500">{peakDay.transactions.toFixed(2)}</p>
-        </div>
-        <div className="text-center p-3 bg-red-50 rounded-lg">
-          <p className="text-sm text-red-600 font-medium">Día Bajo</p>
-          <p className="text-lg font-bold text-red-900">{lowDay.date}</p>
-          <p className="text-xs text-red-500">{lowDay.transactions.toFixed(2)}</p>
-        </div>
-      </div>
-    </div>
+
+      <ResponsiveContainer width="100%" height={300}>
+        <AreaChart data={chartData}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+          <XAxis
+            dataKey="date"
+            stroke="#666"
+            tick={{ fontSize: 11 }}
+            interval={Math.floor(chartData.length / 8)}
+          />
+          <YAxis
+            stroke="#666"
+            tick={{ fontSize: 11 }}
+            tickFormatter={(value) => formatNumber(value)}
+          />
+          <Tooltip content={<CustomTooltip />} contentStyle={{ fontSize: 12, padding: 8, border: '1px solid #e5e7eb', borderRadius: 2, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+          <Area
+            type="monotone"
+            dataKey="transactions"
+            stroke="#3B82F6"
+            fill="#3B82F6"
+            fillOpacity={0.2}
+            strokeWidth={2}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </Shell>
   );
 };
 

@@ -536,68 +536,97 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
             <table className="w-full">
               <thead className="bg-table-header border-b border-table-border">
                 <tr>
-                  {renderSortableHeader('transNumber', 'Transacción')}
+                  <th className="w-8 px-2 h-8"></th>
+                  {renderSortableHeader('transNumber', 'Transacción / e-NCF')}
                   {renderSortableHeader('transDate', 'Fecha')}
                   {renderSortableHeader('siteId', 'Sucursal')}
+                  <th className="text-left px-2 h-8 text-xs font-medium text-text-secondary uppercase tracking-wide">Term.</th>
                   {renderSortableHeader('staftId', 'Vendedor')}
                   {renderSortableHeader('taxpayerName', 'Cliente')}
+                  <th className="text-left px-2 h-8 text-xs font-medium text-text-secondary uppercase tracking-wide">Tipo</th>
                   {renderSortableHeader('total', 'Total')}
                 </tr>
               </thead>
               <tbody>
-                {paginatedTransactions.map((transaction) => (
-                  <tr
-                    key={transaction.transNumber}
-                    className={`h-8 max-h-8 border-b border-table-border hover:bg-row-hover cursor-pointer transition-colors ${transaction.isReturn ? 'text-red-600' : ''} ${transaction.status === 0 ? 'opacity-50' : ''}`}
-                    onClick={() => setSelectedTransaction(transaction)}
-                  >
-                    <td className="px-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[180px]">
-                      <div className="flex items-center gap-1.5">
-                        <StatusDot color={getStatusDot(transaction.cfStatus)} label="" />
-                        <span className={`font-mono text-sm ${transaction.isReturn ? 'text-red-600' : 'text-text-primary'}`}>
-                          {transaction.transNumber}
+                {paginatedTransactions.map((transaction) => {
+                  const isAnulada = transaction.status === 0;
+                  const textColor = transaction.isReturn ? 'text-red-600' : isAnulada ? 'text-text-muted line-through' : 'text-text-primary';
+                  const mutedColor = transaction.isReturn ? 'text-red-500' : 'text-text-muted';
+
+                  return (
+                    <tr
+                      key={transaction.transNumber}
+                      className={`h-8 max-h-8 border-b border-table-border hover:bg-row-hover cursor-pointer transition-colors ${isAnulada ? 'bg-gray-50' : ''}`}
+                      onClick={() => setSelectedTransaction(transaction)}
+                      title={isAnulada ? 'Transacción anulada' : ''}
+                    >
+                      {/* Status indicator */}
+                      <td className="px-2 text-center">
+                        <span className="inline-flex">
+                          <StatusDot color={getStatusDot(transaction.cfStatus)} label="" />
                         </span>
-                        <span className="text-text-muted">·</span>
-                        <span className={`text-sm ${transaction.isReturn ? 'text-red-500' : 'text-text-muted'}`}>
-                          {transaction.cfNumber}
-                        </span>
-                        {transaction.status === 0 && (
-                          <StatusDot color="gray" label="Anulada" />
+                      </td>
+
+                      {/* Transaction + e-NCF */}
+                      <td className="px-2 text-sm whitespace-nowrap overflow-hidden max-w-[220px]">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`font-mono font-medium ${textColor}`}>{transaction.transNumber}</span>
+                          <span className={mutedColor}>·</span>
+                          <span className={`font-mono text-xs ${mutedColor} truncate`}>{transaction.cfNumber}</span>
+                          {isAnulada && <StatusDot color="gray" label="Anulada" />}
+                          {transaction.isReturn && <StatusDot color="red" label="Devolución" />}
+                        </div>
+                      </td>
+
+                      {/* Date */}
+                      <td className="px-2 text-sm whitespace-nowrap">
+                        <span className={textColor}>{formatDateOnly(transaction.transDate)}</span>
+                        <span className={`${mutedColor} ml-1.5`}>{formatTimeOnly(transaction.transDate)}</span>
+                      </td>
+
+                      {/* Site */}
+                      <td className="px-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[140px]">
+                        <span className={`${textColor} font-mono text-xs`}>{transaction.siteId}</span>
+                        {transaction.siteName && (
+                          <span className={`${mutedColor} ml-1.5`}>{transaction.siteName}</span>
                         )}
-                      </div>
-                    </td>
-                    <td className="px-2 text-sm whitespace-nowrap">
-                      <span className={transaction.isReturn ? 'text-red-600' : 'text-text-primary'}>
-                        {formatDateOnly(transaction.transDate)} {formatTimeOnly(transaction.transDate)}
-                      </span>
-                    </td>
-                    <td className="px-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[140px]">
-                      <span className={transaction.isReturn ? 'text-red-600' : 'text-text-primary'}>
-                        {transaction.siteId}
-                      </span>
-                      <span className="text-text-muted"> · T{transaction.terminalId}</span>
-                    </td>
-                    <td className="px-2 text-sm whitespace-nowrap">
-                      <span className={transaction.isReturn ? 'text-red-600' : 'text-text-primary'}>
-                        {transaction.staftName}
-                      </span>
-                      <span className="text-text-muted"> · {transaction.staftId} · T{transaction.shift}</span>
-                    </td>
-                    <td className="px-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[160px]">
-                      <span className={transaction.isReturn ? 'text-red-600' : 'text-text-primary'}>
-                        {transaction.taxpayerName || 'Consumidor Final'}
-                      </span>
-                      {transaction.taxpayerId && (
-                        <span className="text-text-muted"> · {transaction.taxpayerId}</span>
-                      )}
-                    </td>
-                    <td className="px-2 text-sm whitespace-nowrap text-right font-mono font-semibold">
-                      <span className={transaction.isReturn ? 'text-red-600' : 'text-text-primary'}>
-                        {transaction.isReturn ? `-${formatCurrency(transaction.total)}` : formatCurrency(transaction.total)}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+
+                      {/* Terminal */}
+                      <td className="px-2 text-sm whitespace-nowrap">
+                        <span className={`${textColor} font-mono`}>T{transaction.terminalId}</span>
+                        <span className={`${mutedColor} ml-1`}>·</span>
+                        <span className={`${mutedColor} ml-1`} title="Turno">t{transaction.shift}</span>
+                      </td>
+
+                      {/* Vendor */}
+                      <td className="px-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[140px]">
+                        <span className={textColor}>{transaction.staftName}</span>
+                        <span className={`${mutedColor} ml-1 text-xs font-mono`}>#{transaction.staftId}</span>
+                      </td>
+
+                      {/* Customer */}
+                      <td className="px-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[180px]">
+                        <span className={textColor}>{transaction.taxpayerName || 'Consumidor Final'}</span>
+                        {transaction.taxpayerId && (
+                          <span className={`${mutedColor} ml-1.5 text-xs font-mono`}>{transaction.taxpayerId}</span>
+                        )}
+                      </td>
+
+                      {/* CF Type */}
+                      <td className="px-2 text-xs whitespace-nowrap">
+                        <span className={`${mutedColor} font-mono px-1.5 py-0.5 bg-gray-100 rounded-sm`}>{transaction.cfType}</span>
+                      </td>
+
+                      {/* Total */}
+                      <td className="px-2 text-sm whitespace-nowrap text-right font-mono font-bold tabular-nums">
+                        <span className={transaction.isReturn ? 'text-red-600' : 'text-text-primary'}>
+                          {transaction.isReturn ? `-${formatCurrency(transaction.total)}` : formatCurrency(transaction.total)}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

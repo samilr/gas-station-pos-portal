@@ -8,21 +8,25 @@ import {
   Undo2,
   Download,
   Printer,
+  User,
+  Building2,
+  Calendar,
+  Clock9,
+  Monitor,
+  Receipt,
 } from "lucide-react";
 import {
-  getStatusText,
-  getStatusColor,
-  getPaymentTypeColor,
   getCfTypeText,
   formatDate,
   formatCurrency,
 } from "../../../utils/transactionUtils";
 import { formatDateOnly } from "../../../utils/dateUtils";
-import { ITransactionResume } from "../../../types/transaction";
+import { ITransactionResume, CFStatus } from "../../../types/transaction";
 import pdfService from "../../../services/pdfService";
 import toast from "react-hot-toast";
+import StatusDot from "../../ui/StatusDot";
+import { CompactButton } from "../../ui";
 
-// Componente QR
 const QRCodeComponent: React.FC<{ url: string; size?: number }> = ({
   url,
   size = 128,
@@ -36,63 +40,78 @@ const QRCodeComponent: React.FC<{ url: string; size?: number }> = ({
         QRCode.toDataURL(url, {
           width: size,
           margin: 2,
-          color: {
-            dark: "#000000",
-            light: "#FFFFFF",
-          },
+          color: { dark: "#000000", light: "#FFFFFF" },
         })
-          .then((dataUrl) => {
-            setQrDataUrl(dataUrl);
-            setError("");
-          })
-          .catch((err) => {
-            console.error("Error generando QR:", err);
-            setError("Error al generar el código QR");
-          });
+          .then((dataUrl) => { setQrDataUrl(dataUrl); setError(""); })
+          .catch((err) => { console.error("Error generando QR:", err); setError("Error al generar el código QR"); });
       });
     }
   }, [url, size]);
 
   if (error) {
     return (
-      <div className="flex items-center justify-center w-32 h-32 border border-red-200 rounded-sm bg-red-50">
-        <div className="text-center">
-          <div className="w-8 h-8 text-red-500 mx-auto mb-2">⚠️</div>
-          <p className="text-xs text-red-600">Error QR</p>
-        </div>
+      <div className="flex items-center justify-center border border-red-200 rounded-sm bg-red-50" style={{ width: size, height: size }}>
+        <p className="text-2xs text-red-600">Error QR</p>
       </div>
     );
   }
 
   if (!qrDataUrl) {
     return (
-      <div className="flex items-center justify-center w-32 h-32 border border-gray-200 rounded-sm bg-gray-50">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center border border-gray-200 rounded-sm bg-gray-50" style={{ width: size, height: size }}>
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center space-y-2">
-      <img
-        src={qrDataUrl}
-        alt="Código QR"
-        className="border border-gray-200 rounded-sm cursor-pointer hover:opacity-80 transition-opacity"
-        style={{ width: size, height: size }}
-        onClick={() => {
-          // Abrir directamente el enlace sin pasar por página intermedia
-          const link = document.createElement("a");
-          link.href = url;
-          link.target = "_blank";
-          link.rel = "noopener noreferrer";
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }}
-        title="Haz click para abrir la URL"
-      />
-    </div>
+    <img
+      src={qrDataUrl}
+      alt="QR"
+      className="border border-gray-200 rounded-sm cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
+      style={{ width: size, height: size }}
+      onClick={() => {
+        const link = document.createElement("a");
+        link.href = url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }}
+      title="Abrir QR"
+    />
   );
+};
+
+const getStatusDotColor = (cfStatus: number) => {
+  switch (cfStatus) {
+    case CFStatus.ACCEPTED:
+    case CFStatus.ACCEPTED_ALT:
+      return "green";
+    case CFStatus.REJECTED:
+      return "red";
+    case CFStatus.PENDING:
+    case 0: case 1: case 5: case 6: case 7: case 8:
+      return "yellow";
+    default:
+      return "gray";
+  }
+};
+
+const getStatusLabel = (cfStatus: number) => {
+  switch (cfStatus) {
+    case CFStatus.ACCEPTED:
+    case CFStatus.ACCEPTED_ALT:
+      return "Aceptada";
+    case CFStatus.REJECTED:
+      return "Rechazada";
+    case CFStatus.PENDING:
+    case 0: case 1: case 5: case 6: case 7: case 8:
+      return "Pendiente";
+    default:
+      return "Desconocido";
+  }
 };
 
 interface TransactionModalProps {
@@ -115,288 +134,195 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
   const handlePrintTransaction = async (transaction: ITransactionResume) => {
     try {
       const pdfUrl = await pdfService.generateTransactionPDF(transaction, true);
-
-      // Crear una nueva ventana para imprimir
       const printWindow = window.open(pdfUrl, "_blank");
-
       if (printWindow) {
-        printWindow.onload = () => {
-          printWindow.print();
-        };
+        printWindow.onload = () => { printWindow.print(); };
       } else {
-        // Si no se puede abrir la ventana, descargar el PDF
         await pdfService.generateTransactionPDF(transaction, false);
       }
     } catch (error) {
       console.error("Error al generar el PDF:", error);
-      toast.error("Error al generar el PDF de la transacción", {
-        duration: 5000,
-        icon: "❌",
-      });
+      toast.error("Error al generar el PDF", { duration: 5000, icon: "❌" });
     }
   };
 
   const handleDownloadTrasaction = async (transaction: ITransactionResume) => {
     try {
-
       await pdfService.generateTransactionPDF(transaction, false);
-
     } catch (error) {
       console.error("Error al descargar el PDF:", error);
-      toast.error("Error al descargar el PDF de la transacción", {
-        duration: 5000,
-        icon: "❌",
-      });
+      toast.error("Error al descargar el PDF", { duration: 5000, icon: "❌" });
     }
   };
 
   if (!isOpen) return null;
 
+  const InfoRow = ({ label, value, mono = false, danger = false }: { label: string; value: React.ReactNode; mono?: boolean; danger?: boolean }) => (
+    <div className="flex justify-between items-center gap-2 py-0.5">
+      <span className={`text-xs ${danger ? 'text-red-600' : 'text-text-muted'} flex-shrink-0`}>{label}</span>
+      <span className={`text-sm ${danger ? 'text-red-600 font-medium' : 'text-text-primary font-medium'} ${mono ? 'font-mono' : ''} truncate`}>{value}</span>
+    </div>
+  );
+
+  const sectionHeaderClass = "flex items-center gap-2 px-3 h-7 bg-table-header border-b border-table-border";
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-sm max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-          <div className="flex items-center space-x-2">
-            <CreditCard className="w-4 h-4 text-blue-600" />
-            <div>
-              <h3 className="text-base font-semibold text-gray-900">
-                Detalles de Transacción
-              </h3>
-              <p className="text-xs text-text-muted">{transaction.transNumber}</p>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-sm w-full max-w-[1100px] max-h-[92vh] overflow-hidden shadow-xl flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 h-11 border-b border-gray-200 flex-shrink-0 bg-gray-50">
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 bg-blue-100 rounded-sm flex items-center justify-center">
+              <CreditCard className="w-4 h-4 text-blue-600" />
             </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div className="text-right">
-              <p className="text-sm font-semibold text-gray-900">
+            <div>
+              <h3 className="text-sm font-semibold text-text-primary">
                 {getCfTypeText(transaction.cfType)}
-              </p>
-              <div className="flex items-center space-x-3">
-                {transaction.cfValidity && (
-                  <span className="text-xs text-text-muted">
-                    Válida hasta: <span className="font-semibold text-gray-900">{formatDateOnly(transaction.cfValidity)}</span>
-                  </span>
-                )}
-                <span
-                  className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${getStatusColor(
-                    transaction.cfStatus
-                  )}`}
-                >
-                  {getStatusText(transaction.cfStatus)}
-                </span>
+              </h3>
+              <div className="flex items-center gap-2 text-2xs text-text-muted">
+                <span className="font-mono">{transaction.transNumber}</span>
+                <span>·</span>
+                <span className="font-mono">{transaction.cfNumber}</span>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-1 hover:bg-gray-100 rounded-sm transition-colors"
-            >
-              <X className="w-4 h-4 text-gray-500" />
+          </div>
+          <div className="flex items-center gap-3">
+            <StatusDot color={getStatusDotColor(transaction.cfStatus)} label={getStatusLabel(transaction.cfStatus)} />
+            {transaction.cfValidity && (
+              <span className="text-2xs text-text-muted">
+                Válida hasta <span className="font-semibold text-text-primary">{formatDateOnly(transaction.cfValidity)}</span>
+              </span>
+            )}
+            <button onClick={onClose} className="h-6 w-6 flex items-center justify-center rounded-sm hover:bg-gray-100">
+              <X className="w-4 h-4 text-text-secondary" />
             </button>
           </div>
         </div>
 
-        {/* Modal Content */}
-        <div className="p-4 space-y-3">
-          {/* Transaction Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <div className="space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-xs text-text-muted">
-                    Número de Transacción:
-                  </span>
-                  <span className="text-xs font-medium">
-                    {transaction.transNumber}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-xs text-text-muted">
-                    Número de e-NCF:
-                  </span>
-                  <span className="text-xs font-medium">
-                    {transaction.cfNumber}
-                  </span>
-                </div>
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-3">
+          {/* Reversed warning banner */}
+          {transaction.returnCfNumber && transaction.returnTransNUmber && (
+            <div className="mb-2 bg-red-50 border border-red-200 rounded-sm px-3 py-2 flex items-center gap-3">
+              <Undo2 className="w-4 h-4 text-red-600 flex-shrink-0" />
+              <div className="text-xs">
+                <span className="text-red-600 font-semibold">Transacción reversada:</span>
+                <span className="ml-2 font-mono text-red-700">{transaction.returnTransNUmber}</span>
+                <span className="text-red-500 mx-1">·</span>
+                <span className="font-mono text-red-700">{transaction.returnCfNumber}</span>
+              </div>
+            </div>
+          )}
 
-                {transaction.returnCfNumber && transaction.returnTransNUmber && (
-                  <>
-                <div className="flex justify-between">
-                  <span className="text-xs text-red-600">
-                    Transacción Reversada:
-                  </span>
-                  <span className="text-xs text-red-600 font-medium">
-                    {transaction.returnTransNUmber}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-xs text-red-600">
-                    e-NCF Reversado:
-                  </span>
-                  <span className="text-xs text-red-600 font-medium">
-                    {transaction.returnCfNumber}
-                  </span>
-                </div>
-                  </>
-                )}
-
-                <div className="flex justify-between">
-                  <span className="text-xs text-text-muted">Fecha:</span>
-                  <span className="text-xs font-medium">
-                    {formatDate(transaction.transDate)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-xs text-text-muted">Vendedor:</span>
-                  <span className="text-xs font-medium">
-                    {transaction.staftId + " - " + transaction.staftName}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-xs text-text-muted">Turno:</span>
-                  <span className="text-xs font-medium">
-                    {transaction.shift}
-                  </span>
-                </div>
-
-                <div className="flex justify-between">
-                  <span className="text-xs text-text-muted">Terminal:</span>
-                  <span className="text-xs font-medium">
-                    {transaction.terminalId}
-                  </span>
-                </div>
-
-                <div className="flex justify-between">
-                  <span className="text-xs text-text-muted">Cliente:</span>
-                  <span className="text-xs font-medium">
-                    {transaction.taxpayerName || "Consumidor Final"}
-                  </span>
-                </div>
-
-                {transaction.taxpayerName && (
-                  <>
-                    <div className="flex justify-between">
-                      <span className="text-xs text-text-muted">RNC/Cédula:</span>
-                      <span className="text-xs font-medium">
-                        {transaction.taxpayerId}
-                      </span>
-                    </div>
-                  </>
-                )}
-
+          {/* Top row: 3 columns - General / Totals / QR */}
+          <div className="grid grid-cols-12 gap-2 mb-2">
+            {/* General info - 5 cols */}
+            <div className="col-span-12 lg:col-span-5 bg-white border border-table-border rounded-sm">
+              <div className={sectionHeaderClass}>
+                <Receipt className="w-3.5 h-3.5 text-blue-600" />
+                <span className="text-xs font-semibold text-text-primary uppercase tracking-wide">Información General</span>
+              </div>
+              <div className="p-3 grid grid-cols-2 gap-x-4 gap-y-0">
+                <InfoRow label="Transacción" value={transaction.transNumber} mono />
+                <InfoRow label="e-NCF" value={transaction.cfNumber} mono />
+                <InfoRow label="Fecha" value={formatDate(transaction.transDate)} />
+                <InfoRow label="Terminal" value={transaction.terminalId} />
+                <InfoRow label="Sucursal" value={transaction.siteId} />
+                <InfoRow label="Turno" value={transaction.shift} />
+                <InfoRow label="Vendedor" value={`${transaction.staftId} - ${transaction.staftName}`} />
+                <InfoRow label="Cliente" value={transaction.taxpayerName || "Consumidor Final"} />
+                {transaction.taxpayerId && <InfoRow label="RNC/Cédula" value={transaction.taxpayerId} mono />}
               </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="space-y-1">
+            {/* Totals - 3 cols */}
+            <div className="col-span-6 lg:col-span-3 bg-white border border-table-border rounded-sm">
+              <div className={sectionHeaderClass}>
+                <span className="text-xs font-semibold text-text-primary uppercase tracking-wide">Totales</span>
+              </div>
+              <div className="p-3 space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-xs text-text-muted">Subtotal:</span>
-                  <span className="text-xs font-medium">
-                    {formatCurrency(transaction.subtotal)}
-                  </span>
+                  <span className="text-xs text-text-muted">Subtotal</span>
+                  <span className="text-sm font-mono font-medium">{formatCurrency(transaction.subtotal)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-xs text-text-muted">ITBIS:</span>
-                  <span className="text-xs font-medium">
-                    {formatCurrency(transaction.tax)}
-                  </span>
+                  <span className="text-xs text-text-muted">ITBIS</span>
+                  <span className="text-sm font-mono font-medium">{formatCurrency(transaction.tax)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-xs text-text-muted">Total:</span>
-                  <span className="text-xs font-bold text-green-600">
-                    {formatCurrency(transaction.total)}
-                  </span>
+                <div className="flex justify-between pt-2 mt-1 border-t border-gray-200">
+                  <span className="text-sm font-semibold text-text-primary">Total</span>
+                  <span className="text-base font-mono font-bold text-green-600">{formatCurrency(transaction.total)}</span>
                 </div>
-                {transaction.cfQr && (
-                  <div className="flex items-end space-x-4">
-                    <QRCodeComponent url={transaction.cfQr} size={100} />
+              </div>
+            </div>
 
-                    <div className="flex flex-col space-y-1">
+            {/* QR + security - 4 cols */}
+            <div className="col-span-6 lg:col-span-4 bg-white border border-table-border rounded-sm">
+              <div className={sectionHeaderClass}>
+                <QrCode className="w-3.5 h-3.5 text-blue-600" />
+                <span className="text-xs font-semibold text-text-primary uppercase tracking-wide">DGII</span>
+              </div>
+              <div className="p-3">
+                {transaction.cfQr ? (
+                  <div className="flex items-start gap-3">
+                    <QRCodeComponent url={transaction.cfQr} size={96} />
+                    <div className="flex-1 min-w-0 space-y-1">
                       {transaction.cfSecurityCode && (
-                        <div className="text-xs">
-                          <span className="font-medium text-gray-900">
-                            Código de Seguridad:{" "}
-                          </span>
-
-                          <span className="font-medium font-mono text-gray-500">
-                            {transaction.cfSecurityCode}
-                          </span>
+                        <div>
+                          <div className="text-2xs uppercase tracking-wide text-text-muted">Código Seguridad</div>
+                          <div className="text-xs font-mono font-medium break-all">{transaction.cfSecurityCode}</div>
                         </div>
                       )}
                       {transaction.digitalSignatureDate && (
-                        <div className="text-xs">
-                          <span className="font-medium text-gray-900">
-                            Fecha Firma Digital:{" "}
-                          </span>
-
-                          <span className="font-medium text-gray-500">
-                            {transaction.digitalSignatureDate}
-                          </span>
+                        <div>
+                          <div className="text-2xs uppercase tracking-wide text-text-muted">Firma Digital</div>
+                          <div className="text-xs font-medium">{transaction.digitalSignatureDate}</div>
                         </div>
                       )}
                     </div>
                   </div>
+                ) : (
+                  <p className="text-xs text-text-muted">Sin QR disponible</p>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Products */}
-          <div>
-            <h4 className="text-sm font-semibold text-gray-900 mb-2 flex items-center">
-              <Package className="w-4 h-4 mr-2" />
-              Productos ({transaction.prods.length})
-            </h4>
-            <div className="border border-gray-200 rounded-sm overflow-hidden">
+          {/* Products table */}
+          <div className="bg-white border border-table-border rounded-sm mb-2">
+            <div className={sectionHeaderClass}>
+              <Package className="w-3.5 h-3.5 text-blue-600" />
+              <span className="text-xs font-semibold text-text-primary uppercase tracking-wide">
+                Productos ({transaction.prods.length})
+              </span>
+            </div>
+            <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 uppercase">
-                      Producto
-                    </th>
-                    <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 uppercase">
-                      Cantidad
-                    </th>
-                    <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 uppercase">
-                      Precio Unit.
-                    </th>
-                    <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 uppercase">
-                      ITBIS
-                    </th>
-                    <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 uppercase">
-                      Total
-                    </th>
+                    <th className="text-left px-3 h-7 text-2xs font-medium text-text-secondary uppercase tracking-wide">Producto</th>
+                    <th className="text-right px-3 h-7 text-2xs font-medium text-text-secondary uppercase tracking-wide w-20">Cant.</th>
+                    <th className="text-right px-3 h-7 text-2xs font-medium text-text-secondary uppercase tracking-wide w-28">Precio</th>
+                    <th className="text-right px-3 h-7 text-2xs font-medium text-text-secondary uppercase tracking-wide w-24">ITBIS</th>
+                    <th className="text-right px-3 h-7 text-2xs font-medium text-text-secondary uppercase tracking-wide w-28">Total</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody>
                   {transaction.prods.map((product) => (
-                    <tr key={product.productId}>
-                      <td className="px-3 py-2">
-                        <div>
-                          <div className="text-xs font-medium text-gray-900">
-                            {product.productName}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {product.productId}
-                          </div>
+                    <tr key={product.productId} className="h-8 border-t border-table-border hover:bg-row-hover">
+                      <td className="px-3 text-sm text-text-primary">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium truncate">{product.productName}</span>
+                          <span className="text-2xs text-text-muted font-mono">{product.productId}</span>
                           {product.isReturn && (
-                            <span className="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                              Devolución
-                            </span>
+                            <StatusDot color="red" label="Devolución" />
                           )}
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-xs text-gray-900">
-                        {product.quantity}
-                      </td>
-                      <td className="px-3 py-2 text-xs text-gray-900">
-                        {formatCurrency(product.price)}
-                      </td>
-                      <td className="px-3 py-2 text-xs text-gray-900">
-                        {formatCurrency(product.tax)}
-                      </td>
-                      <td className="px-3 py-2 text-xs font-medium text-gray-900">
-                        {formatCurrency(product.total)}
-                      </td>
+                      <td className="px-3 text-sm text-right font-mono">{product.quantity}</td>
+                      <td className="px-3 text-sm text-right font-mono">{formatCurrency(product.price)}</td>
+                      <td className="px-3 text-sm text-right font-mono text-text-muted">{formatCurrency(product.tax)}</td>
+                      <td className="px-3 text-sm text-right font-mono font-semibold">{formatCurrency(product.total)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -405,145 +331,95 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
           </div>
 
           {/* Payments */}
-          <div>
-            <h4 className="text-sm font-semibold text-gray-900 mb-2 flex items-center">
-              <CreditCard className="w-4 h-4 mr-2" />
-              Pagos ({transaction.payms.length})
-            </h4>
-            <div className="space-y-2">
-              {transaction.payms.map((payment) => (
-                <div
-                  key={payment.paymentId}
-                  className="border border-gray-200 rounded-sm p-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <CreditCard className="w-4 h-4 text-blue-600" />
-                      </div>
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <span
-                            className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${getPaymentTypeColor(
-                              payment.type
-                            )}`}
-                          >
-                            {payment.type}
-                          </span>
-                          {payment.isReturn && (
-                            <span className="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                              Devolución
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-sm font-bold text-gray-900">
-                      {formatCurrency(payment.total)}
-                    </div>
-                  </div>
-                </div>
-              ))}
+          <div className="bg-white border border-table-border rounded-sm mb-2">
+            <div className={sectionHeaderClass}>
+              <CreditCard className="w-3.5 h-3.5 text-blue-600" />
+              <span className="text-xs font-semibold text-text-primary uppercase tracking-wide">
+                Pagos ({transaction.payms.length})
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="text-left px-3 h-7 text-2xs font-medium text-text-secondary uppercase tracking-wide">Tipo</th>
+                    <th className="text-left px-3 h-7 text-2xs font-medium text-text-secondary uppercase tracking-wide">Estado</th>
+                    <th className="text-right px-3 h-7 text-2xs font-medium text-text-secondary uppercase tracking-wide w-32">Monto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {transaction.payms.map((payment) => (
+                    <tr key={payment.paymentId} className="h-8 border-t border-table-border hover:bg-row-hover">
+                      <td className="px-3 text-sm text-text-primary font-medium">{payment.type}</td>
+                      <td className="px-3 text-sm">
+                        {payment.isReturn ? (
+                          <StatusDot color="red" label="Devolución" />
+                        ) : (
+                          <StatusDot color="green" label="Completado" />
+                        )}
+                      </td>
+                      <td className="px-3 text-sm text-right font-mono font-semibold">{formatCurrency(payment.total)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
-          {/* Zataca Information */}
+          {/* Zataca */}
           {transaction.zataca && (
-            <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-2 flex items-center">
-                <QrCode className="w-4 h-4 mr-2" />
-                Información Zataca
-              </h4>
-              <div className="border border-gray-200 rounded-sm p-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <div className="text-xs text-text-muted">Operador</div>
-                    <div className="text-xs font-medium">
-                      {transaction.zataca.operator}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-text-muted">Monto</div>
-                    <div className="text-xs font-medium">
-                      {formatCurrency(transaction.zataca.amount)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-text-muted">
-                      Número de Referencia Local
-                    </div>
-                    <div className="text-xs font-medium">
-                      {transaction.zataca.localReferenceNumber}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-text-muted">
-                      Número de Teléfono
-                    </div>
-                    <div className="text-xs font-medium">
-                      {transaction.zataca.phoneNumber}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-text-muted">
-                      ID del Producto Z
-                    </div>
-                    <div className="text-xs font-medium">
-                      {transaction.zataca.zProductId}
-                    </div>
-                  </div>
+            <div className="bg-white border border-table-border rounded-sm">
+              <div className={sectionHeaderClass}>
+                <QrCode className="w-3.5 h-3.5 text-blue-600" />
+                <span className="text-xs font-semibold text-text-primary uppercase tracking-wide">Información Zataca</span>
+              </div>
+              <div className="p-3 grid grid-cols-2 md:grid-cols-5 gap-3">
+                <div>
+                  <div className="text-2xs uppercase tracking-wide text-text-muted mb-0.5">Operador</div>
+                  <div className="text-sm font-medium">{transaction.zataca.operator}</div>
+                </div>
+                <div>
+                  <div className="text-2xs uppercase tracking-wide text-text-muted mb-0.5">Monto</div>
+                  <div className="text-sm font-mono font-medium">{formatCurrency(transaction.zataca.amount)}</div>
+                </div>
+                <div>
+                  <div className="text-2xs uppercase tracking-wide text-text-muted mb-0.5">Ref. Local</div>
+                  <div className="text-sm font-mono font-medium">{transaction.zataca.localReferenceNumber}</div>
+                </div>
+                <div>
+                  <div className="text-2xs uppercase tracking-wide text-text-muted mb-0.5">Teléfono</div>
+                  <div className="text-sm font-medium">{transaction.zataca.phoneNumber}</div>
+                </div>
+                <div>
+                  <div className="text-2xs uppercase tracking-wide text-text-muted mb-0.5">ID Producto Z</div>
+                  <div className="text-sm font-mono font-medium">{transaction.zataca.zProductId}</div>
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* Modal Footer */}
-        <div className="flex justify-between items-center px-4 py-3 border-t border-gray-200">
-          {/* Botón de Reversar - Solo visible para ADMIN o AUDIT */}
-          <div className="flex-1">
+        {/* Footer */}
+        <div className="flex justify-between items-center px-4 h-11 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+          <div>
             {canReverseTransaction && transaction.status === 1 && transaction.cfType !== "34" && !transaction.isReturn && (
-              <button
-                onClick={() => onReverseTransaction(transaction.transNumber)}
-                disabled={isReversing}
-                className="h-7 px-3 text-sm rounded-sm font-medium bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white transition-colors flex items-center space-x-2"
-              >
+              <CompactButton variant="danger" onClick={() => onReverseTransaction(transaction.transNumber)} disabled={isReversing}>
                 {isReversing ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Reversando...</span>
-                  </>
+                  <><RefreshCw className="w-3 h-3 animate-spin" /> Reversando...</>
                 ) : (
-                  <>
-                    <Undo2 className="w-4 h-4" />
-                    <span>Reversar Transacción</span>
-                  </>
+                  <><Undo2 className="w-3 h-3" /> Reversar Transacción</>
                 )}
-              </button>
+              </CompactButton>
             )}
           </div>
-
-          <div className="flex space-x-3">
-            <button
-              onClick={onClose}
-              className="h-7 px-3 text-sm rounded-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              Cerrar
-            </button>
-            <button
-              onClick={() => handleDownloadTrasaction(transaction)}
-              className="h-7 px-3 text-sm rounded-sm font-medium bg-green-600 hover:bg-green-700 text-white transition-colors flex items-center space-x-2"
-            >
-              <Download className="w-4 h-4" />
-              <span>Descargar</span>
-            </button>
-            <button
-              onClick={() => handlePrintTransaction(transaction)}
-              className="h-7 px-3 text-sm rounded-sm font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center space-x-2"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Imprimir</span>
-            </button>
+          <div className="flex gap-2">
+            <CompactButton variant="ghost" onClick={onClose}>Cerrar</CompactButton>
+            <CompactButton variant="ghost" onClick={() => handleDownloadTrasaction(transaction)}>
+              <Download className="w-3 h-3" /> Descargar
+            </CompactButton>
+            <CompactButton variant="primary" onClick={() => handlePrintTransaction(transaction)}>
+              <Printer className="w-3 h-3" /> Imprimir
+            </CompactButton>
           </div>
         </div>
       </div>

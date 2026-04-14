@@ -1,5 +1,6 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart as LineIcon } from 'lucide-react';
 import { formatCurrency } from '../../../../utils/transactionUtils';
 
 interface SalesTrendChartProps {
@@ -9,11 +10,9 @@ interface SalesTrendChartProps {
 }
 
 const SalesTrendChart: React.FC<SalesTrendChartProps> = ({ data, period, title }) => {
-  // Procesar datos para el gráfico de tendencia
   const processData = () => {
     if (!data || data.length === 0) return [];
 
-    // Agrupar por fecha según el período
     const groupedData: { [key: string]: { sales: number; transactions: number; date: string } } = {};
 
     data.forEach(transaction => {
@@ -42,11 +41,7 @@ const SalesTrendChart: React.FC<SalesTrendChartProps> = ({ data, period, title }
       }
 
       if (!groupedData[key]) {
-        groupedData[key] = {
-          sales: 0,
-          transactions: 0,
-          date: key
-        };
+        groupedData[key] = { sales: 0, transactions: 0, date: key };
       }
 
       groupedData[key].sales += transaction.total || 0;
@@ -54,7 +49,6 @@ const SalesTrendChart: React.FC<SalesTrendChartProps> = ({ data, period, title }
     });
 
     return Object.values(groupedData).sort((a, b) => {
-      // Ordenar por fecha/orden lógico
       if (period === 'today') {
         return parseInt(a.date.split(':')[0]) - parseInt(b.date.split(':')[0]);
       }
@@ -67,63 +61,68 @@ const SalesTrendChart: React.FC<SalesTrendChartProps> = ({ data, period, title }
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-gray-900 text-white p-3 rounded-lg shadow-lg">
-          <p className="font-semibold">{label}</p>
-          <p className="text-green-400">Ventas: {formatCurrency(payload[0].value)}</p>
-          <p className="text-blue-400">Transacciones: {payload[1]?.value || 0}</p>
+        <div className="bg-white border border-gray-200 rounded-sm p-2 shadow-md text-xs">
+          <p className="font-semibold text-text-primary">{label}</p>
+          <p className="text-text-secondary">Ventas: <strong className="text-text-primary">{formatCurrency(payload[0].value)}</strong></p>
+          <p className="text-text-secondary">Transacciones: <strong className="text-text-primary">{payload[1]?.value || 0}</strong></p>
         </div>
       );
     }
     return null;
   };
 
+  const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <div className="bg-white rounded-sm border border-table-border">
+      <div className="flex items-center gap-2 px-3 h-8 bg-table-header border-b border-table-border">
+        <LineIcon className="w-3.5 h-3.5 text-blue-600" />
+        <span className="text-xs font-semibold text-text-primary uppercase tracking-wide">{title}</span>
+      </div>
+      <div className="p-3">{children}</div>
+    </div>
+  );
+
   if (chartData.length === 0) {
     return (
-      <div className="h-64 flex items-center justify-center">
-        <p className="text-gray-500">No hay datos disponibles para el período seleccionado</p>
-      </div>
+      <Shell>
+        <div className="h-40 flex items-center justify-center">
+          <p className="text-xs text-text-muted">No hay datos disponibles para el período seleccionado</p>
+        </div>
+      </Shell>
     );
   }
 
   return (
-    <div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis 
-              dataKey="date" 
-              stroke="#666"
-              fontSize={12}
-            />
-            <YAxis 
-              stroke="#666"
-              fontSize={12}
-              tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend />
-            <Line 
-              type="monotone" 
-              dataKey="sales" 
-              stroke="#3B82F6" 
-              strokeWidth={3}
-              dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
-              name="Ventas"
-            />
-            <Line 
-              type="monotone" 
-              dataKey="transactions" 
-              stroke="#10B981" 
-              strokeWidth={2}
-              dot={{ fill: '#10B981', strokeWidth: 2, r: 3 }}
-              name="Transacciones"
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
+    <Shell>
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart data={chartData}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+          <XAxis dataKey="date" stroke="#666" tick={{ fontSize: 11 }} />
+          <YAxis
+            stroke="#666"
+            tick={{ fontSize: 11 }}
+            tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+          />
+          <Tooltip content={<CustomTooltip />} contentStyle={{ fontSize: 12, padding: 8, border: '1px solid #e5e7eb', borderRadius: 2, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+          <Legend wrapperStyle={{ fontSize: 11 }} />
+          <Line
+            type="monotone"
+            dataKey="sales"
+            stroke="#3B82F6"
+            strokeWidth={2}
+            dot={{ fill: '#3B82F6', strokeWidth: 2, r: 3 }}
+            name="Ventas"
+          />
+          <Line
+            type="monotone"
+            dataKey="transactions"
+            stroke="#10B981"
+            strokeWidth={2}
+            dot={{ fill: '#10B981', strokeWidth: 2, r: 3 }}
+            name="Transacciones"
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </Shell>
   );
 };
 

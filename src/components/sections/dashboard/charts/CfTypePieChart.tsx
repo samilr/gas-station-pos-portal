@@ -1,5 +1,6 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { PieChart as PieIcon, AlertTriangle, BarChart3 } from 'lucide-react';
 import { formatCurrency } from '../../../../utils/transactionUtils';
 
 interface CfTypeData {
@@ -16,153 +17,143 @@ interface CfTypePieChartProps {
   error: string | null;
 }
 
-const CfTypePieChart: React.FC<CfTypePieChartProps> = ({
-  data,
-  loading,
-  error
-}) => {
-  // Colores para cada tipo de CF
+const sectionHeaderClass = 'flex items-center gap-2 px-3 h-8 bg-table-header border-b border-table-border';
+
+const tooltipContentStyle = {
+  fontSize: 12,
+  padding: 8,
+  border: '1px solid #e5e7eb',
+  borderRadius: 2,
+  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+};
+
+const CfTypePieChart: React.FC<CfTypePieChartProps> = ({ data, loading, error }) => {
   const COLORS = {
-    '31': '#3B82F6', // Azul
-    '32': '#10B981', // Verde
-    '34': '#F59E0B', // Amarillo
-    '44': '#EF4444', // Rojo
-    '45': '#8B5CF6', // Púrpura
-    'default': '#6B7280' // Gris
+    '31': '#3B82F6',
+    '32': '#10B981',
+    '34': '#F59E0B',
+    '44': '#EF4444',
+    '45': '#8B5CF6',
+    default: '#6B7280',
   };
 
-  const getColor = (cfType: string) => {
-    return COLORS[cfType as keyof typeof COLORS] || COLORS.default;
-  };
+  const getColor = (cfType: string) => COLORS[cfType as keyof typeof COLORS] || COLORS.default;
 
-  // Función para formatear el tooltip
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
-      const data = payload[0].payload;
+      const d = payload[0].payload;
       return (
-        <div className="bg-gray-900 text-white p-3 rounded-lg shadow-lg">
-          <p className="font-semibold">CF {data.cfType} - {data.cfTypeName}</p>
-          <p className="text-green-400">{formatCurrency(data.sales)}</p>
-          <p className="text-gray-300">{data.count} transacciones</p>
-          <p className="text-gray-400">{data.percentage.toFixed(1)}% del total</p>
+        <div className="bg-white border border-gray-200 rounded-sm shadow-md p-2 text-xs">
+          <p className="font-semibold text-text-primary">
+            CF {d.cfType} - {d.cfTypeName}
+          </p>
+          <p className="text-green-600">{formatCurrency(d.sales)}</p>
+          <p className="text-text-secondary">{d.count} transacciones</p>
+          <p className="text-text-muted">{d.percentage.toFixed(1)}% del total</p>
         </div>
       );
     }
     return null;
   };
 
-  // Función para formatear la leyenda
   const renderLegend = (props: any) => {
     const { payload } = props;
     return (
-      <div className="flex flex-wrap justify-center gap-4 mt-4">
+      <div className="flex flex-wrap justify-center gap-3 mt-2">
         {payload.map((entry: any, index: number) => (
-          <div key={index} className="flex items-center space-x-2">
-            <div 
-              className="w-3 h-3 rounded-full" 
-              style={{ backgroundColor: entry.color }}
-            />
-            <span className="text-sm text-gray-700">
-              Tipo {entry.payload.cfType} ({entry.payload.percentage.toFixed(1)}%)
-            </span>
-          </div>
+          <span key={index} className="flex items-center gap-1 text-xs text-text-secondary">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: entry.color }} />
+            Tipo {entry.payload.cfType} ({entry.payload.percentage.toFixed(1)}%)
+          </span>
         ))}
       </div>
     );
   };
 
+  const Shell: React.FC<{ children: React.ReactNode; right?: React.ReactNode }> = ({ children, right }) => (
+    <div className="bg-white rounded-sm border border-table-border">
+      <div className={sectionHeaderClass}>
+        <PieIcon className="w-3.5 h-3.5 text-blue-600" />
+        <span className="text-xs font-semibold text-text-primary uppercase tracking-wide">
+          Ventas por Tipo de Comprobante Fiscal
+        </span>
+        {right && <div className="ml-auto">{right}</div>}
+      </div>
+      {children}
+    </div>
+  );
+
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Ventas por Tipo de Comprobante Fiscal</h3>
+      <Shell>
+        <div className="p-3 flex items-center justify-center h-[280px]">
+          <div className="w-8 h-8 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
         </div>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
-      </div>
+      </Shell>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Ventas por Tipo de Comprobante Fiscal</h3>
-        </div>
-        <div className="text-center py-8">
-          <div className="text-red-500 mb-2">
-            <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
+      <Shell>
+        <div className="p-3">
+          <div className="flex items-center gap-2 p-2 border border-red-200 bg-red-50 rounded-sm text-xs text-red-700">
+            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>Error al cargar datos: {error}</span>
           </div>
-          <p className="text-red-600 font-medium">Error al cargar datos</p>
-          <p className="text-gray-500 text-sm">{error}</p>
         </div>
-      </div>
+      </Shell>
     );
   }
 
   if (data.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Ventas por Tipo de Comprobante Fiscal</h3>
+      <Shell>
+        <div className="p-3 flex flex-col items-center justify-center h-[240px] text-xs text-text-muted">
+          <BarChart3 className="w-5 h-5 mb-2" />
+          <p>No hay datos de ventas por Tipo de Comprobante Fiscal</p>
         </div>
-        <div className="text-center py-8">
-          <div className="text-gray-400 mb-2">
-            <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          </div>
-          <p className="text-gray-500">No hay datos de ventas por Tipo de Comprobante Fiscal</p>
-        </div>
-      </div>
+      </Shell>
     );
   }
 
-  // Preparar datos para el gráfico
-  const chartData = data.map(item => ({
-    ...item,
-    fill: getColor(item.cfType)
-  }));
-
+  const chartData = data.map((item) => ({ ...item, fill: getColor(item.cfType) }));
   const totalSales = data.reduce((sum, item) => sum + item.sales, 0);
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Ventas por Tipo de Comprobante Fiscal</h3>
-        <div className="text-right">
-          <p className="text-sm text-gray-500">Total de Ventas</p>
-          <p className="text-lg font-bold text-gray-900">{formatCurrency(totalSales)}</p>
+    <Shell
+      right={
+        <span className="flex items-center gap-1 text-xs text-text-secondary">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Total
+          <strong className="text-text-primary">{formatCurrency(totalSales)}</strong>
+        </span>
+      }
+    >
+      <div className="p-2">
+        <div className="h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={chartData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={(entry: any) => `${entry.cfType} (${entry.percentage.toFixed(1)}%)`}
+                outerRadius={100}
+                fill="#8884d8"
+                dataKey="sales"
+              >
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomTooltip />} contentStyle={tooltipContentStyle} />
+              <Legend content={renderLegend} wrapperStyle={{ fontSize: 11 }} />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
       </div>
-
-      <div className="h-80">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={chartData}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={(entry: any) => `${entry.cfType} (${entry.percentage.toFixed(1)}%)`}
-              outerRadius={120}
-              fill="#8884d8"
-              dataKey="sales"
-            >
-              {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.fill} />
-              ))}
-            </Pie>
-            <Tooltip content={<CustomTooltip />} />
-            <Legend content={renderLegend} />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-
-    </div>
+    </Shell>
   );
 };
 

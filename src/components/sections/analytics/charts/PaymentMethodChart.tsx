@@ -1,5 +1,6 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { CreditCard } from 'lucide-react';
 import { formatCurrency } from '../../../../utils/transactionUtils';
 
 interface PaymentMethodChartProps {
@@ -8,21 +9,18 @@ interface PaymentMethodChartProps {
 }
 
 const PaymentMethodChart: React.FC<PaymentMethodChartProps> = ({ data, title }) => {
-  // Procesar datos por método de pago
   const processData = () => {
     if (!data || data.length === 0) return [];
 
-    const paymentMap: { [key: string]: { 
-      method: string; 
-      name: string; 
-      sales: number; 
-      transactions: number; 
+    const paymentMap: { [key: string]: {
+      method: string;
+      name: string;
+      sales: number;
+      transactions: number;
       percentage: number;
     } } = {};
 
     data.forEach(transaction => {
-      // Asumiendo que tenemos un campo de método de pago
-      // Si no existe, podemos inferirlo de otros campos o usar un valor por defecto
       const paymentMethod = transaction.paymentMethod || transaction.payment_type || 'Efectivo';
       const methodName = getPaymentMethodName(paymentMethod);
 
@@ -42,13 +40,11 @@ const PaymentMethodChart: React.FC<PaymentMethodChartProps> = ({ data, title }) 
 
     const totalSales = Object.values(paymentMap).reduce((sum, method) => sum + method.sales, 0);
 
-    // Calcular porcentajes
     Object.values(paymentMap).forEach(method => {
       method.percentage = totalSales > 0 ? (method.sales / totalSales) * 100 : 0;
     });
 
-    return Object.values(paymentMap)
-      .sort((a, b) => b.sales - a.sales);
+    return Object.values(paymentMap).sort((a, b) => b.sales - a.sales);
   };
 
   const getPaymentMethodName = (method: string) => {
@@ -68,18 +64,17 @@ const PaymentMethodChart: React.FC<PaymentMethodChartProps> = ({ data, title }) 
 
   const chartData = processData();
 
-  // Colores para el gráfico de pastel
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16', '#F97316'];
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
-      const data = payload[0].payload;
+      const d = payload[0].payload;
       return (
-        <div className="bg-gray-900 text-white p-3 rounded-lg shadow-lg">
-          <p className="font-semibold">{data.name}</p>
-          <p className="text-green-400">Ventas: {formatCurrency(data.sales)}</p>
-          <p className="text-blue-400">Transacciones: {data.transactions}</p>
-          <p className="text-purple-400">{data.percentage.toFixed(1)}% del total</p>
+        <div className="bg-white border border-gray-200 rounded-sm p-2 shadow-md text-xs">
+          <p className="font-semibold text-text-primary">{d.name}</p>
+          <p className="text-text-secondary">Ventas: <strong className="text-text-primary">{formatCurrency(d.sales)}</strong></p>
+          <p className="text-text-secondary">Transacciones: <strong className="text-text-primary">{d.transactions}</strong></p>
+          <p className="text-text-secondary"><strong className="text-text-primary">{d.percentage.toFixed(1)}%</strong> del total</p>
         </div>
       );
     }
@@ -89,27 +84,34 @@ const PaymentMethodChart: React.FC<PaymentMethodChartProps> = ({ data, title }) 
   const renderLegend = (props: any) => {
     const { payload } = props;
     return (
-      <div className="flex flex-wrap justify-center gap-4 mt-4">
+      <div className="flex flex-wrap justify-center gap-3 mt-2">
         {payload.map((entry: any, index: number) => (
-          <div key={index} className="flex items-center space-x-2">
-            <div 
-              className="w-3 h-3 rounded-full" 
-              style={{ backgroundColor: entry.color }}
-            />
-            <span className="text-sm text-gray-700">
-              {entry.value} ({entry.payload.percentage.toFixed(1)}%)
-            </span>
+          <div key={index} className="flex items-center gap-1 text-xs text-text-secondary">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: entry.color }} />
+            {entry.value} <strong className="text-text-primary">({entry.payload.percentage.toFixed(1)}%)</strong>
           </div>
         ))}
       </div>
     );
   };
 
+  const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <div className="bg-white rounded-sm border border-table-border">
+      <div className="flex items-center gap-2 px-3 h-8 bg-table-header border-b border-table-border">
+        <CreditCard className="w-3.5 h-3.5 text-blue-600" />
+        <span className="text-xs font-semibold text-text-primary uppercase tracking-wide">{title}</span>
+      </div>
+      <div className="p-3">{children}</div>
+    </div>
+  );
+
   if (chartData.length === 0) {
     return (
-      <div className="h-64 flex items-center justify-center">
-        <p className="text-gray-500">No hay datos de métodos de pago disponibles</p>
-      </div>
+      <Shell>
+        <div className="h-40 flex items-center justify-center">
+          <p className="text-xs text-text-muted">No hay datos de métodos de pago disponibles</p>
+        </div>
+      </Shell>
     );
   }
 
@@ -118,75 +120,46 @@ const PaymentMethodChart: React.FC<PaymentMethodChartProps> = ({ data, title }) 
   const topMethod = chartData[0];
 
   return (
-    <div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={chartData}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={(entry: any) => `${entry.name} (${entry.percentage.toFixed(1)}%)`}
-              outerRadius={80}
-              fill="#8884d8"
-              dataKey="sales"
-            >
-              {chartData.map((_, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip content={<CustomTooltip />} />
-            <Legend content={renderLegend} />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-      
-      {/* Métricas de métodos de pago */}
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-3 bg-blue-50 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-blue-600 font-medium">Método Preferido</p>
-              <p className="text-lg font-bold text-blue-900">{topMethod.name}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-blue-600">{formatCurrency(topMethod.sales)}</p>
-              <p className="text-xs text-blue-500">{topMethod.percentage.toFixed(1)}%</p>
-            </div>
-          </div>
-        </div>
+    <Shell>
+      <ResponsiveContainer width="100%" height={280}>
+        <PieChart>
+          <Pie
+            data={chartData}
+            cx="50%"
+            cy="50%"
+            labelLine={false}
+            label={(entry: any) => `${entry.name} (${entry.percentage.toFixed(1)}%)`}
+            outerRadius={80}
+            fill="#8884d8"
+            dataKey="sales"
+          >
+            {chartData.map((_, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            ))}
+          </Pie>
+          <Tooltip content={<CustomTooltip />} contentStyle={{ fontSize: 12, padding: 8, border: '1px solid #e5e7eb', borderRadius: 2, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+          <Legend content={renderLegend} wrapperStyle={{ fontSize: 11 }} />
+        </PieChart>
+      </ResponsiveContainer>
 
-        <div className="p-3 bg-green-50 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-green-600 font-medium">Total Ventas</p>
-              <p className="text-lg font-bold text-green-900">{formatCurrency(totalSales)}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-green-600">{totalTransactions}</p>
-              <p className="text-xs text-green-500">transacciones</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-3 bg-purple-50 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-purple-600 font-medium">Métodos Activos</p>
-              <p className="text-lg font-bold text-purple-900">{chartData.length}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-purple-600">
-                {formatCurrency(totalSales / totalTransactions)}
-              </p>
-              <p className="text-xs text-purple-500">promedio</p>
-            </div>
-          </div>
-        </div>
+      <div className="mt-2 flex flex-wrap gap-3">
+        <span className="flex items-center gap-1 text-xs text-text-secondary">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+          Método Preferido <strong className="text-text-primary">{topMethod.name}</strong>
+          <span className="text-text-muted">({topMethod.percentage.toFixed(1)}%)</span>
+        </span>
+        <span className="flex items-center gap-1 text-xs text-text-secondary">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+          Total Ventas <strong className="text-text-primary">{formatCurrency(totalSales)}</strong>
+          <span className="text-text-muted">({totalTransactions} trans.)</span>
+        </span>
+        <span className="flex items-center gap-1 text-xs text-text-secondary">
+          <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+          Métodos Activos <strong className="text-text-primary">{chartData.length}</strong>
+          <span className="text-text-muted">promedio {formatCurrency(totalSales / totalTransactions)}</span>
+        </span>
       </div>
-    </div>
+    </Shell>
   );
 };
 

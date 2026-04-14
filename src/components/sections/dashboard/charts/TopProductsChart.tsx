@@ -1,61 +1,72 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { formatCurrency } from '../../../../utils/dashboardUtils';
-import { Package } from 'lucide-react';
+import { Package, AlertTriangle } from 'lucide-react';
 import { ITopProduct } from '../../../../types/transaction';
 
 interface TopProductsChartProps {
-  data: any[]; // Puede ser transacciones o ITopProduct[]
-  topProducts?: ITopProduct[]; // Datos del endpoint del dashboard
+  data: any[];
+  topProducts?: ITopProduct[];
   loading: boolean;
   error: string | null;
 }
 
+const sectionHeaderClass = 'flex items-center gap-2 px-3 h-8 bg-table-header border-b border-table-border';
+
+const tooltipContentStyle = {
+  fontSize: 12,
+  padding: 8,
+  border: '1px solid #e5e7eb',
+  borderRadius: 2,
+  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+};
+
 const TopProductsChart: React.FC<TopProductsChartProps> = ({ data, topProducts, loading, error }) => {
-  // Procesar datos por producto
   const processData = () => {
-    // Si tenemos topProducts del endpoint, usarlos directamente
     if (topProducts && topProducts.length > 0) {
-      return topProducts.map((product, index) => ({
-        productId: `product-${index}`,
-        productName: product.productName,
-        sales: product.total,
-        quantity: product.quantity,
-        timesSold: 1, // No disponible en el endpoint
-        realPrice: product.quantity > 0 ? product.total / product.quantity : 0
-      })).slice(0, 5);
+      return topProducts
+        .map((product, index) => ({
+          productId: `product-${index}`,
+          productName: product.productName,
+          sales: product.total,
+          quantity: product.quantity,
+          timesSold: 1,
+          realPrice: product.quantity > 0 ? product.total / product.quantity : 0,
+        }))
+        .slice(0, 5);
     }
 
-    // Si no, procesar transacciones como antes
     if (!data || data.length === 0) {
       return [];
     }
 
-    // Verificar si el primer elemento es una transacción (tiene prods) o un producto procesado
     const firstItem = data[0];
     if (firstItem && !firstItem.prods && firstItem.productName) {
-      // Ya está procesado como ITopProduct
-      return data.map((product: any, index: number) => ({
-        productId: `product-${index}`,
-        productName: product.productName,
-        sales: product.total || product.sales,
-        quantity: product.quantity || 0,
-        timesSold: 1,
-        realPrice: (product.quantity || 0) > 0 ? (product.total || product.sales) / (product.quantity || 1) : 0
-      })).slice(0, 5);
+      return data
+        .map((product: any, index: number) => ({
+          productId: `product-${index}`,
+          productName: product.productName,
+          sales: product.total || product.sales,
+          quantity: product.quantity || 0,
+          timesSold: 1,
+          realPrice:
+            (product.quantity || 0) > 0 ? (product.total || product.sales) / (product.quantity || 1) : 0,
+        }))
+        .slice(0, 5);
     }
 
-    // Procesar transacciones completas
-    const productMap: { [key: string]: { 
-      productId: string; 
-      productName: string; 
-      sales: number; 
-      quantity: number; 
-      timesSold: number; // Cuántas veces se vendió este producto
-      realPrice: number; // Precio real del producto
-    } } = {};
+    const productMap: {
+      [key: string]: {
+        productId: string;
+        productName: string;
+        sales: number;
+        quantity: number;
+        timesSold: number;
+        realPrice: number;
+      };
+    } = {};
 
-    data.forEach(transaction => {
+    data.forEach((transaction) => {
       if (transaction.prods && transaction.prods.length > 0) {
         transaction.prods.forEach((prod: any) => {
           const productId = prod.productId || 'unknown';
@@ -67,159 +78,119 @@ const TopProductsChart: React.FC<TopProductsChartProps> = ({ data, topProducts, 
           if (productMap[productId]) {
             productMap[productId].sales += total;
             productMap[productId].quantity += quantity;
-            productMap[productId].timesSold += 1; // Incrementar cada vez que aparece
+            productMap[productId].timesSold += 1;
           } else {
             productMap[productId] = {
               productId,
               productName,
               sales: total,
               quantity,
-              timesSold: 1, // Primera vez que aparece
-              realPrice: price // Precio real del producto
+              timesSold: 1,
+              realPrice: price,
             };
           }
         });
       }
     });
 
-    // Convertir a array (ya tenemos el precio real)
     const products = Object.values(productMap);
-
-    // Ordenar por monto total de ventas (mayor volumen en $ primero)
-    return products
-      .sort((a, b) => b.sales - a.sales)
-      .slice(0, 5);
+    return products.sort((a, b) => b.sales - a.sales).slice(0, 5);
   };
 
   const chartData = processData();
 
-  // Colores para las barras
   const getBarColor = (index: number) => {
-    const colors = [
-      '#3B82F6', // Azul
-      '#10B981', // Verde
-      '#F59E0B', // Amarillo
-      '#EF4444', // Rojo
-      '#8B5CF6', // Púrpura
-      '#06B6D4', // Cian
-      '#84CC16', // Lima
-      '#F97316', // Naranja
-      '#EC4899', // Rosa
-      '#6B7280'  // Gris
-    ];
+    const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6B7280'];
     return colors[index % colors.length];
   };
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
-      const data = payload[0].payload;
+      const d = payload[0].payload;
       return (
-        <div className="bg-gray-900 text-white p-3 rounded-lg shadow-lg">
-          <p className="font-semibold">{data.productName}</p>
-          <p className="text-green-400">Ventas: {formatCurrency(data.sales)}</p>
-          <p className="text-blue-400">Cantidad Total: {data.quantity.toFixed(2)}</p>
-          <p className="text-purple-400">Veces Vendido: {data.timesSold}</p>
-          <p className="text-yellow-400">Precio: {formatCurrency(data.realPrice)}</p>
+        <div className="bg-white border border-gray-200 rounded-sm shadow-md p-2 text-xs">
+          <p className="font-semibold text-text-primary">{d.productName}</p>
+          <p className="text-green-600">Ventas: {formatCurrency(d.sales)}</p>
+          <p className="text-blue-600">Cantidad: {d.quantity.toFixed(2)}</p>
+          <p className="text-purple-600">Veces Vendido: {d.timesSold}</p>
+          <p className="text-amber-600">Precio: {formatCurrency(d.realPrice)}</p>
         </div>
       );
     }
     return null;
   };
 
+  const Shell: React.FC<{ children: React.ReactNode; right?: React.ReactNode }> = ({ children, right }) => (
+    <div className="bg-white rounded-sm border border-table-border">
+      <div className={sectionHeaderClass}>
+        <Package className="w-3.5 h-3.5 text-blue-600" />
+        <span className="text-xs font-semibold text-text-primary uppercase tracking-wide">Top Productos</span>
+        {right && <div className="ml-auto">{right}</div>}
+      </div>
+      {children}
+    </div>
+  );
+
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Top Productos</h3>
+      <Shell>
+        <div className="p-3 flex items-center justify-center h-[280px]">
+          <div className="w-8 h-8 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
         </div>
-        <div className="h-64 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      </div>
+      </Shell>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Top Productos</h3>
+      <Shell>
+        <div className="p-3">
+          <div className="flex items-center gap-2 p-2 border border-red-200 bg-red-50 rounded-sm text-xs text-red-700">
+            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>Error al cargar datos de productos: {error}</span>
+          </div>
         </div>
-        <div className="text-center py-8 text-gray-500">
-          <Package className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-          <p>Error al cargar datos de productos</p>
-          <p className="text-sm text-gray-400">{error}</p>
-        </div>
-      </div>
+      </Shell>
     );
   }
 
   if (chartData.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Top Productos</h3>
-        </div>
-        <div className="text-center py-8 text-gray-500">
-          <Package className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+      <Shell>
+        <div className="p-3 flex flex-col items-center justify-center h-[240px] text-xs text-text-muted">
+          <Package className="w-5 h-5 mb-2" />
           <p>No hay datos de productos disponibles</p>
         </div>
-      </div>
+      </Shell>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Productos con Mayor Volumen</h3>
-        <span className="text-sm text-gray-500">Por monto total de ventas</span>
+    <Shell right={<span className="text-xs text-text-muted">Por monto total de ventas</span>}>
+      <div className="p-2">
+        <div className="h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} margin={{ top: 10, right: 15, left: 5, bottom: 50 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis
+                dataKey="productName"
+                tick={{ fontSize: 11 }}
+                angle={-20}
+                textAnchor="end"
+                height={10}
+              />
+              <YAxis tick={{ fontSize: 11 }} tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+              <Tooltip content={<CustomTooltip />} contentStyle={tooltipContentStyle} />
+              <Bar dataKey="sales" radius={[2, 2, 0, 0]} maxBarSize={80}>
+                {chartData.map((_, index) => (
+                  <Cell key={`cell-${index}`} fill={getBarColor(index)} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
-      
-      <div className="h-80">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis 
-              dataKey="productName" 
-              tick={{ fontSize: 12 }}
-              angle={-20}
-              textAnchor="end"
-              height={10}
-            />
-            <YAxis 
-              tick={{ fontSize: 12 }}
-              tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Bar 
-              dataKey="sales" 
-              radius={[4, 4, 0, 0]}
-              maxBarSize={100}
-            >
-              {chartData.map((_, index) => (
-                <Cell key={`cell-${index}`} fill={getBarColor(index)} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-      
-      {/* Resumen de productos - Solo nombres con colores 
-      <div className="mt-4 grid grid-cols-1 gap-2">
-        {chartData.slice(0, 3).map((product, index) => (
-          <div key={product.productId} className="flex items-center p-2 bg-gray-50 rounded">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getBarColor(index) }}></div>
-              <span className="text-sm font-medium text-gray-900 truncate">
-                {product.productName}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-      */}
-    </div>
-    
+    </Shell>
   );
 };
 
