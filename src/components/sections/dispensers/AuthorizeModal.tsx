@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Fuel } from 'lucide-react';
+import { X, Fuel, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { authorizePump } from '../../../services/dispenserService';
-import type { AuthorizeRequest, NozzlePrice } from '../../../types/dispenser';
+import type { NozzlePrice } from '../../../types/dispenser';
+import { CompactButton } from '../../ui';
 
 interface AuthorizeModalProps {
   isOpen: boolean;
@@ -14,11 +14,7 @@ interface AuthorizeModalProps {
 }
 
 const AuthorizeModal: React.FC<AuthorizeModalProps> = ({
-  isOpen,
-  onClose,
-  pumpNumber,
-  nozzlePrices,
-  onSuccess,
+  isOpen, onClose, pumpNumber, nozzlePrices, onSuccess,
 }) => {
   const [type, setType] = useState<'Amount' | 'Volume' | 'FullTank'>('Amount');
   const [dose, setDose] = useState<string>('');
@@ -34,11 +30,7 @@ const AuthorizeModal: React.FC<AuthorizeModalProps> = ({
       return;
     }
 
-    const request: any = {
-      Type: type,
-      Dose: doseValue,
-      Nozzle: nozzle,
-    };
+    const request: any = { Type: type, Dose: doseValue, Nozzle: nozzle };
 
     setLoading(true);
     try {
@@ -56,150 +48,105 @@ const AuthorizeModal: React.FC<AuthorizeModalProps> = ({
 
   const selectedNozzle = nozzlePrices.find((np) => np.Nozzle === nozzle);
 
+  if (!isOpen) return null;
+
+  const inputCls = 'w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500';
+
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          onClick={onClose}
-        >
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-white rounded-sm shadow-xl w-full max-w-lg mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                  <Fuel className="w-4 h-4 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="text-base font-semibold text-gray-900">Autorizar Despacho</h3>
-                  <p className="text-xs text-text-muted">Bomba #{pumpNumber}</p>
-                </div>
-              </div>
-              <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-                <X className="w-4 h-4" />
-              </button>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={onClose}>
+      <form onSubmit={handleSubmit} className="bg-white rounded-sm w-full max-w-lg shadow-xl max-h-[90vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-4 h-11 border-b border-gray-200 bg-gray-50 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 bg-blue-100 rounded-sm flex items-center justify-center">
+              <Fuel className="w-4 h-4 text-blue-600" />
             </div>
+            <div>
+              <h3 className="text-sm font-semibold text-text-primary">Autorizar Despacho</h3>
+              <p className="text-2xs text-text-muted">Bomba #{pumpNumber}</p>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} className="h-6 w-6 flex items-center justify-center rounded-sm hover:bg-gray-100">
+            <X className="w-4 h-4 text-text-secondary" />
+          </button>
+        </div>
 
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="p-4 space-y-3">
-              {/* Tipo de autorización */}
-              <div>
-                <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
-                  Tipo de despacho
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {([
-                    { value: 'Amount', label: 'Monto (RD$)' },
-                    { value: 'Volume', label: 'Volumen (G.)' },
-                    { value: 'FullTank', label: 'Tanque lleno' },
-                  ] as const).map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setType(opt.value)}
-                      className={`h-7 px-3 text-sm font-medium rounded-sm border transition-colors ${
-                        type === opt.value
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Pistola / Grado */}
-              {nozzlePrices.length > 0 && (
-                <div>
-                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
-                    Pistola / Combustible
-                  </label>
-                  <select
-                    value={nozzle}
-                    onChange={(e) => setNozzle(Number(e.target.value))}
-                    className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  >
-                    {nozzlePrices.map((np) => (
-                      <option key={np.Nozzle} value={np.Nozzle}>
-                        Pistola {np.Nozzle} - {np.FuelGradeName} (RD${np.Price.toFixed(2)}/G.)
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Valor */}
-              {type !== 'FullTank' && (
-                <div>
-                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
-                    {type === 'Amount' ? 'Monto (RD$)' : 'Volumen (Galones)'}
-                  </label>
-                  <input
-                    type="number"
-                    step={type === 'Amount' ? '0.01' : '0.001'}
-                    min="0"
-                    value={dose}
-                    onChange={(e) => setDose(e.target.value)}
-                    placeholder={type === 'Amount' ? 'Ej: 2000.00' : 'Ej: 20.000'}
-                    className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    autoFocus
-                  />
-                  {type === 'Amount' && selectedNozzle && dose && parseFloat(dose) > 0 && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Aprox. {(parseFloat(dose) / selectedNozzle.Price).toFixed(3)} galones
-                    </p>
-                  )}
-                  {type === 'Volume' && selectedNozzle && dose && parseFloat(dose) > 0 && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Aprox. RD${(parseFloat(dose) * selectedNozzle.Price).toFixed(2)}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Resumen */}
-              {type === 'FullTank' && selectedNozzle && (
-                <div className="bg-blue-50 border border-blue-200 rounded-sm p-3">
-                  <p className="text-xs text-blue-700">
-                    Se autorizará despacho de tanque lleno con <strong>{selectedNozzle.FuelGradeName}</strong> a RD${selectedNozzle.Price.toFixed(2)}/G.
-                  </p>
-                </div>
-              )}
-
-              {/* Botones */}
-              <div className="flex justify-end gap-3 pt-2">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div>
+            <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Tipo de despacho</label>
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { value: 'Amount', label: 'Monto (RD$)' },
+                { value: 'Volume', label: 'Volumen (G.)' },
+                { value: 'FullTank', label: 'Tanque lleno' },
+              ] as const).map((opt) => (
                 <button
+                  key={opt.value}
                   type="button"
-                  onClick={onClose}
-                  disabled={loading}
-                  className="h-7 px-3 text-sm rounded-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                  onClick={() => setType(opt.value)}
+                  className={`h-7 px-2 text-xs font-medium rounded-sm border transition-colors ${
+                    type === opt.value
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-text-primary border-gray-300 hover:bg-gray-50'
+                  }`}
                 >
-                  Cancelar
+                  {opt.label}
                 </button>
-                <button
-                  type="submit"
-                  disabled={loading || (type !== 'FullTank' && (!dose || parseFloat(dose) <= 0))}
-                  className="h-7 px-3 text-sm rounded-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-                >
-                  {loading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-                  Autorizar
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+              ))}
+            </div>
+          </div>
+
+          {nozzlePrices.length > 0 && (
+            <div>
+              <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Pistola / Combustible</label>
+              <select value={nozzle} onChange={(e) => setNozzle(Number(e.target.value))} className={inputCls}>
+                {nozzlePrices.map((np) => (
+                  <option key={np.Nozzle} value={np.Nozzle}>
+                    Pistola {np.Nozzle} - {np.FuelGradeName} (RD${np.Price.toFixed(2)}/G.)
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {type !== 'FullTank' && (
+            <div>
+              <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">
+                {type === 'Amount' ? 'Monto (RD$)' : 'Volumen (Galones)'}
+              </label>
+              <input
+                type="number"
+                step={type === 'Amount' ? '0.01' : '0.001'}
+                min="0"
+                value={dose}
+                onChange={(e) => setDose(e.target.value)}
+                placeholder={type === 'Amount' ? 'Ej: 2000.00' : 'Ej: 20.000'}
+                className={inputCls}
+                autoFocus
+              />
+              {type === 'Amount' && selectedNozzle && dose && parseFloat(dose) > 0 && (
+                <p className="text-2xs text-text-muted mt-1">Aprox. {(parseFloat(dose) / selectedNozzle.Price).toFixed(3)} galones</p>
+              )}
+              {type === 'Volume' && selectedNozzle && dose && parseFloat(dose) > 0 && (
+                <p className="text-2xs text-text-muted mt-1">Aprox. RD${(parseFloat(dose) * selectedNozzle.Price).toFixed(2)}</p>
+              )}
+            </div>
+          )}
+
+          {type === 'FullTank' && selectedNozzle && (
+            <div className="bg-blue-50 border border-blue-200 rounded-sm px-3 py-2 text-xs text-blue-700">
+              Se autorizará despacho de tanque lleno con <strong>{selectedNozzle.FuelGradeName}</strong> a RD${selectedNozzle.Price.toFixed(2)}/G.
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-end gap-2 px-4 h-11 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+          <CompactButton type="button" variant="ghost" onClick={onClose} disabled={loading}>Cancelar</CompactButton>
+          <CompactButton type="submit" variant="primary" disabled={loading || (type !== 'FullTank' && (!dose || parseFloat(dose) <= 0))}>
+            {loading ? <><RefreshCw className="w-3 h-3 animate-spin" /> Autorizando...</> : 'Autorizar'}
+          </CompactButton>
+        </div>
+      </form>
+    </div>
   );
 };
 

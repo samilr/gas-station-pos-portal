@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { X, Save } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { X, Save, FileText, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { taxpayerService } from '../../../services/taxpayerService';
 import { ITaxpayer } from '../../../types/taxpayer';
+import { CompactButton } from '../../ui';
 
 interface Props {
   taxpayer: ITaxpayer | null;
@@ -36,55 +36,60 @@ const TaxpayerModal: React.FC<Props> = ({ taxpayer, onClose, onSaved }) => {
     }
   };
 
+  const inputCls = 'w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100';
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <motion.div className="bg-white rounded-sm shadow-2xl w-full max-w-lg">
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <h2 className="text-base font-semibold text-gray-900">{isEdit ? 'Editar Contribuyente' : 'Nuevo Contribuyente'}</h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-sm"><X className="w-4 h-4" /></button>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <form onSubmit={handleSubmit} className="bg-white rounded-sm w-full max-w-lg shadow-xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between px-4 h-11 border-b border-gray-200 bg-gray-50 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 bg-blue-100 rounded-sm flex items-center justify-center">
+              <FileText className="w-4 h-4 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-text-primary">{isEdit ? 'Editar Contribuyente' : 'Nuevo Contribuyente'}</h3>
+              <p className="text-2xs text-text-muted">{isEdit ? 'Modificar datos fiscales' : 'Registrar contribuyente'}</p>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} className="h-6 w-6 flex items-center justify-center rounded-sm hover:bg-gray-100">
+            <X className="w-4 h-4 text-text-secondary" />
+          </button>
         </div>
-        <form onSubmit={handleSubmit} className="p-4 space-y-3">
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
           <div>
-            <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">RNC / ID</label>
-            <input value={form.taxpayerId} onChange={e => setForm(f => ({ ...f, taxpayerId: e.target.value }))}
-              disabled={isEdit} required
-              className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100" />
+            <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">RNC / ID</label>
+            <input value={form.taxpayerId} onChange={e => setForm(f => ({ ...f, taxpayerId: e.target.value }))} disabled={isEdit} required className={inputCls} />
           </div>
           <div>
-            <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">Nombre</label>
-            <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required
-              className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Nombre</label>
+            <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required className={inputCls} />
           </div>
           <div>
-            <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">Tipo</label>
-            <input type="number" value={form.type} onChange={e => setForm(f => ({ ...f, type: Number(e.target.value) }))}
-              className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Tipo</label>
+            <input type="number" value={form.type} onChange={e => setForm(f => ({ ...f, type: Number(e.target.value) }))} className={inputCls} />
           </div>
-          <div className="flex items-center gap-6">
-            <label className="flex items-center gap-2 cursor-pointer">
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
               <input type="checkbox" checked={form.validated} onChange={e => setForm(f => ({ ...f, validated: e.target.checked }))}
-                className="rounded border-gray-300 text-blue-600" />
-              <span className="text-sm text-gray-700">Validado</span>
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+              Validado
             </label>
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
               <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))}
-                className="rounded border-gray-300 text-blue-600" />
-              <span className="text-sm text-gray-700">Activo</span>
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+              Activo
             </label>
           </div>
-          <div className="flex justify-end gap-3 pt-2">
-            <button type="button" onClick={onClose}
-              className="h-7 px-3 text-sm rounded-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
-              Cancelar
-            </button>
-            <button type="submit" disabled={saving}
-              className="flex items-center gap-2 h-7 px-3 text-sm rounded-sm font-medium bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white transition-colors">
-              <Save className="w-4 h-4" />
-              {saving ? 'Guardando...' : 'Guardar'}
-            </button>
-          </div>
-        </form>
-      </motion.div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 px-4 h-11 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+          <CompactButton type="button" variant="ghost" onClick={onClose}>Cancelar</CompactButton>
+          <CompactButton type="submit" variant="primary" disabled={saving}>
+            {saving ? <><RefreshCw className="w-3 h-3 animate-spin" /> Guardando...</> : <><Save className="w-3 h-3" /> Guardar</>}
+          </CompactButton>
+        </div>
+      </form>
     </div>
   );
 };

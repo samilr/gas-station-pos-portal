@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { X, Save } from 'lucide-react';
+import { X, Save, Users, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { staftGroupService } from '../../../services/staftGroupService';
 import { IStaftGroup } from '../../../types/staftGroup';
+import { CompactButton } from '../../ui';
 
 interface Props { group: IStaftGroup | null; onClose: () => void; onSaved: () => void; }
 
@@ -18,31 +19,50 @@ const StaftGroupModal: React.FC<Props> = ({ group, onClose, onSaved }) => {
     else toast.error(res.error || 'Error al guardar');
   };
 
+  const inputCls = 'w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500';
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-sm shadow-2xl w-full max-w-lg">
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <h2 className="text-base font-semibold text-gray-900">{group ? 'Editar Grupo' : 'Nuevo Grupo de Cajeros'}</h2>
-          <button onClick={onClose}><X className="w-4 h-4 text-gray-500" /></button>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <form onSubmit={handleSubmit} className="bg-white rounded-sm w-full max-w-lg shadow-xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between px-4 h-11 border-b border-gray-200 bg-gray-50 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 bg-blue-100 rounded-sm flex items-center justify-center">
+              <Users className="w-4 h-4 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-text-primary">{group ? 'Editar Grupo' : 'Nuevo Grupo de Cajeros'}</h3>
+              <p className="text-2xs text-text-muted">{group ? 'Modificar permisos' : 'Registrar nuevo grupo'}</p>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} className="h-6 w-6 flex items-center justify-center rounded-sm hover:bg-gray-100">
+            <X className="w-4 h-4 text-text-secondary" />
+          </button>
         </div>
-        <form onSubmit={handleSubmit} className="p-4 space-y-3">
-          <div><label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">Nombre</label>
-            <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500" /></div>
-          <div><label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">Permisos (8 bits)</label>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div>
+            <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Nombre</label>
+            <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required className={inputCls} />
+          </div>
+          <div>
+            <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Permisos (8 bits)</label>
             <input value={form.rights} onChange={e => setForm(f => ({ ...f, rights: e.target.value }))} maxLength={8} pattern="[01]{8}"
-              className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono" placeholder="01111111" /></div>
-          <label className="flex items-center gap-2 cursor-pointer text-sm">
-            <input type="checkbox" checked={form.isManager} onChange={e => setForm(f => ({ ...f, isManager: e.target.checked }))} className="rounded" />
+              className={`${inputCls} font-mono`} placeholder="01111111" />
+          </div>
+          <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
+            <input type="checkbox" checked={form.isManager} onChange={e => setForm(f => ({ ...f, isManager: e.target.checked }))}
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
             Es Manager
           </label>
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="h-7 px-3 text-sm rounded-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50">Cancelar</button>
-            <button type="submit" disabled={saving} className="flex items-center gap-2 h-7 px-3 text-sm rounded-sm font-medium bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-60">
-              <Save className="w-4 h-4" />{saving ? 'Guardando...' : 'Guardar'}
-            </button>
-          </div>
-        </form>
-      </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 px-4 h-11 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+          <CompactButton type="button" variant="ghost" onClick={onClose}>Cancelar</CompactButton>
+          <CompactButton type="submit" variant="primary" disabled={saving}>
+            {saving ? <><RefreshCw className="w-3 h-3 animate-spin" /> Guardando...</> : <><Save className="w-3 h-3" /> Guardar</>}
+          </CompactButton>
+        </div>
+      </form>
     </div>
   );
 };

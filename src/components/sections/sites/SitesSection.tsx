@@ -205,7 +205,7 @@ const SitesSection: React.FC = () => {
         <PermissionGate permissions={['sites.create']}>
           <CompactButton variant="primary" onClick={handleCreateSite}>
             <Plus className="w-3.5 h-3.5" />
-            Nueva Sucursal
+            Nuevo
           </CompactButton>
         </PermissionGate>
       </Toolbar>

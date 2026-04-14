@@ -195,7 +195,7 @@ const ProductsSection: React.FC = () => {
             onClick={handleCreateProduct}
           >
             <Plus className="w-3.5 h-3.5" />
-            Nuevo Producto
+            Nuevo
           </CompactButton>
         </PermissionGate>
       </Toolbar>

@@ -1,6 +1,7 @@
 import React from 'react';
-import { AlertTriangle, X, Trash2 } from 'lucide-react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import { ISite } from '../../../../types/site';
+import { CompactButton } from '../../ui';
 
 interface DeleteSiteDialogProps {
   isOpen: boolean;
@@ -11,77 +12,27 @@ interface DeleteSiteDialogProps {
 }
 
 const DeleteSiteDialog: React.FC<DeleteSiteDialogProps> = ({
-  isOpen,
-  onClose,
-  onConfirm,
-  site,
-  loading = false
+  isOpen, onClose, onConfirm, site, loading = false
 }) => {
   if (!isOpen || !site) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-sm max-w-lg w-full">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-              <AlertTriangle className="w-4 h-4 text-red-600" />
-            </div>
-            <div>
-              <h3 className="text-base font-semibold text-gray-900">Eliminar Sucursal</h3>
-              <p className="text-xs text-text-muted">Esta acción no se puede deshacer</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-sm transition-colors"
-          >
-            <X className="w-4 h-4 text-gray-500" />
-          </button>
-        </div>
-
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={onClose}>
+      <div className="bg-white rounded-sm w-full max-w-sm shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="p-4">
-          <div className="mb-3">
-            <p className="text-xs text-gray-700 mb-2">
-              ¿Estás seguro de que quieres eliminar la sucursal:
-            </p>
-            <div className="bg-gray-50 p-3 rounded-sm">
-              <p className="font-medium text-sm text-gray-900">{site.name}</p>
-              <p className="text-xs text-text-muted">ID: {site.site_id}</p>
-              <p className="text-xs text-text-muted">Número: {site.site_number}</p>
-            </div>
+          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-red-100 mb-3">
+            <AlertCircle className="h-5 w-5 text-red-600" />
           </div>
-
-          <div className="bg-yellow-50 border border-yellow-200 rounded-sm p-3 mb-3">
-            <div className="flex">
-              <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5 mr-2 flex-shrink-0" />
-              <div>
-                <p className="text-xs text-yellow-800 font-medium">Advertencia</p>
-                <p className="text-xs text-yellow-700">
-                  Esta acción eliminará permanentemente la sucursal y todos sus datos asociados.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-end space-x-3">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="h-7 px-3 text-sm rounded-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={onConfirm}
-              disabled={loading}
-              className="flex items-center space-x-2 h-7 px-3 text-sm rounded-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
-            >
-              <Trash2 className="w-4 h-4" />
-              <span>{loading ? 'Eliminando...' : 'Eliminar'}</span>
-            </button>
+          <h3 className="text-base font-semibold text-text-primary text-center mb-1">Eliminar Sucursal</h3>
+          <p className="text-sm text-text-secondary text-center mb-4">
+            ¿Eliminar la sucursal <strong>{site.name}</strong> (#{site.site_number})?
+            <br /><span className="font-medium text-red-600">Esta acción no se puede deshacer.</span>
+          </p>
+          <div className="flex gap-2">
+            <CompactButton variant="ghost" onClick={onClose} disabled={loading} className="flex-1 justify-center">Cancelar</CompactButton>
+            <CompactButton variant="danger" onClick={onConfirm} disabled={loading} className="flex-1 justify-center">
+              {loading ? <><RefreshCw className="w-3 h-3 animate-spin" /> Eliminando...</> : 'Eliminar'}
+            </CompactButton>
           </div>
         </div>
       </div>

@@ -34,9 +34,8 @@ const StaftGroupsSection: React.FC = () => {
           { label: "Grupos", value: groups.length, color: "green" },
         ]}
       >
-        <CompactButton variant="primary" onClick={() => setModal({ show: true, group: null })}
-          className="!bg-teal-600 hover:!bg-teal-700">
-          <Plus className="w-3.5 h-3.5" />Nuevo Grupo
+        <CompactButton variant="primary" onClick={() => setModal({ show: true, group: null })}>
+          <Plus className="w-3.5 h-3.5" />Nuevo
         </CompactButton>
         <CompactButton variant="icon" onClick={load}>
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />

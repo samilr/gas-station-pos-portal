@@ -206,8 +206,8 @@ const TaxLinesRow: React.FC<{ taxId: string; onAddLine: () => void }> = ({ taxId
                 <Percent className="w-3 h-3" />Lineas de Tasa — {taxId}
               </p>
               <CompactButton variant="primary" onClick={() => { setLineModal({ show: true, line: null }); }}
-                className="!h-6 !text-xs !bg-amber-600 hover:!bg-amber-700">
-                <Plus className="w-3 h-3" />Nueva Linea
+                className="!h-6 !text-xs">
+                <Plus className="w-3 h-3" />Nuevo
               </CompactButton>
             </div>
 
@@ -325,11 +325,11 @@ const TaxesSection: React.FC = () => {
           ))}
         </div>
         {tab === 'taxes'
-          ? <CompactButton variant="primary" onClick={() => setTaxModal({ show: true, tax: null })} className="!bg-amber-600 hover:!bg-amber-700">
-              <Plus className="w-3.5 h-3.5" />Nuevo Impuesto
+          ? <CompactButton variant="primary" onClick={() => setTaxModal({ show: true, tax: null })}>
+              <Plus className="w-3.5 h-3.5" />Nuevo
             </CompactButton>
           : <CompactButton variant="primary" onClick={() => setTypeModal({ show: true, type: null })}>
-              <Plus className="w-3.5 h-3.5" />Nuevo Tipo
+              <Plus className="w-3.5 h-3.5" />Nuevo
             </CompactButton>}
         <CompactButton variant="icon" onClick={load}>
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
+import { CompactButton } from '../../ui';
 
 interface ConfirmActionModalProps {
   isOpen: boolean;
@@ -12,20 +12,8 @@ interface ConfirmActionModalProps {
   confirmColor?: 'red' | 'orange' | 'green';
 }
 
-const COLOR_MAP = {
-  red: 'bg-red-600 hover:bg-red-700 disabled:bg-red-400',
-  orange: 'bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400',
-  green: 'bg-green-600 hover:bg-green-700 disabled:bg-green-400',
-};
-
 const ConfirmActionModal: React.FC<ConfirmActionModalProps> = ({
-  isOpen,
-  onClose,
-  onConfirm,
-  title,
-  message,
-  confirmLabel = 'Confirmar',
-  confirmColor = 'red',
+  isOpen, onClose, onConfirm, title, message, confirmLabel = 'Confirmar', confirmColor = 'red',
 }) => {
   const [loading, setLoading] = useState(false);
 
@@ -41,58 +29,30 @@ const ConfirmActionModal: React.FC<ConfirmActionModalProps> = ({
     }
   };
 
+  if (!isOpen) return null;
+
+  const variant = confirmColor === 'red' ? 'danger' : 'primary';
+  const iconBg = confirmColor === 'red' ? 'bg-red-100' : confirmColor === 'orange' ? 'bg-orange-100' : 'bg-green-100';
+  const iconColor = confirmColor === 'red' ? 'text-red-600' : confirmColor === 'orange' ? 'text-orange-600' : 'text-green-600';
+
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          onClick={onClose}
-        >
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-white rounded-sm shadow-xl p-4 w-full max-w-lg mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
-                  <AlertTriangle className="w-4 h-4 text-red-600" />
-                </div>
-                <h3 className="text-base font-semibold text-gray-900">{title}</h3>
-              </div>
-              <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <p className="text-xs text-text-muted mb-3">{message}</p>
-
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={onClose}
-                disabled={loading}
-                className="h-7 px-3 text-sm rounded-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleConfirm}
-                disabled={loading}
-                className={`h-7 px-3 text-sm rounded-sm font-medium text-white transition-colors flex items-center gap-2 ${COLOR_MAP[confirmColor]}`}
-              >
-                {loading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-                {confirmLabel}
-              </button>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={onClose}>
+      <div className="bg-white rounded-sm w-full max-w-sm shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="p-4">
+          <div className={`mx-auto flex h-10 w-10 items-center justify-center rounded-full ${iconBg} mb-3`}>
+            <AlertCircle className={`h-5 w-5 ${iconColor}`} />
+          </div>
+          <h3 className="text-base font-semibold text-text-primary text-center mb-1">{title}</h3>
+          <p className="text-sm text-text-secondary text-center mb-4">{message}</p>
+          <div className="flex gap-2">
+            <CompactButton variant="ghost" onClick={onClose} disabled={loading} className="flex-1 justify-center">Cancelar</CompactButton>
+            <CompactButton variant={variant} onClick={handleConfirm} disabled={loading} className="flex-1 justify-center">
+              {loading ? <><RefreshCw className="w-3 h-3 animate-spin" /> Procesando...</> : confirmLabel}
+            </CompactButton>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

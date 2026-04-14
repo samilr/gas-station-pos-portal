@@ -1,20 +1,11 @@
 import React, { useState, useEffect } from "react";
-import {
-  User,
-  Shield,
-  Building,
-  Save,
-  X,
-  Eye,
-  EyeOff,
-  Edit,
-  UserPlus,
-} from "lucide-react";
+import { User, Save, X, Eye, EyeOff, Edit, UserPlus, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 import { usePermissions } from "../../../hooks/usePermissions";
 import { IUser, userService } from "../../../services/userService";
 import { PermissionGate } from "../../common";
 import { Role } from "../../../config/permissions";
+import { CompactButton } from "../../ui";
 
 interface UserFormData {
   username: string;
@@ -32,7 +23,6 @@ interface UserFormData {
   portal_access: number;
 }
 
-// Interfaces para los DTOs del API
 interface CreateUserDto {
   username: string;
   name: string;
@@ -71,122 +61,71 @@ interface UserModalProps {
   onSuccess: () => void;
 }
 
-const UserModal: React.FC<UserModalProps> = ({
-  isOpen,
-  onClose,
-  user,
-  mode,
-  onSuccess,
-}) => {
+const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSuccess }) => {
   const { canEditUsers } = usePermissions();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<UserFormData>({
-    username: "",
-    name: "",
-    email: "",
-    password: "",
-    role: "5", // SELLER por defecto
-    staft_group: "",
-    staft_id: "",
-    site_id: "",
-    terminal_id: 1,
-    shift: 1,
-    active: 1,
-    connected: 0,
-    portal_access: 0,
+    username: "", name: "", email: "", password: "", role: "5", staft_group: "",
+    staft_id: "", site_id: "", terminal_id: 1, shift: 1, active: 1, connected: 0, portal_access: 0,
   });
 
   const isEditing = mode === "edit";
   const isViewing = mode === "view";
   const isCreating = mode === "create";
 
-  // Función para mapear role string a roleId number
   const getRoleId = (role: string): number => {
-    // Si el role ya es un número, devolverlo directamente
     const roleNum = parseInt(role);
-    if (!isNaN(roleNum)) {
-      return roleNum;
-    }
-
-    // Mapeo de strings a números (para compatibilidad)
+    if (!isNaN(roleNum)) return roleNum;
     switch (role.toLowerCase()) {
-      case "admin":
-        return 1;
-      case "configuration":
-        return 2;
-      case "supervisor":
-        return 3;
-      case "manager":
-        return 4;
-      case "seller":
-        return 5;
-      default:
-        return 5; // seller por defecto
+      case "admin": return 1;
+      case "configuration": return 2;
+      case "supervisor": return 3;
+      case "manager": return 4;
+      case "seller": return 5;
+      default: return 5;
     }
   };
 
-  // Función para mapear role string a roleId number (corregido según tu mapeo)
   const getRoleIdFromString = (roleName: string): string => {
     switch (roleName.toUpperCase()) {
-      case "ADMIN":
-        return "1";
-      case "CONFIGURATION":
-        return "2";
-      case "SUPERVISOR":
-        return "3";
-      case "MANAGER":
-        return "4";
-      case "SELLER":
-        return "5";
-      default:
-        return "5"; // SELLER por defecto
+      case "ADMIN": return "1";
+      case "CONFIGURATION": return "2";
+      case "SUPERVISOR": return "3";
+      case "MANAGER": return "4";
+      case "SELLER": return "5";
+      default: return "5";
     }
   };
 
-  // Función para mapear grupo de personal string a number
   const getGroupId = (groupName: string): string => {
-    // Si el grupo ya es un número, devolverlo directamente
     const groupNum = parseInt(groupName);
-    if (!isNaN(groupNum)) {
-      return groupNum.toString();
-    }
-
-    // Mapeo de strings a números
+    if (!isNaN(groupNum)) return groupNum.toString();
     switch (groupName.toLowerCase()) {
-      case "vendedor pista":
-        return "1";
-      case "vendedor tienda":
-        return "2";
+      case "vendedor pista": return "1";
+      case "vendedor tienda": return "2";
       case "administrador estacion":
-      case "administrador estación":
-        return "3";
+      case "administrador estación": return "3";
       case "administracion isla":
-      case "administración isla":
-        return "4";
-      default:
-        return "1"; // Vendedor Pista por defecto
+      case "administración isla": return "4";
+      default: return "1";
     }
   };
 
-  // Función para mapear formulario a CreateUserDto
-  const mapToCreateUserDto = (formData: UserFormData): CreateUserDto => {
-    return {
-      username: formData.username,
-      name: formData.name,
-      email: formData.email || undefined,
-      password: formData.password,
-      roleId: getRoleId(formData.role),
-      portalAccess: formData.portal_access === 1,
-      staftId: parseInt(formData.staft_id) || 0,
-      siteId: formData.site_id,
-      terminalId: formData.terminal_id,
-      shift: formData.shift,
-      staftGroupId: parseInt(formData.staft_group) || 0,
-    };
-  };
+  const mapToCreateUserDto = (formData: UserFormData): CreateUserDto => ({
+    username: formData.username,
+    name: formData.name,
+    email: formData.email || undefined,
+    password: formData.password,
+    roleId: getRoleId(formData.role),
+    portalAccess: formData.portal_access === 1,
+    staftId: parseInt(formData.staft_id) || 0,
+    siteId: formData.site_id,
+    terminalId: formData.terminal_id,
+    shift: formData.shift,
+    staftGroupId: parseInt(formData.staft_group) || 0,
+  });
 
-  // Función para mapear formulario a UpdateUserDto
   const mapToUpdateUserDto = (formData: UserFormData): UpdateUserDto => {
     const updateData: UpdateUserDto = {
       username: formData.username,
@@ -194,33 +133,27 @@ const UserModal: React.FC<UserModalProps> = ({
       email: formData.email || undefined,
       roleId: getRoleId(formData.role),
       portalAccess: formData.portal_access === 1,
-      connected: formData.connected === 1, // Convertir number (1/0) a boolean (true/false)
-      active: formData.active === 1, // Convertir number (1/0) a boolean (true/false)
+      connected: formData.connected === 1,
+      active: formData.active === 1,
       staftId: parseInt(formData.staft_id) || 0,
       siteId: formData.site_id,
       terminalId: formData.terminal_id,
       shift: formData.shift,
       staftGroupId: parseInt(formData.staft_group) || 0,
     };
-
-    // Solo incluir password si se proporcionó
-    if (formData.password) {
-      updateData.password = formData.password;
-    }
-
+    if (formData.password) updateData.password = formData.password;
     return updateData;
   };
 
-  // Cargar datos del usuario cuando se abre el modal para editar o ver
   useEffect(() => {
     if (user && isOpen && (isEditing || isViewing)) {
-      const mappedFormData = {
+      setFormData({
         username: user.username || "",
         name: user.name || "",
         email: user.email || "",
-        password: "", // No mostrar contraseña actual
-        role: getRoleIdFromString(user.role || ""), // Mapear role string a roleId
-        staft_group: getGroupId(user.staft_group || ""), // Mapear grupo correctamente
+        password: "",
+        role: getRoleIdFromString(user.role || ""),
+        staft_group: getGroupId(user.staft_group || ""),
         staft_id: user.staft_id || "",
         site_id: user.site_id || "",
         terminal_id: user.terminal_id || 1,
@@ -228,44 +161,23 @@ const UserModal: React.FC<UserModalProps> = ({
         connected: user.connected ? 1 : 0,
         active: user.active,
         portal_access: user.portal_access ? 1 : 0,
-      };
-      setFormData(mappedFormData);
+      });
     } else if (isCreating && isOpen) {
-      // Resetear formulario para crear nuevo usuario
       setFormData({
-        username: "",
-        name: "",
-        email: "",
-        password: "",
-        role: "5", // SELLER por defecto
-        staft_group: "",
-        staft_id: "",
-        site_id: "",
-        terminal_id: 1,
-        shift: 1,
-        active: 1,
-        portal_access: 0,
-        connected: 0,
+        username: "", name: "", email: "", password: "", role: "5", staft_group: "",
+        staft_id: "", site_id: "", terminal_id: 1, shift: 1, active: 1, portal_access: 0, connected: 0,
       });
     }
   }, [user, isOpen, isEditing, isViewing, isCreating]);
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]:
         type === "checkbox"
-          ? (e.target as HTMLInputElement).checked
-            ? 1
-            : 0
-          : name === "terminal_id" ||
-            name === "shift" ||
-            name === "active" ||
-            name === "portal_access" ||
-            name === "connected"
+          ? (e.target as HTMLInputElement).checked ? 1 : 0
+          : name === "terminal_id" || name === "shift" || name === "active" || name === "portal_access" || name === "connected"
           ? parseInt(value)
           : value,
     }));
@@ -273,68 +185,29 @@ const UserModal: React.FC<UserModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // No hacer nada en modo vista
-    if (isViewing) {
-      return;
-    }
-
+    if (isViewing) return;
     setLoading(true);
-
     try {
       if (isEditing) {
-        const updateData = mapToUpdateUserDto(formData);
-        const response = await userService.updateUser(
-          user!.user_id,
-          updateData
-        );
+        const response = await userService.updateUser(user!.user_id, mapToUpdateUserDto(formData));
         if (response.successful) {
-          toast.success(
-            `Usuario actualizado exitosamente \n ${formData.name}`,
-            {
-              duration: 5000,
-              icon: "✅",
-            }
-          );
-          onSuccess();
-          onClose();
+          toast.success(`Usuario actualizado exitosamente \n ${formData.name}`, { duration: 5000 });
+          onSuccess(); onClose();
         } else {
-          toast.error(
-            "Error al actualizar usuario. Por favor, inténtalo de nuevo.",
-            {
-              duration: 5000,
-              icon: "❌",
-            }
-          );
-          console.error("Error al actualizar usuario");
+          toast.error("Error al actualizar usuario.", { duration: 5000 });
         }
       } else {
-        const createData = mapToCreateUserDto(formData);
-        const response = await userService.createUser(createData);
+        const response = await userService.createUser(mapToCreateUserDto(formData));
         if (response.successful) {
-          toast.success(`Usuario creado exitosamente \n ${formData.name}`, {
-            duration: 5000,
-            icon: "✅",
-          });
-          onSuccess();
-          onClose();
+          toast.success(`Usuario creado exitosamente \n ${formData.name}`, { duration: 5000 });
+          onSuccess(); onClose();
         } else {
-          toast.error(
-            "Error al crear usuario. Por favor, inténtalo de nuevo.",
-            {
-              duration: 5000,
-              icon: "❌",
-            }
-          );
-          console.error("Error al crear usuario");
+          toast.error("Error al crear usuario.", { duration: 5000 });
         }
       }
     } catch (error) {
       console.error("Error al procesar usuario:", error);
-      toast.error("Error de conexión. Por favor, inténtalo de nuevo.", {
-        duration: 5000,
-        icon: "❌",
-      });
+      toast.error("Error de conexión.", { duration: 5000 });
     } finally {
       setLoading(false);
     }
@@ -348,176 +221,74 @@ const UserModal: React.FC<UserModalProps> = ({
 
   if (!isOpen) return null;
 
+  const HeaderIcon = isEditing ? Edit : isViewing ? User : UserPlus;
+  const headerColor = isEditing ? 'green' : 'blue';
+
+  const inputCls = (disabled: boolean) =>
+    `w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${disabled ? "bg-gray-100 cursor-not-allowed" : ""}`;
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-sm max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-          <div className="flex items-center space-x-2">
-            {isEditing ? (
-              <Edit className="w-4 h-4 text-green-600" />
-            ) : (
-              <UserPlus className="w-4 h-4 text-blue-600" />
-            )}
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <form onSubmit={handleSubmit} className="bg-white rounded-sm w-full max-w-2xl shadow-xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between px-4 h-11 border-b border-gray-200 bg-gray-50 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <div className={`w-7 h-7 bg-${headerColor}-100 rounded-sm flex items-center justify-center`}>
+              <HeaderIcon className={`w-4 h-4 text-${headerColor}-600`} />
+            </div>
             <div>
-              <h3 className="text-base font-semibold text-gray-900">
-                {isViewing
-                  ? "Ver Usuario"
-                  : isEditing
-                  ? "Editar Usuario"
-                  : "Crear Nuevo Usuario"}
+              <h3 className="text-sm font-semibold text-text-primary">
+                {isViewing ? "Ver Usuario" : isEditing ? "Editar Usuario" : "Crear Nuevo Usuario"}
               </h3>
-              <p className="text-xs text-text-muted">
-                {isViewing
-                  ? `Viendo: ${user?.name}`
-                  : isEditing
-                  ? `Editando: ${user?.name}`
-                  : "Completa el formulario para crear un nuevo usuario"}
+              <p className="text-2xs text-text-muted">
+                {isViewing ? `Viendo: ${user?.name}` : isEditing ? `Editando: ${user?.name}` : "Completa el formulario"}
               </p>
             </div>
           </div>
-          <button
-            onClick={handleClose}
-            className="p-1 hover:bg-gray-100 rounded-sm transition-colors"
-          >
-            <X className="w-4 h-4 text-gray-500" />
+          <button type="button" onClick={handleClose} className="h-6 w-6 flex items-center justify-center rounded-sm hover:bg-gray-100">
+            <X className="w-4 h-4 text-text-secondary" />
           </button>
         </div>
 
-        {/* Modal Content */}
-        <div className="p-4">
-          <form onSubmit={handleSubmit} className="space-y-3">
-            {/* Basic Information */}
-            <div className="space-y-3">
-              <h3 className="text-base font-semibold text-gray-900 flex items-center space-x-2">
-                <User className="w-4 h-4 text-gray-600" />
-                <span>Información Básica</span>
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
-                    Nombre Completo *
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    required
-                    disabled={isViewing}
-                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                      isViewing ? "bg-gray-100 cursor-not-allowed" : ""
-                    }`}
-                    placeholder="Ingresa el nombre completo"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
-                    Nombre de Usuario *
-                  </label>
-                  <input
-                    type="text"
-                    name="username"
-                    value={formData.username}
-                    onChange={handleInputChange}
-                    required
-                    disabled={isViewing}
-                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                      isViewing ? "bg-gray-100 cursor-not-allowed" : ""
-                    }`}
-                    placeholder="Ingresa el nombre de usuario"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                    disabled={isViewing}
-                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                      isViewing ? "bg-gray-100 cursor-not-allowed" : ""
-                    }`}
-                    placeholder="nombre.apellido@isladom.com.do"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
-                    Contraseña {!isEditing && "*"}
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      required={!isEditing && !isViewing}
-                      disabled={isViewing}
-                      className={`w-full h-7 px-2 pr-8 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                        isViewing ? "bg-gray-100 cursor-not-allowed" : ""
-                      }`}
-                      placeholder={
-                        isViewing
-                          ? "••••••••"
-                          : isEditing
-                          ? "Dejar vacío para mantener actual"
-                          : "Ingresa la contraseña"
-                      }
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      disabled={isViewing}
-                      className={`absolute right-2 top-1/2 transform -translate-y-1/2 ${
-                        isViewing
-                          ? "text-gray-300 cursor-not-allowed"
-                          : "text-gray-400 hover:text-gray-600"
-                      }`}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
-                    </button>
-                  </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div>
+            <h4 className="text-2xs font-semibold uppercase tracking-wide text-text-secondary mb-2 pb-1 border-b border-gray-200">Información Básica</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Nombre Completo *</label>
+                <input type="text" name="name" value={formData.name} onChange={handleInputChange} required disabled={isViewing} className={inputCls(isViewing)} />
+              </div>
+              <div>
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Nombre de Usuario *</label>
+                <input type="text" name="username" value={formData.username} onChange={handleInputChange} required disabled={isViewing} className={inputCls(isViewing)} />
+              </div>
+              <div>
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Email *</label>
+                <input type="email" name="email" value={formData.email} onChange={handleInputChange} required disabled={isViewing} className={inputCls(isViewing)} />
+              </div>
+              <div>
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Contraseña {!isEditing && "*"}</label>
+                <div className="relative">
+                  <input type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleInputChange}
+                    required={!isEditing && !isViewing} disabled={isViewing}
+                    className={`w-full h-7 px-2 pr-7 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${isViewing ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                    placeholder={isViewing ? "••••••••" : isEditing ? "Dejar vacío para mantener" : ""} />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} disabled={isViewing}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary">
+                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Role and Permissions */}
-            <PermissionGate roles={[Role.ADMIN]}>
-              <div className="space-y-3">
-              <h3 className="text-base font-semibold text-gray-900 flex items-center space-x-2">
-                <Shield className="w-4 h-4 text-gray-600" />
-                <span>Rol y Permisos</span>
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <PermissionGate roles={[Role.ADMIN]}>
+            <div>
+              <h4 className="text-2xs font-semibold uppercase tracking-wide text-text-secondary mb-2 pb-1 border-b border-gray-200">Rol y Permisos</h4>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
-                    Rol *
-                  </label>
-                  <select
-                    name="role"
-                    value={formData.role}
-                    onChange={handleInputChange}
-                    required
-                    disabled={isViewing || !canEditUsers}
-                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                      isViewing || !canEditUsers
-                        ? "bg-gray-100 cursor-not-allowed"
-                        : ""
-                    }`}
-                  >
+                  <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Rol *</label>
+                  <select name="role" value={formData.role} onChange={handleInputChange} required disabled={isViewing || !canEditUsers}
+                    className={inputCls(isViewing || !canEditUsers)}>
                     <option value="1">ADMIN</option>
                     <option value="2">CONFIGURATION</option>
                     <option value="3">SUPERVISOR</option>
@@ -526,259 +297,77 @@ const UserModal: React.FC<UserModalProps> = ({
                     <option value="6">AUDIT</option>
                     <option value="7">ACCOUNTANT</option>
                   </select>
-                  {!canEditUsers && !isViewing && (
-                    <p className="text-xs text-red-500 mt-1">
-                      Solo usuarios ADMIN o MANAGER pueden cambiar roles
-                    </p>
-                  )}
                 </div>
-
                 <div>
-                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
-                    Acceso al Portal
-                  </label>
-                  <select
-                    name="portal_access"
-                    value={formData.portal_access}
-                    onChange={handleInputChange}
-                    disabled={isViewing}
-                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                      isViewing ? "bg-gray-100 cursor-not-allowed" : ""
-                    }`}
-                  >
+                  <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Acceso al Portal</label>
+                  <select name="portal_access" value={formData.portal_access} onChange={handleInputChange} disabled={isViewing} className={inputCls(isViewing)}>
                     <option value={1}>Permitido</option>
                     <option value={0}>Denegado</option>
                   </select>
                 </div>
               </div>
+            </div>
+          </PermissionGate>
+
+          <div>
+            <h4 className="text-2xs font-semibold uppercase tracking-wide text-text-secondary mb-2 pb-1 border-b border-gray-200">Información Laboral</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Grupo de Personal *</label>
+                <select name="staft_group" value={formData.staft_group} onChange={handleInputChange} required disabled={isViewing} className={inputCls(isViewing)}>
+                  <option value="">Seleccionar grupo</option>
+                  <option value="1">Vendedor Pista</option>
+                  <option value="2">Vendedor Tienda</option>
+                  <option value="3">Administrador Estacion</option>
+                  <option value="4">Administracion ISLA</option>
+                </select>
               </div>
-            </PermissionGate>
-
-            {/* Work Information */}
-            <div className="space-y-3">
-              <h3 className="text-base font-semibold text-gray-900 flex items-center space-x-2">
-                <Building className="w-4 h-4 text-gray-600" />
-                <span>Información Laboral</span>
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
-                    Grupo de Personal *
-                  </label>
-                  <select
-                    name="staft_group"
-                    value={formData.staft_group}
-                    onChange={handleInputChange}
-                    required
-                    disabled={isViewing}
-                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                      isViewing ? "bg-gray-100 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    <option value="">Seleccionar grupo</option>
-                    <option value="1">Vendedor Pista</option>
-                    <option value="2">Vendedor Tienda</option>
-                    <option value="3">Administrador Estacion</option>
-                    <option value="4">Administracion ISLA</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
-                    Código de empleado *
-                  </label>
-                  <input
-                    type="number"
-                    name="staft_id"
-                    value={formData.staft_id}
-                    onChange={handleInputChange}
-                    required
-                    disabled={isViewing}
-                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                      isViewing ? "bg-gray-100 cursor-not-allowed" : ""
-                    }`}
-                    placeholder="Ingresa el código de empleado"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
-                    Sucursal *
-                  </label>
-                  <input
-                    type="text"
-                    name="site_id"
-                    value={formData.site_id}
-                    onChange={handleInputChange}
-                    required
-                    disabled={isViewing}
-                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                      isViewing ? "bg-gray-100 cursor-not-allowed" : ""
-                    }`}
-                    placeholder="Ingresa el ID del sitio"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-2xs uppercase tracking-wide text-gray-500 mb-0.5">
-                    Turno
-                  </label>
-                  <select
-                    name="shift"
-                    value={formData.shift}
-                    onChange={handleInputChange}
-                    disabled={isViewing}
-                    className={`w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                      isViewing ? "bg-gray-100 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    <option value={1}>Turno 1 (6:00 AM - 2:00 PM)</option>
-                    <option value={2}>Turno 2 (2:00 PM - 10:00 PM)</option>
-                    <option value={3}>Turno 3 (10:00 PM - 6:00 AM)</option>
-                    <option value={4}>Turno 4 (8:00 AM - 5:00 PM)</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Código de empleado *</label>
+                <input type="number" name="staft_id" value={formData.staft_id} onChange={handleInputChange} required disabled={isViewing} className={inputCls(isViewing)} />
+              </div>
+              <div>
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Sucursal *</label>
+                <input type="text" name="site_id" value={formData.site_id} onChange={handleInputChange} required disabled={isViewing} className={inputCls(isViewing)} />
+              </div>
+              <div>
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Turno</label>
+                <select name="shift" value={formData.shift} onChange={handleInputChange} disabled={isViewing} className={inputCls(isViewing)}>
+                  <option value={1}>Turno 1 (6:00-14:00)</option>
+                  <option value={2}>Turno 2 (14:00-22:00)</option>
+                  <option value={3}>Turno 3 (22:00-6:00)</option>
+                  <option value={4}>Turno 4 (8:00-17:00)</option>
+                </select>
               </div>
             </div>
+          </div>
 
-            {/* Status Switches */}
-            <div className="space-y-3">
-              <h3 className="text-base font-semibold text-gray-900 flex items-center space-x-2">
-                <Shield className="w-4 h-4 text-gray-600" />
-                <span>Estado del Usuario</span>
-              </h3>
-
-              {/* Switches */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="flex items-center justify-between p-2 bg-gray-50 rounded-sm">
-                  <div>
-                    <label className="text-2xs uppercase tracking-wide text-gray-500">
-                      Conectado
-                    </label>
-                    <p className="text-xs text-text-muted">
-                      Indica si el usuario está conectado
-                    </p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="connected"
-                      checked={formData.connected === 1}
-                      onChange={handleInputChange}
-                      disabled={isViewing}
-                      className="sr-only peer"
-                    />
-                    <div
-                      className={`relative w-12 h-7 rounded-full transition-all duration-300 ease-in-out ${
-                        formData.connected === 1
-                          ? "bg-blue-600"
-                          : "bg-gray-200 border-2 border-gray-300"
-                      } ${
-                        isViewing
-                          ? "opacity-50 cursor-not-allowed"
-                          : "cursor-pointer hover:shadow-lg"
-                      }`}
-                    >
-                      <div
-                        className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-all duration-300 ease-in-out transform shadow-sm ${
-                          formData.connected === 1
-                            ? "translate-x-5"
-                            : "translate-x-0"
-                        }`}
-                      ></div>
-                      {formData.connected === 1 && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-2 h-2 bg-white rounded-full"></div>
-                        </div>
-                      )}
-                    </div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between p-2 bg-gray-50 rounded-sm">
-                  <div>
-                    <label className="text-2xs uppercase tracking-wide text-gray-500">
-                      Activo
-                    </label>
-                    <p className="text-xs text-text-muted">
-                      Indica si el usuario está activo
-                    </p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="active"
-                      checked={formData.active === 1}
-                      onChange={handleInputChange}
-                      disabled={isViewing}
-                      className="sr-only peer"
-                    />
-                    <div
-                      className={`relative w-12 h-7 rounded-full transition-all duration-300 ease-in-out ${
-                        formData.active === 1
-                          ? "bg-blue-600"
-                          : "bg-gray-200 border-2 border-gray-300"
-                      } ${
-                        isViewing
-                          ? "opacity-50 cursor-not-allowed"
-                          : "cursor-pointer hover:shadow-lg"
-                      }`}
-                    >
-                      <div
-                        className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-all duration-300 ease-in-out transform shadow-sm ${
-                          formData.active === 1
-                            ? "translate-x-5"
-                            : "translate-x-0"
-                        }`}
-                      ></div>
-                      {formData.active === 1 && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-2 h-2 bg-white rounded-full"></div>
-                        </div>
-                      )}
-                    </div>
-                  </label>
-                </div>
-              </div>
+          <div>
+            <h4 className="text-2xs font-semibold uppercase tracking-wide text-text-secondary mb-2 pb-1 border-b border-gray-200">Estado</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="flex items-center justify-between px-2 h-7 bg-gray-50 border border-gray-200 rounded-sm cursor-pointer">
+                <span className="text-xs text-text-primary">Conectado</span>
+                <input type="checkbox" name="connected" checked={formData.connected === 1} onChange={handleInputChange}
+                  disabled={isViewing} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+              </label>
+              <label className="flex items-center justify-between px-2 h-7 bg-gray-50 border border-gray-200 rounded-sm cursor-pointer">
+                <span className="text-xs text-text-primary">Activo</span>
+                <input type="checkbox" name="active" checked={formData.active === 1} onChange={handleInputChange}
+                  disabled={isViewing} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+              </label>
             </div>
-
-            {/* Form Actions */}
-            <div className="flex items-center justify-end space-x-3 pt-3 border-t border-gray-200">
-              <button
-                type="button"
-                onClick={handleClose}
-                className="h-7 px-3 text-sm rounded-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                {isViewing ? "Cerrar" : "Cancelar"}
-              </button>
-              {!isViewing && (
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex items-center space-x-2 h-7 px-3 text-sm rounded-sm font-medium bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white transition-colors"
-                >
-                  {loading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>
-                        {isEditing ? "Actualizando..." : "Creando..."}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      <span>
-                        {isEditing ? "Actualizar Usuario" : "Crear Usuario"}
-                      </span>
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-          </form>
+          </div>
         </div>
-      </div>
+
+        <div className="flex items-center justify-end gap-2 px-4 h-11 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+          <CompactButton type="button" variant="ghost" onClick={handleClose}>{isViewing ? "Cerrar" : "Cancelar"}</CompactButton>
+          {!isViewing && (
+            <CompactButton type="submit" variant="primary" disabled={loading}>
+              {loading ? <><RefreshCw className="w-3 h-3 animate-spin" /> Guardando...</> : <><Save className="w-3 h-3" /> Guardar</>}
+            </CompactButton>
+          )}
+        </div>
+      </form>
     </div>
   );
 };

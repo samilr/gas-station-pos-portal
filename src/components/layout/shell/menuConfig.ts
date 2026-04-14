@@ -55,6 +55,9 @@ export const menuItems: MenuItem[] = [
       { id: 'products.categories', label: 'Categorías', icon: Users, permission: 'products.view' },
       { id: 'products.barcodes', label: 'Barcodes', icon: Barcode, permission: 'products.view' },
       { id: 'gov.taxpayers', label: 'Contribuyentes', icon: Users, permission: 'settings.view' },
+      { id: 'users.list', label: 'Usuarios', icon: Users, permission: 'users.view' },
+      { id: 'users.roles', label: 'Roles', icon: Shield, permission: 'users.view' },
+      { id: 'users.staft-groups', label: 'Grupos de Cajeros', icon: BookUser, permission: 'users.view' },
     ],
   },
   {
@@ -71,17 +74,6 @@ export const menuItems: MenuItem[] = [
       { id: 'dispensers.hardware', label: 'Hardware', icon: Wrench, permission: 'dispensers.view' },
       { id: 'dispensers.tags', label: 'Tags RFID', icon: Tag, permission: 'dispensers.view' },
       { id: 'dispensers.reports', label: 'Reportes', icon: ClipboardList, permission: 'dispensers.view' },
-    ],
-  },
-  {
-    id: 'users',
-    label: 'Usuarios',
-    icon: Users,
-    permission: 'users.view',
-    subItems: [
-      { id: 'users.list', label: 'Lista de Usuarios', icon: Users, permission: 'users.view' },
-      { id: 'users.roles', label: 'Roles', icon: Shield, permission: 'users.view' },
-      { id: 'users.staft-groups', label: 'Grupos de Cajeros', icon: BookUser, permission: 'users.view' },
     ],
   },
   {

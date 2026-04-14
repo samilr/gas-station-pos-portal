@@ -60,17 +60,38 @@ export interface IUser{
   last_time_logged?: Date;
 }
 
+// Normaliza campos camelCase de la API a snake_case interno
+const normalizeUser = (raw: any): IUser => ({
+  ...raw,
+  user_id: raw.user_id ?? raw.userId,
+  staft_id: raw.staft_id ?? (raw.staftId != null ? String(raw.staftId) : ''),
+  staft_group: raw.staft_group ?? raw.staftGroup,
+  staft_group_id: raw.staft_group_id ?? raw.staftGroupId,
+  site_id: raw.site_id ?? raw.siteId,
+  terminal_id: raw.terminal_id ?? raw.terminalId,
+  created_at: raw.created_at ?? raw.createdAt,
+  created_by: raw.created_by ?? raw.createdBy,
+  portal_access: raw.portal_access ?? (raw.portalAccess ? 1 : 0),
+  role_id: raw.role_id ?? raw.roleId,
+  updated_password_at: raw.updated_password_at ?? raw.updatedPasswordAt,
+  last_time_logged: raw.last_time_logged ?? raw.lastTimeLogged,
+});
+
 export const userService = {
   async getUsers(): Promise<UserResponse> {
-    const response = await apiGet<IUser[]>(buildApiUrl('users'));
+    const response = await apiGet<any[]>(buildApiUrl('users'));
     return {
       successful: response.successful,
-      data: response.data || []
+      data: (response.data || []).map(normalizeUser),
     };
   },
 
   async getUserByStaftId(staftId: string): Promise<ApiResponse<IUser>> {
-    return await apiGet<IUser>(buildApiUrl(`users/staft/${staftId}`));
+    const response = await apiGet<any>(buildApiUrl(`users/staft/${staftId}`));
+    return {
+      ...response,
+      data: response.data ? normalizeUser(response.data) : response.data,
+    };
   },
 
   async logout(): Promise<void> {

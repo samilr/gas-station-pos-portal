@@ -44,9 +44,8 @@ const RolesSection: React.FC = () => {
           { label: "Roles", value: roles.length, color: "blue" },
         ]}
       >
-        <CompactButton variant="primary" onClick={() => setModal({ show: true, role: null })}
-          className="!bg-indigo-600 hover:!bg-indigo-700">
-          <Plus className="w-3.5 h-3.5" />Nuevo Rol
+        <CompactButton variant="primary" onClick={() => setModal({ show: true, role: null })}>
+          <Plus className="w-3.5 h-3.5" />Nuevo
         </CompactButton>
         <CompactButton variant="icon" onClick={load}>
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />

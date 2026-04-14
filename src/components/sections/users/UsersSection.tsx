@@ -39,10 +39,11 @@ const UsersSection: React.FC = () => {
 
   const filteredUsers = useMemo(() => {
     return (Array.isArray(users) ? users : []).filter(user => {
+      const term = searchTerm.toLowerCase();
       const matchesSearch =
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase());
+        (user.name || '').toLowerCase().includes(term) ||
+        (user.username || '').toLowerCase().includes(term) ||
+        (user.email || '').toLowerCase().includes(term);
       const matchesRole = roleFilter === '' || user.role.toLowerCase() === roleFilter.toLowerCase();
       const matchesStatus = statusFilter === '' ||
         (statusFilter === 'active' && user.active === 1) ||
@@ -90,34 +91,53 @@ const UsersSection: React.FC = () => {
   const columns = useMemo(() => [
     columnHelper.accessor('name', {
       header: 'Usuario',
-      size: 200,
+      size: 220,
       cell: (info) => {
         const user = info.row.original;
         return (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <div className="w-5 h-5 bg-blue-100 rounded text-2xs font-medium text-blue-600 flex items-center justify-center flex-shrink-0">
               {user.staft_id}
             </div>
             <span className="text-sm text-text-primary truncate">{user.name}</span>
-            <span className="text-text-muted truncate">{user.email}</span>
           </div>
         );
       },
     }),
+    columnHelper.accessor('email', {
+      header: 'Email',
+      size: 200,
+      cell: (info) => {
+        const val = info.getValue();
+        return val
+          ? <span className="text-sm text-text-secondary truncate block">{val}</span>
+          : <span className="text-xs text-text-muted italic">—</span>;
+      },
+    }),
     columnHelper.accessor('site_id', {
       header: 'Sucursal',
-      size: 100,
-      cell: (info) => <span className="text-sm">{info.getValue()}</span>,
+      size: 110,
+      cell: (info) => {
+        const val = info.getValue();
+        return val
+          ? <span className="text-sm font-mono">{val}</span>
+          : <span className="text-xs text-text-muted">—</span>;
+      },
     }),
     columnHelper.accessor('role', {
       header: 'Rol',
-      size: 100,
+      size: 110,
       cell: (info) => <StatusDot color={getRoleDotColor(info.getValue())} label={info.getValue()} />,
     }),
     columnHelper.accessor('staft_group', {
       header: 'Grupo',
-      size: 100,
-      cell: (info) => <span className="text-sm">{info.getValue()}</span>,
+      size: 140,
+      cell: (info) => {
+        const val = info.getValue();
+        return val
+          ? <span className="text-sm truncate block">{val}</span>
+          : <span className="text-xs text-text-muted">—</span>;
+      },
     }),
     columnHelper.accessor('active', {
       header: 'Estado',
@@ -131,7 +151,7 @@ const UsersSection: React.FC = () => {
     }),
     columnHelper.accessor('portal_access', {
       header: 'Portal',
-      size: 60,
+      size: 70,
       cell: (info) => (
         <StatusDot
           color={info.getValue() ? 'green' : 'red'}
@@ -140,12 +160,16 @@ const UsersSection: React.FC = () => {
       ),
     }),
     columnHelper.accessor('created_at', {
-      header: 'Fecha',
+      header: 'Creado',
       size: 100,
       cell: (info) => {
         const val = info.getValue();
-        if (!val) return null;
-        return <span className="text-sm">{formatDateDMY(val)}</span>;
+        if (!val) return <span className="text-xs text-text-muted">—</span>;
+        try {
+          return <span className="text-sm font-mono">{formatDateDMY(val)}</span>;
+        } catch {
+          return <span className="text-xs text-text-muted">—</span>;
+        }
       },
     }),
   ], []);
@@ -194,7 +218,7 @@ const UsersSection: React.FC = () => {
         </CompactButton>
         <PermissionGate roles={[Role.ADMIN]}>
           <CompactButton variant="primary" onClick={handleCreateUser}>
-            <Plus className="w-3 h-3" /> Nuevo Usuario
+            <Plus className="w-3 h-3" /> Nuevo
           </CompactButton>
         </PermissionGate>
       </Toolbar>

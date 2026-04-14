@@ -204,7 +204,7 @@ const DevicesSection: React.FC = () => {
             onClick={handleCreateDevice}
           >
             <Plus className="w-3.5 h-3.5" />
-            Nuevo Dispositivo
+            Nuevo
           </CompactButton>
         </PermissionGate>
       </Toolbar>
