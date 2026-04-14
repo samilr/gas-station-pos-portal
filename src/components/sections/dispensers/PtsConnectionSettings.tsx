@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import {
   Wifi, Save, RefreshCw, CheckCircle, XCircle, Eye, EyeOff, Server,
 } from 'lucide-react';
@@ -10,6 +9,7 @@ import {
   getSystemInfo,
   type PtsSettings,
 } from '../../../services/dispenserService';
+import { CompactButton } from '../../ui';
 
 const PtsConnectionSettings: React.FC = () => {
   const [settings, setSettings] = useState<PtsSettings | null>(null);
@@ -39,7 +39,7 @@ const PtsConnectionSettings: React.FC = () => {
         setPasswordChanged(false);
       }
     } catch {
-      toast.error('Error al cargar configuración PTS');
+      toast.error('Error al cargar configuracion PTS');
     } finally {
       setLoading(false);
     }
@@ -70,12 +70,11 @@ const PtsConnectionSettings: React.FC = () => {
       if (pumpCount !== settings?.pumpCount) payload.pumpCount = pumpCount;
 
       await updatePtsSettings(payload);
-      toast.success('Configuración PTS actualizada. Los cambios toman efecto en la próxima solicitud.');
+      toast.success('Configuracion PTS actualizada. Los cambios toman efecto en la proxima solicitud.');
       setPasswordChanged(false);
-      // Recargar para obtener los valores actualizados
       load();
     } catch (err) {
-      toast.error('Error al guardar configuración');
+      toast.error('Error al guardar configuracion');
     } finally {
       setSaving(false);
     }
@@ -88,14 +87,14 @@ const PtsConnectionSettings: React.FC = () => {
       const packets = await getSystemInfo();
       if (packets.length > 0) {
         setTestResult('success');
-        toast.success('Conexión al PTS exitosa');
+        toast.success('Conexion al PTS exitosa');
       } else {
         setTestResult('error');
-        toast.error('No se recibió respuesta del PTS');
+        toast.error('No se recibio respuesta del PTS');
       }
     } catch {
       setTestResult('error');
-      toast.error('Error al conectar con el PTS. Verifique la configuración.');
+      toast.error('Error al conectar con el PTS. Verifique la configuracion.');
     } finally {
       setTesting(false);
     }
@@ -103,33 +102,26 @@ const PtsConnectionSettings: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-8 flex items-center justify-center">
-        <div className="w-6 h-6 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      <div className="bg-white rounded-sm border border-table-border p-4 flex items-center justify-center">
+        <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm">
-      <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-            <Server className="w-5 h-5 text-purple-600" />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Conexión PTS</h2>
-            <p className="text-sm text-gray-500">Configuración de conexión al controlador PTS-2</p>
-          </div>
-        </div>
-        <button onClick={load} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
-          <RefreshCw className="w-4 h-4" />
-        </button>
+    <div className="bg-white rounded-sm border border-table-border">
+      <div className="flex items-center gap-2 px-3 h-8 bg-table-header border-b border-table-border">
+        <Server className="w-3.5 h-3.5 text-gray-500" />
+        <span className="text-xs font-semibold uppercase tracking-wide text-gray-700 flex-1">Conexion PTS</span>
+        <CompactButton variant="icon" onClick={load}>
+          <RefreshCw className="w-3.5 h-3.5" />
+        </CompactButton>
       </div>
 
-      <div className="p-6 space-y-5">
+      <div className="p-2 space-y-2">
         {/* URL Base */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">
             URL del Controlador PTS
           </label>
           <input
@@ -137,15 +129,15 @@ const PtsConnectionSettings: React.FC = () => {
             value={baseUrl}
             onChange={(e) => setBaseUrl(e.target.value)}
             placeholder="https://192.168.1.117/jsonPTS"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
+            className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
           />
-          <p className="text-xs text-gray-400 mt-1">Debe incluir /jsonPTS al final</p>
+          <p className="text-2xs text-gray-400 mt-0.5">Debe incluir /jsonPTS al final</p>
         </div>
 
-        {/* Usuario y Contraseña */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Usuario y Contrasena */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">
               Usuario (Digest Auth)
             </label>
             <input
@@ -153,12 +145,12 @@ const PtsConnectionSettings: React.FC = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="admin"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Contraseña (Digest Auth)
+            <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">
+              Contrasena (Digest Auth)
             </label>
             <div className="relative">
               <input
@@ -168,26 +160,26 @@ const PtsConnectionSettings: React.FC = () => {
                   setPassword(e.target.value);
                   setPasswordChanged(true);
                 }}
-                placeholder="••••••••"
-                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="********"
+                className="w-full h-7 px-2 pr-7 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               </button>
             </div>
             {!passwordChanged && (
-              <p className="text-xs text-gray-400 mt-1">Deje sin cambiar para mantener la contraseña actual</p>
+              <p className="text-2xs text-gray-400 mt-0.5">Deje sin cambiar para mantener la contrasena actual</p>
             )}
           </div>
         </div>
 
         {/* Pump Count */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">
             Cantidad de Bombas
           </label>
           <input
@@ -195,61 +187,55 @@ const PtsConnectionSettings: React.FC = () => {
             min="0"
             value={pumpCount}
             onChange={(e) => setPumpCount(Number(e.target.value))}
-            className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-28 h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
-          <p className="text-xs text-gray-400 mt-1">0 = auto-detectar desde el PTS</p>
+          <p className="text-2xs text-gray-400 mt-0.5">0 = auto-detectar desde el PTS</p>
         </div>
 
         {/* Test Result */}
         {testResult && (
-          <motion.div
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
+          <div
+            className={`flex items-center gap-1.5 p-1.5 rounded-sm text-xs ${
               testResult === 'success'
                 ? 'bg-green-50 border border-green-200 text-green-700'
                 : 'bg-red-50 border border-red-200 text-red-700'
             }`}
           >
             {testResult === 'success' ? (
-              <><CheckCircle className="w-4 h-4" /> Conexión exitosa al controlador PTS</>
+              <><CheckCircle className="w-3.5 h-3.5" /> Conexion exitosa al controlador PTS</>
             ) : (
-              <><XCircle className="w-4 h-4" /> No se pudo conectar al PTS. Verifique la URL y credenciales.</>
+              <><XCircle className="w-3.5 h-3.5" /> No se pudo conectar al PTS. Verifique la URL y credenciales.</>
             )}
-          </motion.div>
+          </div>
         )}
 
         {/* Botones */}
-        <div className="flex flex-wrap gap-3 pt-2">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+        <div className="flex flex-wrap gap-1 pt-1">
+          <CompactButton
+            variant="primary"
             onClick={handleSave}
             disabled={saving || !hasChanges}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
           >
             {saving ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : (
-              <Save className="w-4 h-4" />
+              <Save className="w-3.5 h-3.5" />
             )}
             Guardar Cambios
-          </motion.button>
+          </CompactButton>
 
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          <CompactButton
+            variant="ghost"
             onClick={handleTestConnection}
             disabled={testing}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 hover:bg-gray-50 disabled:opacity-50 text-gray-700 rounded-lg text-sm font-medium transition-colors"
           >
             {testing ? (
-              <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
+              <div className="w-3.5 h-3.5 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
             ) : (
-              <Wifi className="w-4 h-4" />
+              <Wifi className="w-3.5 h-3.5" />
             )}
-            Probar Conexión
-          </motion.button>
+            Probar Conexion
+          </CompactButton>
         </div>
       </div>
     </div>

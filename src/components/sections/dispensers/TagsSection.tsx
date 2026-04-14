@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Tag, Plus, RefreshCw, Search, AlertCircle, Radio, CheckCircle, XCircle,
+  Tag, Plus, RefreshCw, Radio,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
@@ -125,17 +125,17 @@ const TagsSection: React.FC = () => {
         </CompactButton>
         <CompactButton variant="primary" onClick={() => setShowAddModal(true)}>
           <Plus className="w-3.5 h-3.5" />
-          Agregar Tag
+          Nuevo
         </CompactButton>
       </Toolbar>
 
       {/* Lector RFID */}
-      <div className="bg-white rounded-sm shadow-sm p-2">
-        <div className="flex items-center gap-2 mb-1">
-          <Radio className="w-4 h-4 text-purple-600" />
-          <h2 className="text-xs font-semibold text-gray-900">Leer Tag desde Lector</h2>
+      <div className="bg-white rounded-sm border border-table-border">
+        <div className="flex items-center gap-2 px-3 h-8 bg-table-header border-b border-table-border">
+          <Radio className="w-3.5 h-3.5 text-gray-500" />
+          <span className="text-xs font-semibold uppercase tracking-wide text-gray-700">Leer Tag desde Lector</span>
         </div>
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1 p-2">
           {[1, 2, 3, 4].map((reader) => (
             <CompactButton
               key={reader}
@@ -153,7 +153,7 @@ const TagsSection: React.FC = () => {
           ))}
         </div>
         {readTag && (
-          <div className="mt-1 bg-green-50 border border-green-200 rounded-sm p-1.5 flex items-center gap-1.5">
+          <div className="mx-2 mb-2 bg-green-50 border border-green-200 rounded-sm p-1.5 flex items-center gap-1.5">
             <Tag className="w-3.5 h-3.5 text-green-600" />
             <span className="text-xs text-green-700">Tag detectado: <strong>{readTag}</strong></span>
           </div>
@@ -161,15 +161,15 @@ const TagsSection: React.FC = () => {
       </div>
 
       {/* Tabla de tags */}
-      <div className="bg-white rounded-sm shadow-sm overflow-hidden">
+      <div className="bg-white rounded-sm border border-table-border overflow-hidden">
         {loading ? (
-          <div className="p-8 flex items-center justify-center">
-            <div className="w-5 h-5 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          <div className="p-4 flex items-center justify-center">
+            <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : filteredTags.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            <Tag className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">{searchTerm ? 'No se encontraron tags con ese criterio' : 'No hay tags registrados'}</p>
+          <div className="p-4 text-center text-gray-500">
+            <Tag className="w-6 h-6 mx-auto mb-1 opacity-30" />
+            <p className="text-xs">{searchTerm ? 'No se encontraron tags con ese criterio' : 'No hay tags registrados'}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -225,7 +225,7 @@ const TagsSection: React.FC = () => {
             <h3 className="text-sm font-semibold text-gray-900 mb-2">Agregar Tag RFID</h3>
             <form onSubmit={handleAddTag} className="space-y-2">
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-0.5">ID del Tag</label>
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">ID del Tag</label>
                 <input
                   type="text"
                   value={newTagId}
@@ -236,7 +236,7 @@ const TagsSection: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-0.5">Nombre</label>
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Nombre</label>
                 <input
                   type="text"
                   value={newTagName}

@@ -127,7 +127,7 @@ const GlobalPricesTab: React.FC = () => {
   if (loading) return <LoadingCard />;
 
   return (
-    <div className="bg-white rounded-sm shadow-sm">
+    <div className="bg-white rounded-sm border border-table-border">
       <Toolbar>
         <span className="text-xs text-gray-500">Precios Globales por Grado</span>
         <div className="flex-1" />
@@ -246,7 +246,7 @@ const PerPumpPricesTab: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-sm shadow-sm">
+    <div className="bg-white rounded-sm border border-table-border">
       <Toolbar>
         <span className="text-xs text-gray-500">Precios por Bomba</span>
         <select
@@ -302,7 +302,7 @@ const PerPumpPricesTab: React.FC = () => {
           </table>
         </div>
       ) : (
-        <div className="p-8 text-center text-gray-500">
+        <div className="p-4 text-center text-gray-500">
           <Fuel className="w-8 h-8 mx-auto mb-2 opacity-30" />
           <p className="text-sm">No se encontraron precios para esta bomba</p>
         </div>
@@ -388,13 +388,13 @@ const SchedulerTab: React.FC = () => {
   if (loading) return <LoadingCard />;
 
   return (
-    <div className="bg-white rounded-sm shadow-sm">
+    <div className="bg-white rounded-sm border border-table-border">
       <Toolbar>
         <span className="text-xs text-gray-500">Programador de Cambios de Precio</span>
         <div className="flex-1" />
-        <CompactButton variant="ghost" onClick={addSchedule}>
+        <CompactButton variant="primary" onClick={addSchedule}>
           <Plus className="w-3.5 h-3.5" />
-          Agregar
+          Nuevo
         </CompactButton>
         {hasChanges && (
           <CompactButton variant="primary" onClick={handleSave} disabled={saving}>
@@ -405,12 +405,15 @@ const SchedulerTab: React.FC = () => {
       </Toolbar>
 
       {schedules.length === 0 ? (
-        <div className="p-8 text-center text-gray-500">
+        <div className="p-4 text-center text-gray-500">
           <Clock className="w-8 h-8 mx-auto mb-2 opacity-30" />
           <p className="text-sm">No hay cambios de precio programados</p>
-          <button onClick={addSchedule} className="mt-2 text-blue-600 hover:text-blue-700 text-xs font-medium">
-            Agregar el primero
-          </button>
+          <div className="mt-2 flex justify-center">
+            <CompactButton variant="primary" onClick={addSchedule}>
+              <Plus className="w-3.5 h-3.5" />
+              Nuevo
+            </CompactButton>
+          </div>
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -493,11 +496,8 @@ const SchedulerTab: React.FC = () => {
 // ============================================================
 
 const LoadingCard: React.FC = () => (
-  <div className="bg-white rounded-sm shadow-sm p-8 flex items-center justify-center">
-    <div className="text-center">
-      <div className="w-6 h-6 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-      <p className="text-gray-500 text-xs">Cargando datos...</p>
-    </div>
+  <div className="bg-white rounded-sm border border-table-border p-4 flex items-center justify-center">
+    <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
   </div>
 );
 

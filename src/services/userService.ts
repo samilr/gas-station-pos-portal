@@ -77,20 +77,29 @@ const normalizeUser = (raw: any): IUser => ({
   last_time_logged: raw.last_time_logged ?? raw.lastTimeLogged,
 });
 
+// Extrae el array de usuarios considerando que la API puede devolver
+// `[...]` directo, `{ data: [...] }`, o `{ data: [...], pagination: {...} }`
+const extractUserList = (raw: any): any[] => {
+  if (Array.isArray(raw)) return raw;
+  if (raw && Array.isArray(raw.data)) return raw.data;
+  return [];
+};
+
 export const userService = {
   async getUsers(): Promise<UserResponse> {
-    const response = await apiGet<any[]>(buildApiUrl('users'));
+    const response = await apiGet<any>(buildApiUrl('users'));
     return {
       successful: response.successful,
-      data: (response.data || []).map(normalizeUser),
+      data: extractUserList(response.data).map(normalizeUser),
     };
   },
 
   async getUserByStaftId(staftId: string): Promise<ApiResponse<IUser>> {
     const response = await apiGet<any>(buildApiUrl(`users/staft/${staftId}`));
+    const raw = response.data && response.data.data ? response.data.data : response.data;
     return {
       ...response,
-      data: response.data ? normalizeUser(response.data) : response.data,
+      data: raw ? normalizeUser(raw) : raw,
     };
   },
 

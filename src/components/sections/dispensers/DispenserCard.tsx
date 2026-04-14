@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Fuel, Lock, Unlock, Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type {
@@ -11,6 +10,7 @@ import type {
 } from '../../../types/dispenser';
 import { getPumpVisualState, isPumpLocked, lockPump, unlockPump } from '../../../services/dispenserService';
 import { mapFuelProductName } from '../../../utils/fuelProductMapping';
+import StatusDot from '../../ui/StatusDot';
 
 interface DispenserCardProps {
   pumpNumber: number;
@@ -20,12 +20,12 @@ interface DispenserCardProps {
   onStatusChange?: () => void;
 }
 
-const STATE_CONFIG: Record<PumpVisualState, { bg: string; label: string }> = {
-  available:          { bg: 'bg-green-500',  label: 'Disponible' },
-  dispensing:         { bg: 'bg-orange-500', label: 'Dispensando' },
-  locked:             { bg: 'bg-red-500',    label: 'Bloqueada' },
-  offline:            { bg: 'bg-gray-300',   label: 'Offline' },
-  'end-of-transaction': { bg: 'bg-blue-500', label: 'Fin Transacción' },
+const STATE_CONFIG: Record<PumpVisualState, { color: string; label: string }> = {
+  available:            { color: 'green',  label: 'Disponible' },
+  dispensing:           { color: 'orange', label: 'Dispensando' },
+  locked:               { color: 'red',    label: 'Bloqueada' },
+  offline:              { color: 'gray',   label: 'Offline' },
+  'end-of-transaction': { color: 'blue',   label: 'Fin Trans.' },
 };
 
 const DispenserCard: React.FC<DispenserCardProps> = ({
@@ -39,8 +39,7 @@ const DispenserCard: React.FC<DispenserCardProps> = ({
 
   const state: PumpVisualState = error ? 'offline' : getPumpVisualState(packet);
   const locked = isPumpLocked(packet);
-  const { bg, label } = STATE_CONFIG[state];
-  const hasData = !!packet && state !== 'offline';
+  const { color, label } = STATE_CONFIG[state];
 
   const handleLockToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -64,7 +63,6 @@ const DispenserCard: React.FC<DispenserCardProps> = ({
     }
   };
 
-  // Extraer datos para mostrar según el estado
   const getDisplayData = () => {
     if (!packet) return null;
 
@@ -94,63 +92,56 @@ const DispenserCard: React.FC<DispenserCardProps> = ({
     new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP', minimumFractionDigits: 2 }).format(n);
 
   return (
-    <motion.div
-      whileHover={{ scale: 1.03 }}
-      className={`relative rounded-lg p-4 shadow-sm ${bg} ${state === 'dispensing' ? 'animate-pulse' : ''}`}
-    >
-      {/* Header: número + lock */}
-      <div className="flex items-center justify-between mb-2">
-        <span className={`font-bold text-lg ${hasData ? 'text-white' : 'text-gray-700'}`}>
-          #{pumpNumber}
-        </span>
+    <div className={`relative bg-white rounded-sm border border-table-border p-2 hover:bg-row-hover ${state === 'dispensing' ? 'ring-1 ring-orange-300' : ''}`}>
+      {/* Header: numero + lock */}
+      <div className="flex items-center justify-between mb-1">
+        <span className="font-semibold text-sm text-gray-900">#{pumpNumber}</span>
         <button
           onClick={handleLockToggle}
           disabled={isLocking || isLoading || !packet || state === 'dispensing'}
-          className={`transition-opacity disabled:opacity-40 disabled:cursor-not-allowed ${hasData ? 'text-white opacity-75 hover:opacity-100' : 'text-gray-500'}`}
+          className="text-gray-500 hover:text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           title={locked ? 'Desbloquear dispensadora' : 'Bloquear dispensadora'}
         >
           {isLocking ? (
-            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
           ) : locked ? (
-            <Lock className="w-4 h-4" />
+            <Lock className="w-3.5 h-3.5" />
           ) : (
-            <Unlock className="w-4 h-4" />
+            <Unlock className="w-3.5 h-3.5" />
           )}
         </button>
       </div>
 
-      {/* Icono central */}
-      <div className={hasData ? 'text-white' : 'text-gray-500'}>
-        <Fuel className={`w-10 h-10 mx-auto mb-2 opacity-90 ${state === 'dispensing' ? 'animate-bounce' : ''}`} />
-
-        {/* Estado */}
-        <p className="text-xs text-center font-medium opacity-90 mb-1">{label}</p>
-
-        {/* Datos */}
-        {displayData && (
-          <>
-            <p className="text-xs text-center opacity-80 truncate">{displayData.fuel}</p>
-            <div className="flex justify-between text-xs mt-1">
-              <span>{displayData.volume.toFixed(3)} G.</span>
-              <span>{formatCurrency(displayData.amount)}</span>
-            </div>
-            {displayData.tag && (
-              <div className="flex items-center gap-1 mt-1 text-xs opacity-80">
-                <Tag className="w-3 h-3" />
-                <span className="truncate">{displayData.tag}</span>
-              </div>
-            )}
-          </>
-        )}
+      {/* Icono + estado */}
+      <div className="flex items-center gap-1.5 mb-1">
+        <Fuel className={`w-4 h-4 text-gray-400 ${state === 'dispensing' ? 'animate-pulse text-orange-500' : ''}`} />
+        <StatusDot color={color} label={label} />
       </div>
+
+      {/* Datos */}
+      {displayData && (
+        <div className="space-y-0.5 border-t border-gray-100 pt-1">
+          <p className="text-xs text-gray-600 truncate">{displayData.fuel}</p>
+          <div className="flex justify-between text-xs text-gray-700">
+            <span>{displayData.volume.toFixed(3)} G.</span>
+            <span className="font-medium">{formatCurrency(displayData.amount)}</span>
+          </div>
+          {displayData.tag && (
+            <div className="flex items-center gap-1 text-2xs text-gray-500">
+              <Tag className="w-3 h-3" />
+              <span className="truncate">{displayData.tag}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Overlay de carga */}
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg">
-          <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
+        <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-sm">
+          <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
         </div>
       )}
-    </motion.div>
+    </div>
   );
 };
 

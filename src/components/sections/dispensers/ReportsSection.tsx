@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  FileText, Search, Download, Fuel, Droplets, Truck, AlertCircle,
+  FileText, Search, Download, Fuel, Droplets, Truck,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
@@ -13,7 +13,6 @@ import { mapFuelProductName } from '../../../utils/fuelProductMapping';
 import type { ReportDateFilter } from '../../../types/dispenser';
 import { useHeader } from '../../../context/HeaderContext';
 import { CompactButton } from '../../ui';
-import Toolbar from '../../ui/Toolbar';
 
 type ReportType = 'pump-transactions' | 'tank-measurements' | 'in-tank-deliveries';
 
@@ -126,10 +125,10 @@ const ReportsSection: React.FC = () => {
   return (
     <div className="space-y-1">
       {/* Filtros */}
-      <div className="bg-white rounded-sm shadow-sm p-2">
+      <div className="bg-white rounded-sm border border-table-border p-2">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-0.5">Tipo de Reporte</label>
+            <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Tipo de Reporte</label>
             <select
               value={reportType}
               onChange={(e) => { setReportType(e.target.value as ReportType); setHasSearched(false); }}
@@ -142,7 +141,7 @@ const ReportsSection: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-0.5">Desde</label>
+            <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Desde</label>
             <input
               type="date"
               value={startDate}
@@ -152,7 +151,7 @@ const ReportsSection: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-0.5">Hasta</label>
+            <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Hasta</label>
             <input
               type="date"
               value={endDate}
@@ -187,15 +186,15 @@ const ReportsSection: React.FC = () => {
 
       {/* Resultados */}
       {hasSearched && (
-        <div className="bg-white rounded-sm shadow-sm overflow-hidden">
+        <div className="bg-white rounded-sm border border-table-border overflow-hidden">
           {loading ? (
-            <div className="p-8 flex items-center justify-center">
-              <div className="w-5 h-5 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <div className="p-4 flex items-center justify-center">
+              <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
             </div>
           ) : !hasResults ? (
-            <div className="p-8 text-center text-gray-500">
-              <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
-              <p className="text-sm">No se encontraron resultados para este periodo</p>
+            <div className="p-4 text-center text-gray-500">
+              <FileText className="w-6 h-6 mx-auto mb-1 opacity-30" />
+              <p className="text-xs">No se encontraron resultados para este periodo</p>
             </div>
           ) : (
             <div className="overflow-x-auto">

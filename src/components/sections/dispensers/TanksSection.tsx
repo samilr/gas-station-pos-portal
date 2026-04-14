@@ -14,6 +14,7 @@ import type {
 } from '../../../types/dispenser';
 import { useHeader } from '../../../context/HeaderContext';
 import { CompactButton } from '../../ui';
+import StatusDot from '../../ui/StatusDot';
 import Toolbar from '../../ui/Toolbar';
 
 const POLLING_INTERVAL = 10000;
@@ -82,11 +83,8 @@ const TanksSection: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-sm shadow-sm p-8 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-6 h-6 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <p className="text-gray-500 text-xs">Cargando datos de tanques...</p>
-        </div>
+      <div className="bg-white rounded-sm border border-table-border p-4 flex items-center justify-center">
+        <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -110,9 +108,9 @@ const TanksSection: React.FC = () => {
 
       {/* Grid de tanques */}
       {tanks.length === 0 ? (
-        <div className="bg-white rounded-sm shadow-sm p-8 text-center text-gray-500">
-          <Droplets className="w-8 h-8 mx-auto mb-2 opacity-30" />
-          <p className="text-sm">No se encontraron tanques configurados</p>
+        <div className="bg-white rounded-sm border border-table-border p-4 text-center text-gray-500">
+          <Droplets className="w-6 h-6 mx-auto mb-1 opacity-30" />
+          <p className="text-xs">No se encontraron tanques configurados</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
@@ -156,8 +154,8 @@ const TanksSection: React.FC = () => {
             return (
               <div
                 key={tankId}
-                className={`bg-white rounded-sm shadow-sm p-3 border ${
-                  hasAlarm && m ? 'border-red-300' : 'border-transparent'
+                className={`bg-white rounded-sm p-2 border ${
+                  hasAlarm && m ? 'border-red-300' : 'border-table-border'
                 }`}
               >
                 {/* Header del tanque */}
@@ -217,11 +215,9 @@ const TanksSection: React.FC = () => {
                       <span className="text-[10px] text-gray-600">Agua: {waterHeight.toFixed(1)}mm</span>
                     </div>
                     {alarms.length > 0 && (
-                      <div className="col-span-2 mt-0.5">
+                      <div className="col-span-2 mt-0.5 flex flex-wrap gap-1">
                         {alarms.map((alarm: string, i: number) => (
-                          <span key={i} className="inline-block text-[10px] bg-red-100 text-red-700 px-1 py-0.5 rounded-sm mr-0.5 mb-0.5">
-                            {alarm}
-                          </span>
+                          <StatusDot key={i} color="red" label={alarm} />
                         ))}
                       </div>
                     )}
@@ -240,19 +236,11 @@ const TanksSection: React.FC = () => {
       )}
 
       {/* Info */}
-      <div className="bg-blue-50 border border-blue-200 rounded-sm p-2">
-        <div className="flex items-start space-x-2">
-          <AlertCircle className="w-4 h-4 text-blue-500 mt-0.5" />
-          <div className="text-xs text-blue-700">
-            <p className="font-medium mb-0.5">Indicadores de nivel:</p>
-            <ul className="list-disc list-inside space-y-0.5 ml-2">
-              <li><span className="font-semibold text-blue-600">Azul:</span> Nivel normal</li>
-              <li><span className="font-semibold text-orange-600">Naranja:</span> Nivel bajo</li>
-              <li><span className="font-semibold text-red-600">Rojo:</span> Nivel critico (bajo o alto)</li>
-            </ul>
-            <p className="mt-1 text-[10px] opacity-75">Los datos se actualizan cada 10 segundos</p>
-          </div>
-        </div>
+      <div className="flex items-center flex-wrap gap-3 px-2 py-1 text-xs text-text-muted">
+        <StatusDot color="blue" label="Normal" />
+        <StatusDot color="orange" label="Bajo" />
+        <StatusDot color="red" label="Critico" />
+        <span className="ml-auto text-2xs opacity-75">Actualizacion cada 10s</span>
       </div>
     </div>
   );

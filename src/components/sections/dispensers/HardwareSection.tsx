@@ -101,9 +101,10 @@ const PumpsTab: React.FC = () => {
 
   return (
     <div className="space-y-1">
-      <div className="bg-white rounded-sm shadow-sm">
-        <div className="h-8 px-2 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-gray-900">Puertos Serie</h3>
+      <div className="bg-white rounded-sm border border-table-border">
+        <div className="flex items-center gap-2 px-3 h-8 bg-table-header border-b border-table-border">
+          <Wrench className="w-3.5 h-3.5 text-gray-500" />
+          <span className="text-xs font-semibold uppercase tracking-wide text-gray-700 flex-1">Puertos Serie</span>
           <CompactButton variant="icon" onClick={load}>
             <RefreshCw className="w-3.5 h-3.5" />
           </CompactButton>
@@ -117,9 +118,10 @@ const PumpsTab: React.FC = () => {
           ])}
         />
       </div>
-      <div className="bg-white rounded-sm shadow-sm">
-        <div className="h-8 px-2 border-b border-gray-200 flex items-center">
-          <h3 className="text-xs font-semibold text-gray-900">Bombas ({pumps.length})</h3>
+      <div className="bg-white rounded-sm border border-table-border">
+        <div className="flex items-center gap-2 px-3 h-8 bg-table-header border-b border-table-border">
+          <Fuel className="w-3.5 h-3.5 text-gray-500" />
+          <span className="text-xs font-semibold uppercase tracking-wide text-gray-700">Bombas ({pumps.length})</span>
         </div>
         <TableWrapper
           headers={['ID', 'Direccion', 'Puerto', 'Grados', 'Lock por Defecto', 'Auth Requerida']}
@@ -150,9 +152,10 @@ const NozzlesTab: React.FC = () => {
   if (loading) return <LoadingSkeleton />;
 
   return (
-    <div className="bg-white rounded-sm shadow-sm">
-      <div className="h-8 px-2 border-b border-gray-200 flex items-center">
-        <h3 className="text-xs font-semibold text-gray-900">Configuracion de Pistolas ({nozzles.length} bombas)</h3>
+    <div className="bg-white rounded-sm border border-table-border">
+      <div className="flex items-center gap-2 px-3 h-8 bg-table-header border-b border-table-border">
+        <Gauge className="w-3.5 h-3.5 text-gray-500" />
+        <span className="text-xs font-semibold uppercase tracking-wide text-gray-700">Configuracion de Pistolas ({nozzles.length} bombas)</span>
       </div>
       <TableWrapper
         headers={['Bomba', 'Grados de Combustible', 'Tanques']}
@@ -179,9 +182,10 @@ const FuelGradesTab: React.FC = () => {
   if (loading) return <LoadingSkeleton />;
 
   return (
-    <div className="bg-white rounded-sm shadow-sm">
-      <div className="h-8 px-2 border-b border-gray-200 flex items-center">
-        <h3 className="text-xs font-semibold text-gray-900">Grados de Combustible</h3>
+    <div className="bg-white rounded-sm border border-table-border">
+      <div className="flex items-center gap-2 px-3 h-8 bg-table-header border-b border-table-border">
+        <Fuel className="w-3.5 h-3.5 text-gray-500" />
+        <span className="text-xs font-semibold uppercase tracking-wide text-gray-700">Grados de Combustible</span>
       </div>
       <TableWrapper
         headers={['ID', 'Nombre', 'Precio (RD$)', 'Coef. Expansion']}
@@ -209,9 +213,10 @@ const ProbesTab: React.FC = () => {
   if (loading) return <LoadingSkeleton />;
 
   return (
-    <div className="bg-white rounded-sm shadow-sm">
-      <div className="h-8 px-2 border-b border-gray-200 flex items-center">
-        <h3 className="text-xs font-semibold text-gray-900">Sondas ATG</h3>
+    <div className="bg-white rounded-sm border border-table-border">
+      <div className="flex items-center gap-2 px-3 h-8 bg-table-header border-b border-table-border">
+        <Wrench className="w-3.5 h-3.5 text-gray-500" />
+        <span className="text-xs font-semibold uppercase tracking-wide text-gray-700">Sondas ATG</span>
       </div>
       <TableWrapper
         headers={['ID', 'Tanque', 'Protocolo', 'Puerto', 'Direccion', 'Habilitada']}
@@ -241,9 +246,10 @@ const ReadersTab: React.FC = () => {
   if (loading) return <LoadingSkeleton />;
 
   return (
-    <div className="bg-white rounded-sm shadow-sm">
-      <div className="h-8 px-2 border-b border-gray-200 flex items-center">
-        <h3 className="text-xs font-semibold text-gray-900">Lectores RFID</h3>
+    <div className="bg-white rounded-sm border border-table-border">
+      <div className="flex items-center gap-2 px-3 h-8 bg-table-header border-b border-table-border">
+        <Radio className="w-3.5 h-3.5 text-gray-500" />
+        <span className="text-xs font-semibold uppercase tracking-wide text-gray-700">Lectores RFID</span>
       </div>
       <TableWrapper
         headers={['ID', 'Protocolo', 'Puerto', 'Direccion', 'Bombas', 'Habilitado']}
@@ -273,9 +279,10 @@ const PriceBoardsTab: React.FC = () => {
   if (loading) return <LoadingSkeleton />;
 
   return (
-    <div className="bg-white rounded-sm shadow-sm">
-      <div className="h-8 px-2 border-b border-gray-200 flex items-center">
-        <h3 className="text-xs font-semibold text-gray-900">Paneles de Precios Digitales</h3>
+    <div className="bg-white rounded-sm border border-table-border">
+      <div className="flex items-center gap-2 px-3 h-8 bg-table-header border-b border-table-border">
+        <MonitorSpeaker className="w-3.5 h-3.5 text-gray-500" />
+        <span className="text-xs font-semibold uppercase tracking-wide text-gray-700">Paneles de Precios Digitales</span>
       </div>
       <TableWrapper
         headers={['ID', 'Protocolo', 'Puerto', 'Direccion', 'Grado', 'Habilitado']}
@@ -326,7 +333,7 @@ const TableWrapper: React.FC<{ headers: string[]; rows: string[][] }> = ({ heade
 );
 
 const LoadingSkeleton: React.FC = () => (
-  <div className="bg-white rounded-sm shadow-sm p-4 flex items-center justify-center">
+  <div className="bg-white rounded-sm border border-table-border p-4 flex items-center justify-center">
     <div className="w-5 h-5 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
   </div>
 );

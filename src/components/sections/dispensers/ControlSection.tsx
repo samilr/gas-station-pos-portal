@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Lock, Unlock, Play, Square, AlertTriangle, Pause, RotateCcw, X as XClose,
+  Lock, Unlock, Play, Square, Pause, RotateCcw,
   CheckCircle2, Fuel, Zap, AlertCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -22,7 +22,6 @@ import {
 import type {
   PumpStatusPacket,
   PumpFillingStatusData,
-  PumpIdleStatusData,
   PumpVisualState,
   NozzlePrice,
 } from '../../../types/dispenser';
@@ -54,20 +53,12 @@ const STATE_LABEL: Record<PumpVisualState, string> = {
   'end-of-transaction': 'Fin Trans.',
 };
 
-const STATE_BG: Record<PumpVisualState, string> = {
-  available: 'bg-green-500',
-  dispensing: 'bg-orange-500',
-  locked: 'bg-red-500',
-  offline: 'bg-gray-300',
-  'end-of-transaction': 'bg-blue-500',
-};
-
-const STATE_RING: Record<PumpVisualState, string> = {
-  available: 'ring-green-400',
-  dispensing: 'ring-orange-400',
-  locked: 'ring-red-400',
-  offline: 'ring-gray-300',
-  'end-of-transaction': 'ring-blue-400',
+const STATE_DOT_COLOR: Record<PumpVisualState, string> = {
+  available: 'green',
+  dispensing: 'orange',
+  locked: 'red',
+  offline: 'gray',
+  'end-of-transaction': 'blue',
 };
 
 const ControlSection: React.FC = () => {
@@ -396,26 +387,24 @@ const ControlSection: React.FC = () => {
             <button
               key={num}
               onClick={() => togglePump(num)}
-              className={`relative rounded-sm p-2 text-center transition-all ${STATE_BG[state]} ${
-                selected ? `ring-2 ${STATE_RING[state]} ring-offset-1` : ''
-              } ${isFilling ? 'animate-pulse' : ''}`}
+              className={`relative bg-white rounded-sm border p-1.5 text-left hover:bg-row-hover transition-colors ${
+                selected ? 'border-blue-500 ring-1 ring-blue-500' : 'border-table-border'
+              } ${isFilling ? 'ring-1 ring-orange-300' : ''}`}
             >
               {selected && (
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center shadow">
-                  <CheckCircle2 className="w-3 h-3 text-blue-600" />
+                <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-600 rounded-full flex items-center justify-center shadow">
+                  <CheckCircle2 className="w-2.5 h-2.5 text-white" />
                 </div>
               )}
 
-              <span className={`font-bold text-sm ${state === 'offline' ? 'text-gray-600' : 'text-white'}`}>
-                {num}
-              </span>
-              <p className={`text-[10px] mt-0.5 ${state === 'offline' ? 'text-gray-500' : 'text-white/80'}`}>
-                {STATE_LABEL[state]}
-              </p>
-              {locked && <Lock className="w-2.5 h-2.5 text-white/70 mx-auto mt-0.5" />}
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-sm text-gray-900">#{num}</span>
+                {locked && <Lock className="w-3 h-3 text-red-500" />}
+              </div>
+              <StatusDot color={STATE_DOT_COLOR[state]} label={STATE_LABEL[state]} className="mt-0.5" />
               {fillingData && (
-                <p className="text-[10px] text-white/80 mt-0.5 truncate">
-                  {fillingData.Volume.toFixed(1)}G.
+                <p className="text-2xs text-gray-600 mt-0.5 truncate">
+                  {fillingData.Volume.toFixed(1)} G.
                 </p>
               )}
             </button>
@@ -425,12 +414,15 @@ const ControlSection: React.FC = () => {
 
       {/* Panel de acciones */}
       {hasSelection && (
-        <div className="bg-white rounded-sm shadow-sm p-2">
-          <p className="text-xs font-semibold text-gray-900 mb-1">
-            Acciones -- Bomba(s): {Array.from(selectedPumps).sort((a, b) => a - b).join(', ')}
-          </p>
+        <div className="bg-white rounded-sm border border-table-border">
+          <div className="flex items-center gap-2 px-3 h-8 bg-table-header border-b border-table-border">
+            <Fuel className="w-3.5 h-3.5 text-gray-500" />
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-700">
+              Acciones -- Bomba(s): {Array.from(selectedPumps).sort((a, b) => a - b).join(', ')}
+            </span>
+          </div>
 
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1 p-2">
             <ActionButton
               icon={<Fuel className="w-3.5 h-3.5" />}
               label="Autorizar"
@@ -501,9 +493,12 @@ const ControlSection: React.FC = () => {
       )}
 
       {/* Acciones globales */}
-      <div className="bg-white rounded-sm shadow-sm p-2">
-        <p className="text-xs font-semibold text-gray-900 mb-1">Acciones Globales</p>
-        <div className="flex flex-wrap gap-1">
+      <div className="bg-white rounded-sm border border-table-border">
+        <div className="flex items-center gap-2 px-3 h-8 bg-table-header border-b border-table-border">
+          <Lock className="w-3.5 h-3.5 text-gray-500" />
+          <span className="text-xs font-semibold uppercase tracking-wide text-gray-700">Acciones Globales</span>
+        </div>
+        <div className="flex flex-wrap gap-1 p-2">
           <CompactButton
             variant="danger"
             onClick={handleLockAll}
@@ -524,20 +519,12 @@ const ControlSection: React.FC = () => {
         </div>
       </div>
 
-      {/* Info */}
-      <div className="bg-blue-50 border border-blue-200 rounded-sm p-2">
-        <div className="flex items-start space-x-2">
-          <AlertCircle className="w-4 h-4 text-blue-500 mt-0.5" />
-          <div className="text-xs text-blue-700">
-            <p className="font-medium mb-0.5">Instrucciones:</p>
-            <ul className="list-disc list-inside space-y-0.5 ml-2">
-              <li>Haga clic en las bombas para seleccionarlas</li>
-              <li><strong>Autorizar:</strong> requiere exactamente 1 bomba seleccionada</li>
-              <li><strong>Detener/Suspender:</strong> solo aplica a bombas que esten dispensando</li>
-              <li><strong>Emergencia:</strong> requiere confirmacion antes de ejecutar</li>
-            </ul>
-          </div>
-        </div>
+      {/* Info compacto */}
+      <div className="flex items-start gap-1.5 px-2 py-1 text-2xs text-text-muted">
+        <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+        <span>
+          Clic para seleccionar bombas. Autorizar requiere 1 bomba. Detener/Suspender solo aplica a bombas dispensando. Emergencia requiere confirmacion.
+        </span>
       </div>
 
       {/* Modals */}

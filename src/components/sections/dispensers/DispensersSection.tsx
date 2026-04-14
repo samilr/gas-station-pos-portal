@@ -7,7 +7,6 @@ import {
   lockAllPumps,
   unlockAllPumps,
   getPumpVisualState,
-  isPumpLocked,
   getPumpNumber,
   lockPump,
   unlockPump,
@@ -276,7 +275,7 @@ const DispensersSection: React.FC = () => {
 
       {/* Contenido */}
       {viewMode === 'table' ? (
-        <div className="bg-white rounded-sm shadow-sm overflow-hidden">
+        <div className="bg-white rounded-sm border border-table-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -294,37 +293,30 @@ const DispensersSection: React.FC = () => {
                 {filteredPumps.map(([number, packet]) => {
                   const state = getPumpVisualState(packet);
                   const pumpData = getPumpData(packet);
-                  const locked = isPumpLocked(packet);
 
                   return (
                     <tr key={number} className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover">
                       <td className="px-2 text-sm whitespace-nowrap">
-                        <span className="font-bold text-gray-900">#{number}</span>
+                        <span className="font-semibold text-gray-900">#{number}</span>
                       </td>
                       <td className="px-2 text-sm whitespace-nowrap">
                         <StatusDot color={STATE_DOT_COLOR[state]} label={STATE_TEXT[state]} />
                       </td>
-                      <td className="px-2 text-sm whitespace-nowrap text-gray-900">{pumpData.fuel}</td>
+                      <td className="px-2 text-sm whitespace-nowrap text-gray-900 overflow-hidden text-ellipsis">{pumpData.fuel}</td>
                       <td className="px-2 text-sm whitespace-nowrap text-gray-900">{pumpData.volume.toFixed(3)} G.</td>
                       <td className="px-2 text-sm whitespace-nowrap font-medium text-gray-900">{formatCurrency(pumpData.amount)}</td>
-                      <td className="px-2 text-sm whitespace-nowrap text-gray-900">
+                      <td className="px-2 text-sm whitespace-nowrap text-gray-900 overflow-hidden text-ellipsis">
                         {pumpData.lastDateTime ? formatDateTime(pumpData.lastDateTime) : '-'}
                       </td>
                       <td className="px-2 text-sm whitespace-nowrap">
                         {state === 'locked' ? (
-                          <button
-                            onClick={() => handlePumpLockToggle(number, true)}
-                            className="text-green-600 hover:text-green-700 text-xs font-medium"
-                          >
-                            Desbloquear
-                          </button>
+                          <CompactButton variant="ghost" onClick={() => handlePumpLockToggle(number, true)} className="border-green-300 text-green-600 hover:bg-green-50">
+                            <Unlock className="w-3 h-3" /> Desbloquear
+                          </CompactButton>
                         ) : state === 'available' ? (
-                          <button
-                            onClick={() => handlePumpLockToggle(number, false)}
-                            className="text-red-600 hover:text-red-700 text-xs font-medium"
-                          >
-                            Bloquear
-                          </button>
+                          <CompactButton variant="danger" onClick={() => handlePumpLockToggle(number, false)}>
+                            <Lock className="w-3 h-3" /> Bloquear
+                          </CompactButton>
                         ) : (
                           <span className="text-gray-400">-</span>
                         )}
@@ -352,23 +344,13 @@ const DispensersSection: React.FC = () => {
       )}
 
       {/* Leyenda */}
-      <div className="bg-blue-50 border border-blue-200 rounded-sm p-2">
-        <div className="flex items-start space-x-2">
-          <AlertCircle className="w-4 h-4 text-blue-500 mt-0.5" />
-          <div className="text-xs text-blue-700">
-            <p className="font-medium mb-0.5">Leyenda de Estados:</p>
-            <ul className="list-disc list-inside space-y-0.5 ml-2">
-              <li><span className="font-semibold text-green-600">Verde:</span> Dispensadora disponible</li>
-              <li><span className="font-semibold text-orange-600">Naranja:</span> Dispensadora dispensando</li>
-              <li><span className="font-semibold text-red-600">Rojo:</span> Dispensadora bloqueada</li>
-              <li><span className="font-semibold text-gray-600">Gris:</span> Dispensadora offline</li>
-              <li><span className="font-semibold text-blue-600">Azul:</span> Fin de transaccion</li>
-            </ul>
-            <p className="mt-1 text-xs opacity-75">
-              Los datos se actualizan automaticamente cada 2 segundos
-            </p>
-          </div>
-        </div>
+      <div className="flex items-center flex-wrap gap-3 px-2 py-1 text-xs text-text-muted">
+        <StatusDot color="green" label="Disponible" />
+        <StatusDot color="orange" label="Dispensando" />
+        <StatusDot color="red" label="Bloqueada" />
+        <StatusDot color="gray" label="Offline" />
+        <StatusDot color="blue" label="Fin Transaccion" />
+        <span className="ml-auto text-2xs opacity-75">Actualizacion cada 2s</span>
       </div>
     </div>
   );
