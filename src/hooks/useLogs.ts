@@ -3,7 +3,7 @@ import { logService, PaginationMeta } from '../services/logService';
 import { IActionLog, IErrorLog } from '../types/logs';
 import { getCurrentSantoDomingoDate } from '../utils/transactionUtils';
 
-const DEFAULT_LIMIT = 50;
+const DEFAULT_LIMIT = 20;
 
 const defaultPagination: PaginationMeta = {
   page: 1,
@@ -23,17 +23,18 @@ export const useActionLogs = () => {
   const [endDateFilter, setEndDateFilter] = useState<string>(today);
   const [pagination, setPagination] = useState<PaginationMeta>(defaultPagination);
   const [currentPage, setCurrentPage] = useState(1);
-  const [limit] = useState(DEFAULT_LIMIT);
+  const [limit, setLimit] = useState(DEFAULT_LIMIT);
 
   const loadActionLogs = useCallback(async (
     fromDate: string,
     toDate: string,
-    page: number
+    page: number,
+    pageLimit: number = limit,
   ) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await logService.getActionLogs({ fromDate, toDate, page, limit });
+      const response = await logService.getActionLogs({ fromDate, toDate, page, limit: pageLimit });
       if (response.successful) {
         setActionLogs(response.data || []);
         setPagination(response.pagination ?? defaultPagination);
@@ -50,23 +51,29 @@ export const useActionLogs = () => {
   }, [limit]);
 
   const refreshActionLogs = useCallback(async () => {
-    await loadActionLogs(startDateFilter, endDateFilter, currentPage);
-  }, [loadActionLogs, startDateFilter, endDateFilter, currentPage]);
+    await loadActionLogs(startDateFilter, endDateFilter, currentPage, limit);
+  }, [loadActionLogs, startDateFilter, endDateFilter, currentPage, limit]);
 
   const loadActionLogsWithDates = useCallback(async (startDate: string, endDate: string) => {
     setStartDateFilter(startDate);
     setEndDateFilter(endDate);
     setCurrentPage(1);
-    await loadActionLogs(startDate, endDate, 1);
-  }, [loadActionLogs]);
+    await loadActionLogs(startDate, endDate, 1, limit);
+  }, [loadActionLogs, limit]);
 
   const goToPage = useCallback(async (page: number) => {
     setCurrentPage(page);
-    await loadActionLogs(startDateFilter, endDateFilter, page);
+    await loadActionLogs(startDateFilter, endDateFilter, page, limit);
+  }, [loadActionLogs, startDateFilter, endDateFilter, limit]);
+
+  const changeLimit = useCallback(async (newLimit: number) => {
+    setLimit(newLimit);
+    setCurrentPage(1);
+    await loadActionLogs(startDateFilter, endDateFilter, 1, newLimit);
   }, [loadActionLogs, startDateFilter, endDateFilter]);
 
   useEffect(() => {
-    loadActionLogs(today, today, 1);
+    loadActionLogs(today, today, 1, DEFAULT_LIMIT);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -83,6 +90,8 @@ export const useActionLogs = () => {
     pagination,
     currentPage,
     goToPage,
+    limit,
+    changeLimit,
   };
 };
 
@@ -95,17 +104,18 @@ export const useErrorLogs = () => {
   const [endDateFilter, setEndDateFilter] = useState<string>(today);
   const [pagination, setPagination] = useState<PaginationMeta>(defaultPagination);
   const [currentPage, setCurrentPage] = useState(1);
-  const [limit] = useState(DEFAULT_LIMIT);
+  const [limit, setLimit] = useState(DEFAULT_LIMIT);
 
   const loadErrorLogs = useCallback(async (
     fromDate: string,
     toDate: string,
-    page: number
+    page: number,
+    pageLimit: number = limit,
   ) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await logService.getErrorLogs({ fromDate, toDate, page, limit });
+      const response = await logService.getErrorLogs({ fromDate, toDate, page, limit: pageLimit });
       if (response.successful) {
         setErrorLogs(response.data || []);
         setPagination(response.pagination ?? defaultPagination);
@@ -122,19 +132,25 @@ export const useErrorLogs = () => {
   }, [limit]);
 
   const refreshErrorLogs = useCallback(async () => {
-    await loadErrorLogs(startDateFilter, endDateFilter, currentPage);
-  }, [loadErrorLogs, startDateFilter, endDateFilter, currentPage]);
+    await loadErrorLogs(startDateFilter, endDateFilter, currentPage, limit);
+  }, [loadErrorLogs, startDateFilter, endDateFilter, currentPage, limit]);
 
   const loadErrorLogsWithDates = useCallback(async (startDate: string, endDate: string) => {
     setStartDateFilter(startDate);
     setEndDateFilter(endDate);
     setCurrentPage(1);
-    await loadErrorLogs(startDate, endDate, 1);
-  }, [loadErrorLogs]);
+    await loadErrorLogs(startDate, endDate, 1, limit);
+  }, [loadErrorLogs, limit]);
 
   const goToPage = useCallback(async (page: number) => {
     setCurrentPage(page);
-    await loadErrorLogs(startDateFilter, endDateFilter, page);
+    await loadErrorLogs(startDateFilter, endDateFilter, page, limit);
+  }, [loadErrorLogs, startDateFilter, endDateFilter, limit]);
+
+  const changeLimit = useCallback(async (newLimit: number) => {
+    setLimit(newLimit);
+    setCurrentPage(1);
+    await loadErrorLogs(startDateFilter, endDateFilter, 1, newLimit);
   }, [loadErrorLogs, startDateFilter, endDateFilter]);
 
   const resolveError = useCallback(async (errorId: string, resolvedBy: string) => {
@@ -176,5 +192,7 @@ export const useErrorLogs = () => {
     pagination,
     currentPage,
     goToPage,
+    limit,
+    changeLimit,
   };
 };

@@ -8,7 +8,7 @@ import { useTerminals } from '../../../hooks/useTerminals';
 import { ITerminal } from '../../../services/terminalService';
 import { PermissionGate } from '../../common';
 import { formatDateDMY } from '../../../utils/dateUtils';
-import { CompactButton } from '../../ui';
+import { CompactButton, Pagination } from '../../ui';
 import StatusDot from '../../ui/StatusDot';
 import Toolbar from '../../ui/Toolbar';
 
@@ -34,7 +34,7 @@ const TerminalsSection: React.FC = () => {
   const [connectionFilter, setConnectionFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isTerminalModalOpen, setIsTerminalModalOpen] = useState(false);
   const [modalTerminal, setModalTerminal] = useState<ITerminal | null>(null);
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view'>('create');
@@ -341,55 +341,16 @@ const TerminalsSection: React.FC = () => {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between bg-white px-3 py-1.5 border border-gray-200 rounded-sm">
-        <div className="text-xs text-gray-700">
-          Mostrando <span className="font-medium">{startIndex + 1}</span> a{' '}
-          <span className="font-medium">{Math.min(endIndex, filteredTerminals.length)}</span> de{' '}
-          <span className="font-medium">{filteredTerminals.length}</span> terminales
-          {filteredTerminals.length !== terminals.length && (
-            <span className="text-gray-500"> (filtrados de {terminals.length} total)</span>
-          )}
-        </div>
-        <div className="flex items-center gap-1">
-          <CompactButton
-            variant="ghost"
-            onClick={handlePreviousPage}
-            disabled={currentPage === 1}
-          >
-            Anterior
-          </CompactButton>
-
-          <div className="flex items-center gap-0.5">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
-              if (totalPages <= 7 ||
-                  page === 1 ||
-                  page === totalPages ||
-                  (page >= currentPage - 1 && page <= currentPage + 1)) {
-                return (
-                  <CompactButton
-                    key={page}
-                    variant={page === currentPage ? 'primary' : 'ghost'}
-                    onClick={() => handlePageChange(page)}
-                  >
-                    {page}
-                  </CompactButton>
-                );
-              } else if (page === currentPage - 2 || page === currentPage + 2) {
-                return <span key={page} className="px-1 text-xs text-gray-500">...</span>;
-              }
-              return null;
-            })}
-          </div>
-
-          <CompactButton
-            variant="ghost"
-            onClick={handleNextPage}
-            disabled={currentPage === totalPages}
-          >
-            Siguiente
-          </CompactButton>
-        </div>
-      </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filteredTerminals.length}
+        pageSize={itemsPerPage}
+        onPageChange={handlePageChange}
+        onPageSizeChange={(size) => { setItemsPerPage(size); setCurrentPage(1); }}
+        itemLabel="terminales"
+        filteredTotal={terminals.length}
+      />
 
       {/* Terminal Modal */}
       <TerminalModal

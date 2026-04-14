@@ -9,7 +9,7 @@ import { useDevices } from '../../../hooks/useDevices';
 import { IHost } from '../../../services/deviceService';
 import { formatDateDMY } from '../../../utils/dateUtils';
 import { HostType } from '../../../types/host_type.enum';
-import { CompactButton } from '../../ui';
+import { CompactButton, Pagination } from '../../ui';
 import StatusDot from '../../ui/StatusDot';
 import Toolbar from '../../ui/Toolbar';
 
@@ -35,7 +35,7 @@ const DevicesSection: React.FC = () => {
   const [connectionFilter, setConnectionFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false);
   const [modalDevice, setModalDevice] = useState<IHost | null>(null);
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view'>('create');
@@ -357,55 +357,16 @@ const DevicesSection: React.FC = () => {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between bg-white px-3 py-1.5 border border-gray-200 rounded-sm">
-        <div className="text-xs text-gray-700">
-          Mostrando <span className="font-medium">{startIndex + 1}</span> a{' '}
-          <span className="font-medium">{Math.min(endIndex, filteredDevices.length)}</span> de{' '}
-          <span className="font-medium">{filteredDevices.length}</span> dispositivos
-          {filteredDevices.length !== devices.length && (
-            <span className="text-gray-500"> (filtrados de {devices.length} total)</span>
-          )}
-        </div>
-        <div className="flex items-center gap-1">
-          <CompactButton
-            variant="ghost"
-            onClick={handlePreviousPage}
-            disabled={currentPage === 1}
-          >
-            Anterior
-          </CompactButton>
-
-          <div className="flex items-center gap-0.5">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
-              if (totalPages <= 7 ||
-                  page === 1 ||
-                  page === totalPages ||
-                  (page >= currentPage - 1 && page <= currentPage + 1)) {
-                return (
-                  <CompactButton
-                    key={page}
-                    variant={page === currentPage ? 'primary' : 'ghost'}
-                    onClick={() => handlePageChange(page)}
-                  >
-                    {page}
-                  </CompactButton>
-                );
-              } else if (page === currentPage - 2 || page === currentPage + 2) {
-                return <span key={page} className="px-1 text-xs text-gray-500">...</span>;
-              }
-              return null;
-            })}
-          </div>
-
-          <CompactButton
-            variant="ghost"
-            onClick={handleNextPage}
-            disabled={currentPage === totalPages}
-          >
-            Siguiente
-          </CompactButton>
-        </div>
-      </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filteredDevices.length}
+        pageSize={itemsPerPage}
+        onPageChange={handlePageChange}
+        onPageSizeChange={(size) => { setItemsPerPage(size); setCurrentPage(1); }}
+        itemLabel="dispositivos"
+        filteredTotal={devices.length}
+      />
 
       {/* Device Modal */}
       <DeviceModal

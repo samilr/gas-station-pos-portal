@@ -128,7 +128,13 @@ export const useProducts = () => {
       
       // Intentar cargar desde la API
       const apiProducts = await getAllProducts();
-      setProducts(apiProducts);
+      // Normalizar: asegurar que siempre sea array (algunas APIs devuelven { data: [...] } u objeto único)
+      const list = Array.isArray(apiProducts)
+        ? apiProducts
+        : (apiProducts && Array.isArray((apiProducts as any).data))
+          ? (apiProducts as any).data
+          : [];
+      setProducts(list);
     } catch (err) {
       console.warn('Error loading products from API, using mock data:', err);
       setProducts(mockProducts);

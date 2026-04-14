@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Filter, RefreshCw, X, FuelIcon, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Filter, RefreshCw, X, FuelIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import fuelTransactionService, { FuelTransaction, FuelTransactionsPagination } from '../../../services/fuelTransactionService';
 import { useHeader } from '../../../context/HeaderContext';
 import { mapFuelProductName } from '../../../utils/fuelProductMapping';
-import { CompactButton } from '../../ui';
+import { CompactButton, Pagination } from '../../ui';
 import StatusDot from '../../ui/StatusDot';
 
 const FuelTransactionsSection: React.FC = () => {
@@ -341,100 +341,21 @@ const FuelTransactionsSection: React.FC = () => {
 
       {/* Paginacion */}
       {transactions.length > 0 && (
-        <div className="flex items-center justify-between bg-white px-2 py-1 border border-gray-200 rounded-sm">
-          <div className="flex items-center space-x-2">
-            <div className="text-xs text-gray-700">
-              {pagination ? (
-                <>
-                  <span className="font-medium">{((pagination.page - 1) * pagination.limit) + 1}</span>-
-                  <span className="font-medium">{Math.min(pagination.page * pagination.limit, pagination.total)}</span> de{' '}
-                  <span className="font-medium">{pagination.total}</span>
-                </>
-              ) : (
-                <>
-                  <span className="font-medium">{((currentPage - 1) * itemsPerPage) + 1}</span>-
-                  <span className="font-medium">{Math.min(currentPage * itemsPerPage, transactions.length)}</span> de{' '}
-                  <span className="font-medium">{transactions.length}</span>
-                </>
-              )}
-            </div>
-            <div className="flex items-center space-x-1">
-              <label htmlFor="itemsPerPage" className="text-xs text-gray-700">
-                Por pag:
-              </label>
-              <select
-                id="itemsPerPage"
-                value={itemsPerPage}
-                onChange={async (e) => {
-                  const newLimit = parseInt(e.target.value, 10);
-                  if (newLimit !== itemsPerPage) {
-                    setItemsPerPage(newLimit);
-                    setCurrentPage(1);
-                    await fetchTransactions(1, newLimit);
-                  }
-                }}
-                className="h-7 px-1 text-xs border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white"
-              >
-                <option value={10}>10</option>
-                <option value={15}>15</option>
-                <option value={20}>20</option>
-                <option value={30}>30</option>
-                <option value={40}>40</option>
-                <option value={50}>50</option>
-              </select>
-            </div>
-          </div>
-          <div className="flex items-center space-x-1">
-            <button
-              onClick={() => {
-                const newPage = Math.max(1, currentPage - 1);
-                setCurrentPage(newPage);
-              }}
-              disabled={!pagination?.hasPrev && currentPage === 1}
-              className="h-7 w-7 flex items-center justify-center text-sm bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 rounded-sm transition-colors"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-            </button>
-
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              let pageNumber;
-              if (totalPages <= 5) {
-                pageNumber = i + 1;
-              } else if (currentPage <= 3) {
-                pageNumber = i + 1;
-              } else if (currentPage >= totalPages - 2) {
-                pageNumber = totalPages - 4 + i;
-              } else {
-                pageNumber = currentPage - 2 + i;
-              }
-
-              return (
-                <button
-                  key={pageNumber}
-                  onClick={() => setCurrentPage(pageNumber)}
-                  className={`h-7 w-7 flex items-center justify-center text-xs rounded-sm transition-colors ${
-                    currentPage === pageNumber
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 hover:bg-gray-200'
-                  }`}
-                >
-                  {pageNumber}
-                </button>
-              );
-            })}
-
-            <button
-              onClick={() => {
-                const newPage = Math.min(totalPages, currentPage + 1);
-                setCurrentPage(newPage);
-              }}
-              disabled={!pagination?.hasNext && currentPage === totalPages}
-              className="h-7 w-7 flex items-center justify-center text-sm bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 rounded-sm transition-colors"
-            >
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={pagination?.total ?? transactions.length}
+          pageSize={pagination?.limit ?? itemsPerPage}
+          onPageChange={(page) => setCurrentPage(page)}
+          onPageSizeChange={async (newLimit) => {
+            if (newLimit !== itemsPerPage) {
+              setItemsPerPage(newLimit);
+              setCurrentPage(1);
+              await fetchTransactions(1, newLimit);
+            }
+          }}
+          itemLabel="transacciones"
+        />
       )}
     </div>
   );

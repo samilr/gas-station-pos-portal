@@ -6,3 +6,4 @@ export { default as StatusDot } from './StatusDot';
 export { default as Toolbar } from './Toolbar';
 export type { ToolbarChip } from './Toolbar';
 export { default as DetailDrawer } from './DetailDrawer';
+export { default as Pagination } from './Pagination';

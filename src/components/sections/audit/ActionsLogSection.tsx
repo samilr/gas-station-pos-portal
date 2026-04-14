@@ -5,7 +5,7 @@ import { IActionLog } from '../../../types/logs';
 import { getCurrentSantoDomingoDate } from '../../../utils/transactionUtils';
 import { formatDateToSantoDomingo } from '../../../utils/dateUtils';
 import { LocationMap } from '../../common';
-import { CompactButton } from '../../ui';
+import { CompactButton, Pagination } from '../../ui';
 import Toolbar from '../../ui/Toolbar';
 
 
@@ -22,6 +22,7 @@ const ActionsLogSection: React.FC = () => {
     pagination,
     currentPage,
     goToPage,
+    changeLimit,
   } = useActionLogs();
   const [searchTerm, setSearchTerm] = useState('');
   const [userFilter, setUserFilter] = useState('');
@@ -289,59 +290,15 @@ const ActionsLogSection: React.FC = () => {
       </div>
 
       {/* Paginacion del servidor */}
-      <div className="flex items-center justify-between px-2 py-1 bg-white border border-gray-200 rounded-sm text-xs text-gray-600">
-        <div>
-          {pagination.total === 0 ? 0 : startIndex + 1}-{Math.min(startIndex + pagination.limit, pagination.total)} de {pagination.total}
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={handlePrevPage}
-            disabled={!pagination.hasPrev || loading}
-            className={`px-2 py-0.5 text-xs rounded-sm transition-colors ${
-              !pagination.hasPrev || loading ? 'text-gray-400 cursor-not-allowed' : 'hover:bg-gray-100 text-gray-700'
-            }`}
-          >
-            Anterior
-          </button>
-
-          <div className="flex items-center gap-0.5">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
-              if (
-                totalPages <= 7 ||
-                page === 1 ||
-                page === totalPages ||
-                (page >= currentPage - 1 && page <= currentPage + 1)
-              ) {
-                return (
-                  <button
-                    key={page}
-                    onClick={() => handlePageChange(page)}
-                    disabled={loading}
-                    className={`px-2 py-0.5 text-xs rounded-sm transition-colors ${
-                      page === currentPage ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                );
-              } else if (page === currentPage - 2 || page === currentPage + 2) {
-                return <span key={page} className="px-1 text-gray-400">...</span>;
-              }
-              return null;
-            })}
-          </div>
-
-          <button
-            onClick={handleNextPage}
-            disabled={!pagination.hasNext || loading}
-            className={`px-2 py-0.5 text-xs rounded-sm transition-colors ${
-              !pagination.hasNext || loading ? 'text-gray-400 cursor-not-allowed' : 'hover:bg-gray-100 text-gray-700'
-            }`}
-          >
-            Siguiente
-          </button>
-        </div>
-      </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={pagination.total}
+        pageSize={pagination.limit}
+        onPageChange={handlePageChange}
+        onPageSizeChange={changeLimit}
+        itemLabel="registros"
+      />
 
       {/* Modal de detalles */}
       {showDetailsModal && selectedAction && (

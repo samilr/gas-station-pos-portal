@@ -9,7 +9,7 @@ import { usePermissions } from '../../../hooks/usePermissions';
 import { useProducts } from '../../../hooks/useProducts';
 import { IProduct } from '../../../types/product';
 import { PermissionGate } from '../../common';
-import { CompactButton } from '../../ui';
+import { CompactButton, Pagination } from '../../ui';
 import StatusDot from '../../ui/StatusDot';
 import Toolbar from '../../ui/Toolbar';
 ;
@@ -23,7 +23,7 @@ const ProductsSection: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
@@ -146,11 +146,12 @@ const ProductsSection: React.FC = () => {
     }
   };
 
-  // Calcular estadísticas
-  const totalProducts = products.length;
-  const activeProducts = products.filter(p => p.active).length;
-  const inactiveProducts = products.filter(p => !p.active).length;
-  const inventoryProducts = products.filter(p => p.inventory).length;
+  // Calcular estadísticas (defensivo ante respuestas no-array)
+  const productList = Array.isArray(products) ? products : [];
+  const totalProducts = productList.length;
+  const activeProducts = productList.filter(p => p.active).length;
+  const inactiveProducts = productList.filter(p => !p.active).length;
+  const inventoryProducts = productList.filter(p => p.inventory).length;
 
   if (loading) {
     return (
@@ -224,7 +225,7 @@ const ProductsSection: React.FC = () => {
                 className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Todas</option>
-                {Array.from(new Set(products.map(p => p.category_id))).map(categoryId => (
+                {Array.from(new Set(productList.map(p => p.category_id))).map(categoryId => (
                   <option key={categoryId} value={categoryId}>{categoryId}</option>
                 ))}
               </select>
@@ -346,55 +347,16 @@ const ProductsSection: React.FC = () => {
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between bg-white px-3 py-1.5 border-t border-gray-200">
-          <div className="text-xs text-gray-700">
-            Mostrando <span className="font-medium">{startIndex + 1}</span> a{' '}
-            <span className="font-medium">{Math.min(endIndex, filteredProducts.length)}</span> de{' '}
-            <span className="font-medium">{filteredProducts.length}</span> productos
-            {filteredProducts.length !== products.length && (
-              <span className="text-gray-500"> (filtrados de {products.length} total)</span>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
-            <CompactButton
-              variant="ghost"
-              onClick={handlePrevPage}
-              disabled={currentPage === 1}
-            >
-              Anterior
-            </CompactButton>
-
-            <div className="flex items-center gap-0.5">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
-                if (totalPages <= 7 ||
-                    page === 1 ||
-                    page === totalPages ||
-                    (page >= currentPage - 1 && page <= currentPage + 1)) {
-                  return (
-                    <CompactButton
-                      key={page}
-                      variant={page === currentPage ? 'primary' : 'ghost'}
-                      onClick={() => handlePageChange(page)}
-                    >
-                      {page}
-                    </CompactButton>
-                  );
-                } else if (page === currentPage - 2 || page === currentPage + 2) {
-                  return <span key={page} className="px-1 text-xs text-gray-500">...</span>;
-                }
-                return null;
-              })}
-            </div>
-
-            <CompactButton
-              variant="ghost"
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages}
-            >
-              Siguiente
-            </CompactButton>
-          </div>
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredProducts.length}
+          pageSize={itemsPerPage}
+          onPageChange={handlePageChange}
+          onPageSizeChange={(size) => { setItemsPerPage(size); setCurrentPage(1); }}
+          itemLabel="productos"
+          filteredTotal={productList.length}
+        />
       </div>
 
       {error && (

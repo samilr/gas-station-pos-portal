@@ -6,8 +6,6 @@ import {
   Clock,
   AlertCircle,
   Download,
-  ArrowLeft,
-  ArrowRight,
   RefreshCw,
   FileX,
   ChevronUp,
@@ -30,7 +28,7 @@ import { SortField, useTransactions } from '../../../hooks/useTransactions';
 import transactionService from '../../../services/transactionService';
 import { CFStatus } from '../../../types/transaction';
 import { useHeader } from '../../../context/HeaderContext';
-import { CompactButton } from '../../ui';
+import { CompactButton, Pagination } from '../../ui';
 import StatusDot from '../../ui/StatusDot';
 import Toolbar from '../../ui/Toolbar';
 
@@ -652,69 +650,21 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
       )}
 
       {/* Pagination */}
-      <div className="flex items-center justify-between px-2 py-1.5 bg-white border border-table-border rounded-sm">
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-text-muted">
-            {pagination ? (
-              <>{((pagination.page - 1) * pagination.limit) + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total}</>
-            ) : (
-              <>{startIndex + 1}–{endIndex} de {filteredTransactions.length}</>
-            )}
-          </span>
-          <div className="flex items-center gap-1">
-            <label className="text-xs text-text-muted">Items:</label>
-            <select
-              value={itemsPerPage}
-              onChange={async (e) => {
-                const newLimit = parseInt(e.target.value, 10);
-                setItemsPerPage(newLimit);
-                setCurrentPage(1);
-                if (startDateFilter && endDateFilter) {
-                  await searchTransactionsDirectly(buildSearchParams(1, newLimit));
-                }
-              }}
-              className="h-6 px-1 text-xs border border-gray-300 rounded-sm bg-white"
-            >
-              <option value={10}>10</option>
-              <option value={15}>15</option>
-              <option value={20}>20</option>
-              <option value={30}>30</option>
-              <option value={50}>50</option>
-            </select>
-          </div>
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => { if (startDateFilter && endDateFilter) searchTransactionsDirectly(buildSearchParams(Math.max(1, currentPage - 1))); }}
-            disabled={!pagination?.hasPrev && currentPage === 1}
-            className="h-6 w-6 flex items-center justify-center rounded-sm hover:bg-gray-100 disabled:opacity-30"
-          >
-            <ArrowLeft className="w-3.5 h-3.5 text-text-secondary" />
-          </button>
-          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-            let pageNumber;
-            if (totalPages <= 5) pageNumber = i + 1;
-            else if (currentPage <= 3) pageNumber = i + 1;
-            else if (currentPage >= totalPages - 2) pageNumber = totalPages - 4 + i;
-            else pageNumber = currentPage - 2 + i;
-            return (
-              <button key={pageNumber}
-                onClick={() => { if (startDateFilter && endDateFilter) searchTransactionsDirectly(buildSearchParams(pageNumber)); }}
-                className={`h-6 min-w-[24px] px-1 text-xs rounded-sm transition-colors ${currentPage === pageNumber ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-text-secondary'}`}
-              >
-                {pageNumber}
-              </button>
-            );
-          })}
-          <button
-            onClick={() => { if (startDateFilter && endDateFilter) searchTransactionsDirectly(buildSearchParams(Math.min(totalPages, currentPage + 1))); }}
-            disabled={!pagination?.hasNext && currentPage === totalPages}
-            className="h-6 w-6 flex items-center justify-center rounded-sm hover:bg-gray-100 disabled:opacity-30"
-          >
-            <ArrowRight className="w-3.5 h-3.5 text-text-secondary" />
-          </button>
-        </div>
-      </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={pagination?.total ?? filteredTransactions.length}
+        pageSize={pagination?.limit ?? itemsPerPage}
+        onPageChange={(page) => { if (startDateFilter && endDateFilter) searchTransactionsDirectly(buildSearchParams(page)); }}
+        onPageSizeChange={async (newLimit) => {
+          setItemsPerPage(newLimit);
+          setCurrentPage(1);
+          if (startDateFilter && endDateFilter) {
+            await searchTransactionsDirectly(buildSearchParams(1, newLimit));
+          }
+        }}
+        itemLabel="transacciones"
+      />
 
       {/* Reverse Confirmation Dialog */}
       <Dialog open={showReverseDialog} onClose={cancelReverseTransaction} className="relative z-50">
