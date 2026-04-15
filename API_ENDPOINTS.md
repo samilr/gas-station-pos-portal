@@ -85,8 +85,8 @@
 | 70 | POST | `/api/cart/add` | Agregar al carrito |
 | 71 | PUT | `/api/cart/{id}` | Actualizar item del carrito |
 | 72 | DELETE | `/api/cart/{id}` | Eliminar item del carrito |
-| 73 | GET | `/api/audit/actions?page=1&limit=50` | Action logs paginados |
-| 74 | GET | `/api/audit/errors?page=1&limit=50` | Error logs paginados |
+| 73 | GET | `/api/audit/actions?fromDate=&toDate=&page=1&limit=50` | Action logs paginados (filtro por rango de fecha) |
+| 74 | GET | `/api/audit/errors?fromDate=&toDate=&page=1&limit=50` | Error logs paginados (filtro por rango de fecha) |
 | 75 | DELETE | `/api/audit/actions/{id}` | Eliminar action log |
 | 76 | DELETE | `/api/audit/errors/{id}` | Eliminar error log |
 | 77 | GET | `/api/zataca/config` | Config de Zataca |
@@ -108,6 +108,78 @@
 | 93 | GET | `/api/fuel-transactions/{id}` | Fuel transaction por ID |
 | 94 | PUT | `/api/fuel-transactions/{id}` | Actualizar fuel transaction |
 | 95 | DELETE | `/api/fuel-transactions/{id}` | Eliminar fuel transaction |
+| 96 | GET | `/api/dispensers/settings` | Config del proxy PTS (password enmascarado) |
+| 97 | PUT | `/api/dispensers/settings` | Actualizar config del proxy PTS (persistida) |
+| 98 | GET | `/api/dataphone-suppliers` | Lista de proveedores de dataphone (CardNet, etc.) |
+| 99 | GET | `/api/dataphone-suppliers/{id}` | Proveedor por ID |
+| 100 | POST | `/api/dataphone-suppliers` | Crear proveedor |
+| 101 | PUT | `/api/dataphone-suppliers/{id}` | Actualizar proveedor |
+| 102 | DELETE | `/api/dataphone-suppliers/{id}` | Eliminar proveedor |
+| 103 | GET | `/api/dataphones?siteId={x}` | Lista de dataphones (opcional filtrar por sitio) |
+| 104 | GET | `/api/dataphones/{id}` | Dataphone por ID |
+| 105 | POST | `/api/dataphones` | Crear dataphone |
+| 106 | PUT | `/api/dataphones/{id}` | Actualizar dataphone |
+| 107 | DELETE | `/api/dataphones/{id}` | Eliminar dataphone |
+| 108 | GET | `/api/dataphone-terminals?siteId={x}` | Lista de mapeos terminal↔dataphone |
+| 109 | GET | `/api/dataphone-terminals/{dataphoneId}/{siteId}/{terminalId}` | Mapeo específico |
+| 110 | POST | `/api/dataphone-terminals` | Crear mapeo |
+| 111 | PUT | `/api/dataphone-terminals/{dataphoneId}/{siteId}/{terminalId}` | Actualizar mapeo |
+| 112 | DELETE | `/api/dataphone-terminals/{dataphoneId}/{siteId}/{terminalId}` | Eliminar mapeo |
+| 113 | POST | `/api/card-payments/process` | Procesar trans (stage + cobrar + promover según saldo) |
+| 114 | POST | `/api/card-payments/{id}/void` | Anular un cobro aprobado (mismo lote) |
+| 115 | POST | `/api/card-payments/{id}/refund` | Devolución post-cierre de lote |
+| 116 | POST | `/api/card-payments/{id}/link-trans` | Reconciliar cobro huérfano con una trans creada después |
+| 117 | POST | `/api/card-payments/batch-close` | Cierre de lote del día en el dataphone |
+| 118 | GET | `/api/card-payments` | Lista paginada con filtros (site/terminal/fecha/status) |
+| 119 | GET | `/api/card-payments/orphaned?siteId={x}` | Cobros aprobados sin trans (reconciliación) |
+| 120 | GET | `/api/card-payments/{id}` | CardPayment por ID |
+| 121 | GET | `/api/jobs/getEncfStatus` | Trigger manual del ciclo de sondeo DGII |
+| 122 | POST | `/api/jobs/downloadTaxpayers` | Trigger manual de la importación de contribuyentes DGII |
+| 123 | GET | `/api/dispensers-config?siteId=&ptsId=` | Catálogo de dispensadoras (CRUD config de hardware) |
+| 124 | GET | `/api/dispensers-config/{id}` | Dispensadora por ID |
+| 125 | POST | `/api/dispensers-config` | Crear dispensadora |
+| 126 | PUT | `/api/dispensers-config/{id}` | Actualizar dispensadora (campos parciales) |
+| 127 | DELETE | `/api/dispensers-config/{id}` | Eliminar dispensadora |
+
+### Response shape canónico
+
+Todos los endpoints que devuelven listas usan la misma forma, paginen o no. La propiedad `count` fue reemplazada por un objeto `pagination` en **todos** los listados para que el cliente no tenga que manejar formas distintas.
+
+**Listados:**
+
+```json
+{
+  "successful": true,
+  "data": [ /* ... */ ],
+  "pagination": {
+    "page": 1,
+    "limit": 50,
+    "total": 137,
+    "totalPages": 3,
+    "hasNext": true,
+    "hasPrev": false
+  }
+}
+```
+
+En listados sin paginación real (ej. catálogos completos), `pagination` trae `page=1, limit=total, totalPages=1, hasNext=false, hasPrev=false` — pero la propiedad siempre está presente.
+
+**Item único:** `{ "successful": true, "data": { /* ... */ } }`
+**Errores:** `{ "successful": false, "error": "mensaje", "code": "NotFound|Validation|Conflict" }`
+
+### Endpoints con shape de respuesta modificada
+
+| Endpoint | Cambio |
+|---|---|
+| `GET /health` | Ahora retorna `status`, `timestamp`, `uptime`, `environment`, `version` y `checks.database` (healthy/unhealthy). `503` si la BD falla. |
+| `GET /api/products`, `/users`, `/sites/all`, `/hosts`, `/terminals` | Ahora paginados (`search`, `page`, `limit`). Response con `pagination` reemplazando `count`. |
+| `GET /api/products/details`, `/products/category/{id}` | Ahora devuelven `pagination` (no `count`). Sin paginación real — retornan todo el catálogo. |
+| `GET /api/categories`, `/payments`, `/staft-groups` | Ahora devuelven `pagination` (no `count`). |
+| `GET /api/card-payments`, `/card-payments/orphaned` | Usan shape canónico con `pagination`. |
+| `GET /api/dataphone-suppliers`, `/dataphones`, `/dataphone-terminals` | Usan shape canónico con `pagination`. |
+| `GET /api/audit/actions` + `/errors` | Filtro por rango `fromDate`/`toDate` (default: hoy UTC). Response con `pagination` + `filters`. |
+| `GET /api/fuel-transactions` | Response aplanada — `pagination` ya no está anidada dentro de `data`. |
+| `GET /api/dispensers/status` | Response envuelta con `pumpCount` + `data`. |
 
 ---
 
@@ -440,15 +512,16 @@
 
 ## Fin-Inv — Products
 
-### `GET /api/products` — EXISTING
+### `GET /api/products?search=&page=1&limit=50` — EXISTING (🆕 ahora paginado)
 
-> Todos los productos
+> Lista paginada de productos, con búsqueda opcional por nombre/productId.
+>
+> **Query params:** `search` (opcional), `page` (default 1), `limit` (default 50, máx 200).
 
 **Response:**
 ```json
 {
   "successful": true,
-  "count": 4294,
   "data": [
     {
       "productId": "1-001",
@@ -494,7 +567,15 @@
       "inventory": true,
       "active": true
     }
-  ]
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 50,
+    "total": 4294,
+    "totalPages": 86,
+    "hasNext": true,
+    "hasPrev": false
+  }
 }
 ```
 
@@ -774,9 +855,12 @@
 
 ## Core — Users
 
-### `GET /api/users` — EXISTING
+### `GET /api/users?search=&page=1&limit=50` — EXISTING (🆕 ahora paginado)
 
-> Lista de usuarios (con join a roles + staft_group)
+> Lista paginada de usuarios (con join a roles + staft_group). Búsqueda opcional por nombre/username.
+>
+> **Query params:** `search` (opcional), `page` (default 1), `limit` (default 50, máx 200).
+> **Nota:** la versión anterior filtraba por `role`/`siteId`/`staftId` tomados del JWT — ese filtrado se removió; ahora la lista siempre viene global y se filtra vía `search`.
 
 **Response:**
 ```json
@@ -817,7 +901,15 @@
       "shift": 4,
       "terminalId": 1
     }
-  ]
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 50,
+    "total": 218,
+    "totalPages": 5,
+    "hasNext": true,
+    "hasPrev": false
+  }
 }
 ```
 
@@ -932,9 +1024,11 @@
 }
 ```
 
-### `GET /api/sites/all` — EXISTING
+### `GET /api/sites/all?search=&page=1&limit=50` — EXISTING (🆕 ahora paginado)
 
-> Todas las sucursales (full data)
+> Lista paginada de sucursales con full data. Búsqueda opcional por nombre/siteId.
+>
+> **Query params:** `search` (opcional), `page` (default 1), `limit` (default 50, máx 200).
 
 **Response:**
 ```json
@@ -965,7 +1059,15 @@
       "active": false,
       "status": 2
     }
-  ]
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 50,
+    "total": 180,
+    "totalPages": 4,
+    "hasNext": true,
+    "hasPrev": false
+  }
 }
 ```
 
@@ -991,9 +1093,11 @@
 
 ## Core — Hosts
 
-### `GET /api/hosts` — EXISTING
+### `GET /api/hosts?search=&page=1&limit=50` — EXISTING (🆕 ahora paginado)
 
-> Lista de hosts
+> Lista paginada de hosts. Búsqueda opcional por nombre/deviceId/ipAddress.
+>
+> **Query params:** `search` (opcional), `page` (default 1), `limit` (default 50, máx 200).
 
 **Response:**
 ```json
@@ -1026,7 +1130,15 @@
       "deviceId": "sssssssssss1d5cd2f7",
       "hostTypeId": 1
     }
-  ]
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 50,
+    "total": 42,
+    "totalPages": 1,
+    "hasNext": false,
+    "hasPrev": false
+  }
 }
 ```
 
@@ -1274,9 +1386,11 @@
 
 ## Bus-Sale — Terminals
 
-### `GET /api/terminals` — EXISTING
+### `GET /api/terminals?search=&page=1&limit=50` — EXISTING (🆕 ahora paginado)
 
-> Lista de terminales
+> Lista paginada de terminales. Búsqueda opcional por nombre/siteId.
+>
+> **Query params:** `search` (opcional), `page` (default 1), `limit` (default 50, máx 200).
 
 **Response:**
 ```json
@@ -1327,7 +1441,15 @@
       "active": true,
       "productListType": 0
     }
-  ]
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 50,
+    "total": 312,
+    "totalPages": 7,
+    "hasNext": true,
+    "hasPrev": false
+  }
 }
 ```
 
@@ -1755,9 +1877,15 @@
 
 ## Audit
 
-### `GET /api/audit/actions?page=1&limit=50` — 🆕 NEW
+### `GET /api/audit/actions?fromDate=&toDate=&page=1&limit=50` — 🆕 NEW
 
-> Action logs paginados
+> Action logs paginados con filtro por rango de fechas.
+>
+> **Query params:**
+> - `fromDate` / `toDate` (opcionales, formato `YYYY-MM-DD`). Si no se envían, ambos default al día actual (UTC).
+> - `page` (default 1), `limit` (default 50, máx 200).
+>
+> El rango se normaliza a `[fromDate 00:00:00, toDate 23:59:59]` en UTC.
 
 **Response:**
 ```json
@@ -1789,34 +1917,55 @@
       "terminalId": null,
       "latitude": null,
       "longitude": null
-    },
-    {
-      "actionId": 18519,
-      "staftId": null,
-      "siteId": null,
-      "action": "LOGIN",
-      "description": "Intento de login: 633",
-      "ipAddress": "::1",
-      "createdAt": "2026-04-12T01:01:47.99",
-      "deviceId": null,
-      "terminalId": null,
-      "latitude": null,
-      "longitude": null
     }
   ],
-  "total": 17497,
-  "page": 1,
-  "limit": 3
+  "pagination": {
+    "page": 1,
+    "limit": 50,
+    "total": 312,
+    "totalPages": 7,
+    "hasNext": true,
+    "hasPrev": false
+  },
+  "filters": {
+    "fromDate": "2026-04-13T00:00:00Z",
+    "toDate":   "2026-04-13T23:59:59Z"
+  }
 }
 ```
 
-### `GET /api/audit/errors?page=1&limit=50` — 🆕 NEW
+### `GET /api/audit/errors?fromDate=&toDate=&page=1&limit=50` — 🆕 NEW
 
-> Error logs paginados
+> Error logs paginados con filtro por rango de fechas. Mismos query params y forma de respuesta que `/api/audit/actions`.
 
 **Response:**
 ```json
-{"successful":true,"data":[{"errorId":693,"staftId":null,"siteId":null,"errorCode":"PASSWORD_CHANGED","message":"Contraseña actual incorrecta","stackTrace":"   at GasStationPos.Application.Auth.Commands.ChangePassword.ChangePasswordHandler.Handle(ChangePasswordCommand request, CancellationToken cancellationToken) in /Users/sgonzalez/Apps/gas-station-managment-api/src/GasStationPos.Application/Auth/Commands/ChangePassword/ChangePasswordCommand.cs:line 38
+{
+  "successful": true,
+  "data": [
+    {
+      "errorId": 693,
+      "staftId": null,
+      "siteId": null,
+      "errorCode": "PASSWORD_CHANGED",
+      "message": "Contraseña actual incorrecta",
+      "stackTrace": "...",
+      "createdAt": "2026-04-13T14:22:10.112"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 50,
+    "total": 41,
+    "totalPages": 1,
+    "hasNext": false,
+    "hasPrev": false
+  },
+  "filters": {
+    "fromDate": "2026-04-13T00:00:00Z",
+    "toDate":   "2026-04-13T23:59:59Z"
+  }
+}
 ```
 
 ---
@@ -1919,15 +2068,25 @@
 
 ## External — Fuel Transactions
 
-### `GET /api/fuel-transactions` — 🆕 NEW
+### `GET /api/fuel-transactions?page=1&limit=50` — 🆕 NEW
 
-> Fuel transactions recientes (24h)
+> Fuel transactions recientes (24h) paginadas.
+>
+> **Cambio:** el shape de la respuesta se aplanó — la `pagination` ahora está a nivel raíz (antes estaba anidada dentro de `data.pagination`, con `data.data` para el array).
 
 **Response:**
 ```json
 {
   "successful": true,
-  "data": []
+  "data": [],
+  "pagination": {
+    "page": 1,
+    "limit": 50,
+    "total": 0,
+    "totalPages": 1,
+    "hasNext": false,
+    "hasPrev": false
+  }
 }
 ```
 
@@ -1935,17 +2094,98 @@
 
 ## Health
 
-### `GET /health` — EXISTING
+### `GET /health` — EXISTING (🆕 respuesta enriquecida)
 
-> Health check
+> Health check. Verifica estado general + conexión a BD (ejecuta `SELECT 1`). Retorna `200` si todo OK, `503` si la BD falla (con `status: "degraded"` en el payload).
+
+**Response (healthy — 200):**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2026-04-13T14:22:10.112Z",
+  "uptime": "02:17:45",
+  "environment": "Development",
+  "version": "1.0.0",
+  "checks": {
+    "database": { "status": "healthy", "error": null }
+  }
+}
+```
+
+**Response (degradado — 503):**
+```json
+{
+  "status": "degraded",
+  "timestamp": "2026-04-13T14:22:10.112Z",
+  "uptime": "02:17:45",
+  "environment": "Production",
+  "version": "1.0.0",
+  "checks": {
+    "database": { "status": "unhealthy", "error": "A network-related error..." }
+  }
+}
+```
+
+---
+
+## Dispensers (PTS-2 Proxy)
+
+> Proxy al PTS-2 Controller — el frontend nunca habla directo con el hardware.
+> Base path: `/api/dispensers`. Todos los errores del proxy se devuelven como `{ successful: false, error: "..." }` con HTTP 200 para no romper el polling del portal.
+
+### `GET /api/dispensers/status` — 🆕 NEW (shape actualizado)
+
+> Estado de todas las bombas. Ahora incluye `pumpCount` configurado y envuelve la respuesta del PTS en un wrapper.
 
 **Response:**
 ```json
 {
   "successful": true,
-  "status": "healthy"
+  "pumpCount": 8,
+  "data": { /* payload crudo del PTS-2 */ }
 }
 ```
+
+### `GET /api/dispensers/settings` — 🆕 NEW
+
+> Retorna la configuración actual del proxy PTS. El password nunca se expone — siempre viene como `"********"`.
+
+**Response:**
+```json
+{
+  "successful": true,
+  "data": {
+    "baseUrl": "http://127.0.0.1:8080",
+    "username": "admin",
+    "password": "********",
+    "pumpCount": 8
+  }
+}
+```
+
+### `PUT /api/dispensers/settings` — 🆕 NEW
+
+> Actualiza la configuración del proxy PTS y la persiste en disco. Todos los campos son opcionales; solo se actualizan los que se envíen no-vacíos. Los cambios aplican al siguiente request (no requiere reiniciar el proceso).
+
+**Request:**
+```json
+{
+  "baseUrl":   "http://192.168.1.50:8080",
+  "username":  "admin",
+  "password":  "nueva-clave",
+  "pumpCount": 12
+}
+```
+
+**Response:**
+```json
+{
+  "successful": true,
+  "message": "PTS proxy settings updated. Changes take effect on next request."
+}
+```
+
+> Resto de endpoints del proxy (sin cambios de shape): `GET /status/{pump}`, `GET /system/info`, `GET /probes/{probe}/volume-table`, etc. — ver `DispensersController.cs`.
 
 ---
 
@@ -2446,6 +2686,255 @@
 |--------|------|-------------|
 | DELETE | `/api/audit/actions/{id}` | Eliminar action log |
 | DELETE | `/api/audit/errors/{id}` | Eliminar error log |
+
+---
+
+## Dataphone Suppliers — 🆕 NEW
+
+CRUD del catálogo de proveedores de pinpad (CardNet, Azul, Visanet...). `dataphone_supplier_id` es el discriminador que usa el factory de `ICardPaymentGateway` para elegir la implementación al cobrar.
+
+### `GET /api/dataphone-suppliers`
+
+```json
+{
+  "successful": true,
+  "count": 1,
+  "data": [
+    { "dataphoneSupplierId": 1, "name": "CARDNET", "comment": null,
+      "posRequestPort": 2018, "dataphoneResponsePort": 7060,
+      "transTimeout": 38000, "active": true }
+  ]
+}
+```
+
+### `POST /api/dataphone-suppliers`
+
+```json
+{ "dataphoneSupplierId": 1, "name": "CARDNET", "comment": null,
+  "posRequestPort": 2018, "dataphoneResponsePort": 7060,
+  "transTimeout": 38000, "active": true }
+```
+
+### `GET /api/dataphone-suppliers/{id}` · `PUT /api/dataphone-suppliers/{id}` · `DELETE /api/dataphone-suppliers/{id}`
+
+Shape análogo a `POST`. El `PUT` no acepta cambiar el `dataphoneSupplierId`.
+
+---
+
+## Dataphones — 🆕 NEW
+
+CRUD de los dataphones físicos instalados por sitio.
+
+### `GET /api/dataphones?siteId=CO-0017`
+
+```json
+{
+  "successful": true,
+  "count": 1,
+  "data": [
+    { "dataphoneId": 1, "name": "C A R D N E T", "siteId": "CO-0017",
+      "dataphoneSupplierId": 1, "dataphoneIpAddress": "192.168.125.36",
+      "dataphoneResponsePort": 7060, "terminalRequestPort": 2018,
+      "transTimeout": 64000, "comment": null, "active": true }
+  ]
+}
+```
+
+Sin query param retorna todos los sitios.
+
+### `POST /api/dataphones` · `GET /api/dataphones/{id}` · `PUT /api/dataphones/{id}` · `DELETE /api/dataphones/{id}`
+
+Mismos campos que el GET. El `dataphoneSupplierId` debe referenciar una fila existente en `dataphone_supplier`.
+
+---
+
+## Dataphone Terminals — 🆕 NEW
+
+Mapeo entre un terminal POS (`siteId + terminalId`) y el dataphone físico que le corresponde. Un dataphone puede servir a varios terminales (ej. kiosko comparte pinpad con caja).
+
+### `GET /api/dataphone-terminals?siteId=CO-0017`
+
+```json
+{
+  "successful": true,
+  "count": 2,
+  "data": [
+    { "dataphoneId": 1, "siteId": "CO-0017", "terminalId": 2,
+      "dataphoneIp": "192.168.125.36", "terminalIp": "192.168.125.25",
+      "closingManually": true, "active": true },
+    { "dataphoneId": 1, "siteId": "CO-0017", "terminalId": 301,
+      "dataphoneIp": "192.168.125.36", "terminalIp": "192.168.125.25",
+      "closingManually": true, "active": true }
+  ]
+}
+```
+
+### `POST /api/dataphone-terminals` · `GET /api/dataphone-terminals/{dataphoneId}/{siteId}/{terminalId}` · `PUT` · `DELETE`
+
+PK compuesta `(dataphoneId, siteId, terminalId)` se pasa en la ruta.
+
+---
+
+## Card Payments — 🆕 NEW
+
+Cobros con tarjeta contra el dataphone CardNet. El flujo principal es `/process` (stage + cobrar + promover). Los demás endpoints cubren void, refund, cierre de lote y reconciliación.
+
+Ver doc de integración completa: [docs/CARD_PAYMENTS_POS_INTEGRATION.md](docs/CARD_PAYMENTS_POS_INTEGRATION.md).
+
+### `POST /api/card-payments/process`
+
+Procesa una transacción. Upsert en staging (`pos_trans*`), cobra cualquier línea de tarjeta sin aprobación contra el dataphone, y si el saldo (`|total| − Σ payments.total`) queda ≤ 0 promueve a la tabla real (`trans*`) con eNCF DGII y borra el staging; sino deja en staging.
+
+**Request:**
+```json
+{
+  "posTransNumber": null,
+  "transHead": {
+    "transType": 1, "siteId": "CO-0017", "terminalId": 2,
+    "storeId": "CO-0017-01", "fuelTransactionId": null,
+    "shift": 1, "staftId": 10, "managerId": null,
+    "startTime": "2026-04-15T15:00:00Z", "endTime": "2026-04-15T15:02:30Z",
+    "customerId": "CONTADO", "taxpayerId": null, "deliveryType": 0,
+    "subtotal": 847.46, "tax": 152.54, "total": 1000.00, "payment": 1000.00,
+    "returnTransNumber": null, "source": 0, "cfTypeId": "31",
+    "status": 1, "createdBy": "POS_MOBILE", "posVersion": "1.0.0"
+  },
+  "transProd": [ { "productId": "GAS-REG", "...": "..." } ],
+  "transPaym": [
+    { "paymentId": "TAR", "paymentType": 2, "currencyId": "DOP",
+      "exchangeRate": 1.0, "quantity": 1, "total": 500.00, "cardSupplierId": 1 },
+    { "paymentId": "EFE", "paymentType": 1, "currencyId": "DOP",
+      "exchangeRate": 1.0, "quantity": 1, "total": 500.00 }
+  ],
+  "saleFromCart": true, "zatacaSale": false, "userRole": "CASHIER"
+}
+```
+
+**Response — promovida (`finalized: true`):**
+```json
+{
+  "successful": true,
+  "data": {
+    "posTransNumber": "PTMP000001",
+    "finalized": true, "remainingBalance": 0,
+    "transNumber": "POS000123",
+    "encf": "E310000000001",
+    "cfValidity": "2027-04-15T00:00:00",
+    "dateDigitalSignature": "15-04-2026 15:02:33",
+    "securityCode": "abc123",
+    "urlQr": "https://ecf.dgii.gov.do/eCF/ConsultaTimbre?...",
+    "cardPayments": [
+      { "cardPaymentId": "7f3c-...-abc1", "transPaymLineNumber": 1,
+        "approved": true, "authorizationNumber": "821520", "reference": 123,
+        "host": 6, "batch": 1, "cardProduct": "VISA",
+        "maskedPan": "542298xxxxxx6290", "status": "LinkedToTrans", "message": null }
+    ]
+  }
+}
+```
+
+**Response — pendiente (`finalized: false`):** igual shape pero con `transNumber: null`, `encf: null`, y `remainingBalance` > 0. El cliente debe volver a llamar con el mismo `posTransNumber`.
+
+**Errores:** `400` si los montos no coinciden, `404` si el dataphone no tiene mapeo para el terminal o la `fuel_transaction_id` no existe, `409` si el dataphone declina o falla la comunicación (compensación automática vía void).
+
+### `POST /api/card-payments/{id}/void`
+
+Anula un cobro aprobado (mismo lote abierto). `{id}` es el `cardPaymentId` devuelto por `/process`.
+
+**Request:** body vacío.
+**Response:** `{ successful: true, data: { cardPaymentId, status: "Voided", rawResponse, messages } }`.
+Errores: `400` si el CardPayment ya está Voided/Refunded, `409` si el dataphone rechaza el void.
+
+### `POST /api/card-payments/{id}/refund`
+
+Devolución post-cierre. Crea un nuevo `CardPayment` con `Operation=Refund` ligado al original.
+
+**Request:**
+```json
+{ "amountCents": 50000, "taxCents": 0, "otherTaxesCents": 0 }
+```
+
+**Response:** `{ successful: true, data: { refundCardPaymentId, originalCardPaymentId, approved, authorizationNumber, reference, rawResponse, messages } }`.
+
+### `POST /api/card-payments/batch-close`
+
+Cierra el lote del día contra el dataphone.
+
+**Request:** `{ "siteId": "CO-0017", "terminalId": 2 }`
+**Response:** `{ successful: true, data: { cardPaymentId, success, closureQuantity, rawResponse, messages } }`.
+
+### `POST /api/card-payments/{id}/link-trans`
+
+Reconciliación manual de un cobro huérfano. Se usa cuando `/process` aprobó el cobro pero la creación de `trans*` falló después; el operador luego crea la `trans` por otro medio y llama este endpoint para atarla al `CardPayment`.
+
+**Request:** `{ "transNumber": "POS000124", "transPaymLine": 1 }`
+**Response:** `{ successful: true, data: { cardPaymentId, transNumber, transPaymLine, status: "LinkedToTrans" } }`.
+
+### `GET /api/card-payments?siteId=&terminalId=&from=&to=&page=1&limit=50`
+
+Lista paginada con filtros opcionales.
+
+### `GET /api/card-payments/orphaned?siteId=CO-0017`
+
+Cobros con `status = Approved` pero sin `linkedTransNumber` (pendientes de reconciliación).
+
+### `GET /api/card-payments/{id}`
+
+Retorna el `CardPayment` completo incluyendo `rawRequest` y `rawResponse` para auditoría.
+
+---
+
+## Dispensers Config — 🆕 NEW
+
+CRUD del catálogo de dispensadoras con configuración de hardware (marca, protocolo, conexión TCP/Serial, baud rate, etc.). Es un módulo separado del proxy PTS que vive en `/api/dispensers/*` — este (`/api/dispensers-config`) es el catálogo editable desde el portal.
+
+Doc completa con ejemplos, validaciones y TypeScript types: [docs/DISPENSERS_CONFIG_ENDPOINTS.md](docs/DISPENSERS_CONFIG_ENDPOINTS.md).
+
+### `GET /api/dispensers-config?siteId=CO-0017&ptsId=...`
+
+Lista con filtros opcionales por `siteId` y/o `ptsId`. Orden: `siteId` asc, `pumpNumber` asc.
+
+```json
+{
+  "successful": true,
+  "data": [
+    {
+      "dispenserId": 1, "siteId": "CO-0017", "ptsId": "004A00323233511638383435",
+      "pumpNumber": 1, "nozzlesCount": 4, "name": "Bomba 1 Isla Norte", "active": true,
+      "brand": "Gilbarco", "model": "Encore 700S", "serialNumber": "GB2024-1001",
+      "connectionType": "TCP", "ipAddress": "192.168.1.50", "tcpPort": 10001,
+      "serialPort": null, "baudRate": 9600, "dataBits": 8, "parity": "None", "stopBits": "1",
+      "protocol": "GILBARCO_TWO_WIRE", "protocolVersion": "1.0", "busAddress": 1,
+      "timeoutMs": 5000, "createdAt": "2026-04-14T17:42:31Z", "updatedAt": null
+    }
+  ]
+}
+```
+
+### `POST /api/dispensers-config` · `GET /api/dispensers-config/{id}` · `PUT /api/dispensers-config/{id}` · `DELETE /api/dispensers-config/{id}`
+
+- PK `(siteId, pumpNumber)` es única (`UQ_dispenser_site_pump`) — intento duplicado retorna `409`.
+- `connectionType ∈ {TCP, SERIAL, RS485, RS422}` (CHECK constraint en BD).
+- `PUT` acepta campos parciales (solo se actualizan los no-null). No permite cambiar `siteId` ni `pumpNumber`.
+- `DELETE` es físico (no soft-delete).
+
+---
+
+## Jobs — 🆕 NEW
+
+Triggers manuales de los background services. Los jobs corren automáticamente (sondeo DGII cada 60s, importación de contribuyentes cada 7 días); estos endpoints son para disparar un ciclo bajo demanda.
+
+### `GET /api/jobs/getEncfStatus`
+
+Corre sincrónicamente un ciclo completo de reconciliación DGII: lista trans con `cf_status` pendiente (SinEnviar, Enviado, Repetido, ErrorProveedor, ErrorInterno), consulta `/ConsultaEstado` del intermediario por cada eNCF, y actualiza el `cf_status` local según la respuesta. Separa ventas de devoluciones (solo reconcilia devoluciones si su venta padre ya está Aceptada).
+
+**Response:** `{ "successful": true, "message": "Reconciliación DGII ejecutada" }`
+
+### `POST /api/jobs/downloadTaxpayers`
+
+Descarga el ZIP DGII (`RNC_CONTRIBUYENTES.zip`), parsea el CSV, y hace bulk-insert solo de los contribuyentes que no existan aún en la DB local. Protegido por semáforo: si el job automático semanal ya está corriendo, retorna `409` en lugar de ejecutar dos veces.
+
+**Response:** `{ "successful": true, "inserted": 12345 }`
 
 ---
 

@@ -308,7 +308,7 @@ const FuelTransactionsSection: React.FC = () => {
                       {mapFuelProductName(transaction.fuelGradeName)}
                     </td>
                     <td className="px-2 text-sm text-gray-900 whitespace-nowrap">
-                      {transaction.volume.toFixed(2)} G.
+                      {transaction.volume.toFixed(3)} G.
                     </td>
                     <td className="px-2 text-sm text-gray-900 whitespace-nowrap">
                       {formatCurrency(transaction.price)}

@@ -28,12 +28,22 @@ import HardwareSection from '../components/sections/dispensers/HardwareSection';
 import TagsSection from '../components/sections/dispensers/TagsSection';
 import ReportsSection from '../components/sections/dispensers/ReportsSection';
 import FuelTransactionsSection from '../components/sections/dispensers/FuelTransactionsSection';
+import FuelDashboardSection from '../components/sections/dispensers/FuelDashboardSection';
+import DispensersConfigSection from '../components/sections/dispensers/DispensersConfigSection';
 import RolesSection from '../components/sections/users/RolesSection';
 import StaftGroupsSection from '../components/sections/users/StaftGroupsSection';
 import TaxpayersSection from '../components/sections/gov/TaxpayersSection';
 import TaxesSection from '../components/sections/gov/TaxesSection';
 import CfConfigSection from '../components/sections/gov/CfConfigSection';
 import ZatacaSection from '../components/sections/zataca/ZatacaSection';
+import CategoriesSection from '../components/sections/products/CategoriesSection';
+import TaxTypesSection from '../components/sections/gov/TaxTypesSection';
+import TaxLinesSection from '../components/sections/gov/TaxLinesSection';
+import DataphoneSuppliersSection from '../components/sections/dataphones/DataphoneSuppliersSection';
+import DataphonesSection from '../components/sections/dataphones/DataphonesSection';
+import DataphoneTerminalsSection from '../components/sections/dataphones/DataphoneTerminalsSection';
+import CardPaymentsSection from '../components/sections/card-payments/CardPaymentsSection';
+import JobsSection from '../components/sections/jobs/JobsSection';
 import { 
   Database, 
   Shield, 
@@ -333,11 +343,7 @@ export const router = createBrowserRouter([
             path: 'categories',
             element: (
               <PermissionRoute permission="products.view">
-                <GenericSection
-                  title="Categorías de Productos"
-                  description="Gestiona las categorías de productos"
-                  icon={Package}
-                />
+                <CategoriesSection />
               </PermissionRoute>
             )
           },
@@ -388,8 +394,16 @@ export const router = createBrowserRouter([
           {
             index: true,
             element: <PermissionRoute permission="dispensers.view" fallback={<Navigate to="/dashboard" replace />}>
-              <Navigate to="monitor" replace />
+              <Navigate to="dashboard" replace />
             </PermissionRoute>
+          },
+          {
+            path: 'dashboard',
+            element: <PermissionRoute permission="dispensers.view"><FuelDashboardSection /></PermissionRoute>
+          },
+          {
+            path: 'config',
+            element: <PermissionRoute permission="dispensers.view"><DispensersConfigSection /></PermissionRoute>
           },
           {
             path: 'monitor',
@@ -708,8 +722,72 @@ export const router = createBrowserRouter([
             element: <PermissionRoute permission="settings.view"><TaxesSection /></PermissionRoute>
           },
           {
+            path: 'tax-types',
+            element: <PermissionRoute permission="settings.view"><TaxTypesSection /></PermissionRoute>
+          },
+          {
+            path: 'tax-lines',
+            element: <PermissionRoute permission="settings.view"><TaxLinesSection /></PermissionRoute>
+          },
+          {
             path: 'cf-config',
             element: <PermissionRoute permission="settings.view"><CfConfigSection /></PermissionRoute>
+          }
+        ]
+      },
+      // Rutas de Dataphones
+      {
+        path: 'dataphones',
+        children: [
+          {
+            index: true,
+            element: <PermissionRoute permission="settings.view" fallback={<Navigate to="/dashboard" replace />}>
+              <Navigate to="suppliers" replace />
+            </PermissionRoute>
+          },
+          {
+            path: 'suppliers',
+            element: <PermissionRoute permission="settings.view"><DataphoneSuppliersSection /></PermissionRoute>
+          },
+          {
+            path: 'list',
+            element: <PermissionRoute permission="settings.view"><DataphonesSection /></PermissionRoute>
+          },
+          {
+            path: 'terminals',
+            element: <PermissionRoute permission="settings.view"><DataphoneTerminalsSection /></PermissionRoute>
+          }
+        ]
+      },
+      // Rutas de Card Payments
+      {
+        path: 'card-payments',
+        children: [
+          {
+            index: true,
+            element: <PermissionRoute permission="settings.view" fallback={<Navigate to="/dashboard" replace />}>
+              <Navigate to="list" replace />
+            </PermissionRoute>
+          },
+          {
+            path: 'list',
+            element: <PermissionRoute permission="settings.view"><CardPaymentsSection /></PermissionRoute>
+          }
+        ]
+      },
+      // Rutas de Jobs
+      {
+        path: 'jobs',
+        children: [
+          {
+            index: true,
+            element: <PermissionRoute permission="settings.edit" fallback={<Navigate to="/dashboard" replace />}>
+              <Navigate to="list" replace />
+            </PermissionRoute>
+          },
+          {
+            path: 'list',
+            element: <PermissionRoute permission="settings.edit"><JobsSection /></PermissionRoute>
           }
         ]
       },

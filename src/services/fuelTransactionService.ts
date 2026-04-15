@@ -44,6 +44,75 @@ export interface FuelTransactionsResponse {
   error?: string;
 }
 
+// ============================================================
+// Dashboard de combustible
+// ============================================================
+
+export interface FuelDashboardFilters {
+  startDate?: string;
+  endDate?: string;
+  siteId?: string | null;
+  excludeOffline?: boolean;
+}
+
+export interface FuelSummary {
+  txCount: number;
+  totalVolume: number;
+  totalAmount: number;
+  avgTicket: number;
+  uniquePumps: number;
+  uniqueSites: number;
+}
+
+export interface FuelDailyTrendRow {
+  date: string;
+  txCount: number;
+  volume: number;
+  amount: number;
+}
+
+export interface FuelByPumpRow {
+  pump: number;
+  txCount: number;
+  volume: number;
+  amount: number;
+}
+
+export interface FuelByFuelGradeRow {
+  fuelGradeId: number;
+  fuelGradeName: string;
+  txCount: number;
+  volume: number;
+  amount: number;
+}
+
+export interface FuelHourlyRow {
+  hour: number;
+  txCount: number;
+  volume: number;
+  amount: number;
+}
+
+export interface FuelBySiteRow {
+  siteId: string;
+  txCount: number;
+  volume: number;
+  amount: number;
+}
+
+export interface FuelTopTransactionRow {
+  transactionId: number;
+  pump: number;
+  nozzle: number;
+  fuelGradeName: string;
+  volume: number;
+  amount: number;
+  price: number;
+  transactionDate: string;
+  siteId: string | null;
+  ptsId: string | null;
+}
+
 class FuelTransactionService {
   /**
    * Obtiene las transacciones de combustible con filtros opcionales
@@ -136,6 +205,65 @@ class FuelTransactionService {
   async deleteFuelTransaction(id: number): Promise<{ successful: boolean; error?: string }> {
     const response = await apiDelete(buildApiUrl(`fuel-transactions/${id}`));
     return { successful: response.successful, error: response.error };
+  }
+
+  // ============================================================
+  // Dashboard endpoints
+  // ============================================================
+
+  private async fetchDashboard<T>(
+    path: string,
+    filters?: FuelDashboardFilters,
+    extra?: Record<string, string | number | undefined>,
+  ): Promise<T> {
+    const qs = new URLSearchParams();
+    if (filters?.startDate) qs.append('startDate', filters.startDate);
+    if (filters?.endDate) qs.append('endDate', filters.endDate);
+    if (filters?.siteId) qs.append('siteId', filters.siteId);
+    if (filters?.excludeOffline !== undefined) qs.append('excludeOffline', String(filters.excludeOffline));
+    if (extra) {
+      Object.entries(extra).forEach(([k, v]) => {
+        if (v !== undefined && v !== null) qs.append(k, String(v));
+      });
+    }
+    const query = qs.toString();
+    const url = buildApiUrl(`fuel-transactions/dashboard/${path}${query ? `?${query}` : ''}`);
+    const res = await apiGet<any>(url);
+    if (!res.successful) throw new Error(res.error || `Error al obtener ${path}`);
+    // El backend envuelve: { successful, filters, data }
+    const body = res.data;
+    return (body?.data ?? body) as T;
+  }
+
+  async getDashboardSummary(filters?: FuelDashboardFilters): Promise<FuelSummary> {
+    return this.fetchDashboard<FuelSummary>('summary', filters);
+  }
+
+  async getDashboardDailyTrend(filters?: FuelDashboardFilters): Promise<FuelDailyTrendRow[]> {
+    return this.fetchDashboard<FuelDailyTrendRow[]>('daily-trend', filters);
+  }
+
+  async getDashboardBySite(filters?: FuelDashboardFilters): Promise<FuelBySiteRow[]> {
+    return this.fetchDashboard<FuelBySiteRow[]>('by-site', filters);
+  }
+
+  async getDashboardByPump(filters?: FuelDashboardFilters): Promise<FuelByPumpRow[]> {
+    return this.fetchDashboard<FuelByPumpRow[]>('by-pump', filters);
+  }
+
+  async getDashboardByFuelGrade(filters?: FuelDashboardFilters): Promise<FuelByFuelGradeRow[]> {
+    return this.fetchDashboard<FuelByFuelGradeRow[]>('by-fuel-grade', filters);
+  }
+
+  async getDashboardHourly(filters?: FuelDashboardFilters): Promise<FuelHourlyRow[]> {
+    return this.fetchDashboard<FuelHourlyRow[]>('hourly', filters);
+  }
+
+  async getDashboardTopTransactions(
+    filters?: FuelDashboardFilters,
+    limit: number = 20,
+  ): Promise<FuelTopTransactionRow[]> {
+    return this.fetchDashboard<FuelTopTransactionRow[]>('top-transactions', filters, { limit });
   }
 }
 

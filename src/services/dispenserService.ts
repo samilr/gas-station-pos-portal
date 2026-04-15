@@ -74,14 +74,44 @@ function extractRawPackets(response: any): any[] {
   return [];
 }
 
+// Normaliza las llaves de un objeto plano a PascalCase (tolerante a camelCase)
+function toPascalData(data: any): any {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return data;
+  const out: any = {};
+  for (const key of Object.keys(data)) {
+    const pascal = key.charAt(0).toUpperCase() + key.slice(1);
+    out[pascal] = data[key];
+  }
+  return out;
+}
+
 // Normaliza un packet de camelCase a PascalCase para compatibilidad con los tipos
 function normalizePacket(raw: any): PtsPacket {
-  return {
+  const rawData = raw.Data ?? raw.data ?? {};
+  const packet: PtsPacket = {
     Id: raw.Id ?? raw.id ?? 0,
     Type: raw.Type ?? raw.type ?? '',
-    Data: raw.Data ?? raw.data ?? {},
+    Data: toPascalData(rawData),
     Message: raw.Message ?? raw.message ?? null,
   };
+
+  // En PumpFillingStatus el controlador envía el monto real (pesos) dentro del campo Volume
+  // y el Amount/Volume reales están distorsionados. Reconstruir:
+  //   Amount real = Volume_raw
+  //   Volume real = Amount real / Price
+  // Solo aplica a PumpFillingStatus; PumpEndOfTransactionStatus y UploadPumpTransaction
+  // ya vienen correctos desde el PTS-2.
+  if (packet.Type === 'PumpFillingStatus' && packet.Data) {
+    const d: any = packet.Data;
+    const rawVolume = Number(d.Volume ?? 0);
+    const price = Number(d.Price ?? 0);
+    const montoReal = rawVolume;
+    const volumenReal = price > 0 ? montoReal / price : 0;
+    d.Amount = Math.round(montoReal * 100) / 100;
+    d.Volume = Math.round(volumenReal * 1000) / 1000;
+  }
+
+  return packet;
 }
 
 function extractPackets<T>(response: any): PtsPacket<T>[] {
@@ -124,7 +154,7 @@ export function p(obj: any): any {
 export async function getAllPumpStatuses(): Promise<PumpStatusPacket[]> {
   const res = await apiGet<any>(buildApiUrl('dispensers/status'));
   if (!res.successful) throw new Error(res.error || 'Error al obtener estado de bombas');
-  return extractPackets<PumpStatusData>(res.data);
+  return extractPackets<PumpStatusData>(res.data) as PumpStatusPacket[];
 }
 
 export async function getPumpStatus(pump: number): Promise<PumpStatusPacket> {

@@ -1,0 +1,75 @@
+import { buildApiUrl } from '../config/api';
+import { apiGet, apiPost, apiPut, apiDelete } from './apiInterceptor';
+
+export interface Dataphone {
+  dataphoneId: number;
+  name: string;
+  siteId: string;
+  dataphoneSupplierId: number;
+  dataphoneIpAddress: string;
+  dataphoneResponsePort: number;
+  terminalRequestPort: number;
+  transTimeout: number;
+  comment: string | null;
+  active: boolean;
+}
+
+export interface CreateDataphoneRequest {
+  dataphoneId: number;
+  name: string;
+  siteId: string;
+  dataphoneSupplierId: number;
+  dataphoneIpAddress: string;
+  dataphoneResponsePort: number;
+  terminalRequestPort: number;
+  transTimeout: number;
+  comment?: string | null;
+  active: boolean;
+}
+
+export type UpdateDataphoneRequest = Partial<Omit<CreateDataphoneRequest, 'dataphoneId'>>;
+
+export interface ListResponse {
+  successful: boolean;
+  data: Dataphone[];
+  error?: string;
+}
+export interface ItemResponse {
+  successful: boolean;
+  data: Dataphone | null;
+  error?: string;
+}
+
+class DataphoneService {
+  async list(filters?: { siteId?: string }): Promise<ListResponse> {
+    const qs = new URLSearchParams();
+    if (filters?.siteId) qs.append('siteId', filters.siteId);
+    const query = qs.toString();
+    const url = buildApiUrl(`dataphones${query ? `?${query}` : ''}`);
+    const res = await apiGet<any>(url);
+    return { successful: res.successful, data: Array.isArray(res.data) ? res.data : [], error: res.error };
+  }
+
+  async getById(id: number): Promise<ItemResponse> {
+    const res = await apiGet<Dataphone>(buildApiUrl(`dataphones/${id}`));
+    return { successful: res.successful, data: res.data || null, error: res.error };
+  }
+
+  async create(payload: CreateDataphoneRequest): Promise<ItemResponse> {
+    const res = await apiPost<Dataphone>(buildApiUrl('dataphones'), payload);
+    return { successful: res.successful, data: res.data || null, error: res.error };
+  }
+
+  async update(id: number, payload: UpdateDataphoneRequest): Promise<ItemResponse> {
+    const res = await apiPut<Dataphone>(buildApiUrl(`dataphones/${id}`), payload);
+    return { successful: res.successful, data: res.data || null, error: res.error };
+  }
+
+  async remove(id: number): Promise<{ successful: boolean; error?: string }> {
+    const res = await apiDelete(buildApiUrl(`dataphones/${id}`));
+    return { successful: res.successful, error: res.error };
+  }
+}
+
+const dataphoneService = new DataphoneService();
+export default dataphoneService;

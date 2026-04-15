@@ -22,6 +22,8 @@ import {
 import type {
   PumpStatusPacket,
   PumpFillingStatusData,
+  PumpIdleStatusData,
+  PumpEndOfTransactionStatusData,
   PumpVisualState,
   NozzlePrice,
 } from '../../../types/dispenser';
@@ -381,16 +383,42 @@ const ControlSection: React.FC = () => {
           const selected = selectedPumps.has(num);
           const locked = isPumpLocked(packet);
           const isFilling = state === 'dispensing';
-          const fillingData = isFilling ? (packet?.Data as PumpFillingStatusData) : null;
+
+          // Datos a mostrar: fill en curso o última transacción si idle/locked
+          let info: { fuel: string; volume: number; amount: number } | null = null;
+          if (packet) {
+            if (isFilling) {
+              const d = packet.Data as PumpFillingStatusData;
+              info = { fuel: mapFuelProductName(d.FuelGradeName), volume: d.Volume, amount: d.Amount };
+            } else if (state === 'end-of-transaction') {
+              const d = packet.Data as PumpEndOfTransactionStatusData;
+              info = { fuel: mapFuelProductName(d.FuelGradeName), volume: d.Volume, amount: d.Amount };
+            } else if (state === 'available' || state === 'locked') {
+              const d = packet.Data as PumpIdleStatusData;
+              if (d.LastTransaction > 0) {
+                info = { fuel: mapFuelProductName(d.LastFuelGradeName), volume: d.LastVolume, amount: d.LastAmount };
+              }
+            }
+          }
+
+          const formatCurrency = (n: number) =>
+            new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP', minimumFractionDigits: 2 }).format(n);
 
           return (
             <button
               key={num}
               onClick={() => togglePump(num)}
-              className={`relative bg-white rounded-sm border p-1.5 text-left hover:bg-row-hover transition-colors ${
+              className={`relative overflow-hidden rounded-md border p-1.5 text-left transition-all duration-300 ${
                 selected ? 'border-blue-500 ring-1 ring-blue-500' : 'border-table-border'
-              } ${isFilling ? 'ring-1 ring-orange-300' : ''}`}
+              } ${
+                isFilling
+                  ? 'bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 border-orange-300 animate-dispensing-glow'
+                  : 'bg-white hover:bg-row-hover'
+              }`}
             >
+              {isFilling && (
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-orange-400 via-amber-400 to-orange-400 animate-fuel-flow" />
+              )}
               {selected && (
                 <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-600 rounded-full flex items-center justify-center shadow">
                   <CheckCircle2 className="w-2.5 h-2.5 text-white" />
@@ -398,14 +426,23 @@ const ControlSection: React.FC = () => {
               )}
 
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-sm text-gray-900">#{num}</span>
+                <span className={`font-bold text-sm ${isFilling ? 'text-orange-700' : 'text-gray-900'}`}>
+                  #{num}
+                </span>
                 {locked && <Lock className="w-3 h-3 text-red-500" />}
               </div>
               <StatusDot color={STATE_DOT_COLOR[state]} label={STATE_LABEL[state]} className="mt-0.5" />
-              {fillingData && (
-                <p className="text-2xs text-gray-600 mt-0.5 truncate">
-                  {fillingData.Volume.toFixed(1)} G.
-                </p>
+
+              {info && (
+                <div className={`mt-1 pt-1 border-t space-y-0.5 ${isFilling ? 'border-orange-200' : 'border-gray-100'}`}>
+                  <p className={`text-2xs truncate ${isFilling ? 'text-orange-700 font-medium' : 'text-gray-600'}`}>
+                    {info.fuel}
+                  </p>
+                  <div className={`flex justify-between text-2xs tabular-nums ${isFilling ? 'text-orange-900' : 'text-gray-700'}`}>
+                    <span className={isFilling ? 'font-semibold' : ''}>{info.volume.toFixed(3)} G.</span>
+                    <span className={isFilling ? 'font-bold' : 'font-medium'}>{formatCurrency(info.amount)}</span>
+                  </div>
+                </div>
               )}
             </button>
           );

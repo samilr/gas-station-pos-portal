@@ -39,3 +39,49 @@ body {
 html, body, #root {
   @apply bg-white;
 }
+
+/* ========================================
+   Animaciones para Dispenser Monitor
+   ======================================== */
+
+/* Flujo de combustible (barra superior animada) */
+@keyframes fuelFlow {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* Glow pulsante para cards dispensando */
+@keyframes dispensingGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.35), 0 4px 12px -2px rgba(249, 115, 22, 0.25); }
+  50%      { box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.15), 0 6px 18px -2px rgba(249, 115, 22, 0.45); }
+}
+
+/* Rise/fade entrada del card */
+@keyframes cardRise {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Gota cayendo (icono fuel activo) */
+@keyframes fuelDrop {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-2px) scale(1.05); }
+}
+
+/* Shimmer para valores actualizándose */
+@keyframes valueShimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fuel-flow {
+  background-size: 200% 100%;
+  animation: fuelFlow 1.8s linear infinite;
+}
+.animate-dispensing-glow { animation: dispensingGlow 2.2s ease-in-out infinite; }
+.animate-card-rise       { animation: cardRise 0.25s ease-out both; }
+.animate-fuel-drop       { animation: fuelDrop 1.4s ease-in-out infinite; }
+.animate-value-shimmer {
+  background-size: 200% auto;
+  animation: valueShimmer 2s linear infinite;
+}

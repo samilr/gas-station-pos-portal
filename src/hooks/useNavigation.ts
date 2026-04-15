@@ -75,6 +75,8 @@ export const useNavigation = () => {
     'sites.active': '/dashboard/sites/active',
     'sites.inactive': '/dashboard/sites/inactive',
     'dispensers': '/dashboard/dispensers',
+    'dispensers.dashboard': '/dashboard/dispensers/dashboard',
+    'dispensers.config': '/dashboard/dispensers/config',
     'dispensers.monitor': '/dashboard/dispensers/monitor',
     'dispensers.control': '/dashboard/dispensers/control',
     'dispensers.prices': '/dashboard/dispensers/prices',
@@ -112,7 +114,20 @@ export const useNavigation = () => {
     'gov': '/dashboard/gov',
     'gov.taxpayers': '/dashboard/gov/taxpayers',
     'gov.taxes': '/dashboard/gov/taxes',
+    'gov.tax-types': '/dashboard/gov/tax-types',
+    'gov.tax-lines': '/dashboard/gov/tax-lines',
     'gov.cf-config': '/dashboard/gov/cf-config',
+    // Dataphones
+    'dataphones': '/dashboard/dataphones',
+    'dataphones.suppliers': '/dashboard/dataphones/suppliers',
+    'dataphones.list': '/dashboard/dataphones/list',
+    'dataphones.terminals': '/dashboard/dataphones/terminals',
+    // Card Payments
+    'card-payments': '/dashboard/card-payments',
+    'card-payments.list': '/dashboard/card-payments/list',
+    // Jobs
+    'jobs': '/dashboard/jobs',
+    'jobs.list': '/dashboard/jobs/list',
     // Zataca
     'zataca': '/dashboard/zataca',
     'zataca.main': '/dashboard/zataca/main',

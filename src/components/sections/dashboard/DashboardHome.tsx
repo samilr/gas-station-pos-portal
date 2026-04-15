@@ -19,6 +19,9 @@ import DailySalesChart from "./charts/DailySalesChart";
 import SiteSalesChart from "./charts/SiteSalesChart";
 import CfTypePieChart from "./charts/CfTypePieChart";
 import TopProductsChart from "./charts/TopProductsChart";
+import FuelDailyTrendChart from "../dispensers/charts/FuelDailyTrendChart";
+import FuelByFuelGradeChart from "../dispensers/charts/FuelByFuelGradeChart";
+import useFuelDashboard from "../../../hooks/useFuelDashboard";
 import { CompactButton } from "../../ui";
 import Toolbar from "../../ui/Toolbar";
 
@@ -36,6 +39,11 @@ const DashboardHome: React.FC = () => {
     updateChartFilters, refreshChartData, getChartStats,
     loadSiteSalesData, refreshSiteData, updateSiteChartFilters, getSiteStats,
   } = useDashboard();
+
+  const fuelDash = useFuelDashboard({
+    initialPeriod: '7d',
+    enabled: { dailyTrend: true, byFuelGrade: true },
+  });
 
   const getCurrentSantoDomingoDateTime = () => {
     const now = new Date();
@@ -215,6 +223,12 @@ const DashboardHome: React.FC = () => {
         <SiteSalesChart data={siteSales} loading={siteLoading} error={siteError}
           chartFilters={siteChartFilters} onUpdateFilters={updateSiteChartFilters}
           onRefresh={refreshSiteData} siteStats={getSiteStats} />
+      </div>
+
+      {/* Combustible — últimos 7 días */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+        <FuelDailyTrendChart data={fuelDash.dailyTrend} loading={fuelDash.loading} error={fuelDash.error} />
+        <FuelByFuelGradeChart data={fuelDash.byFuelGrade} loading={fuelDash.loading} error={fuelDash.error} />
       </div>
 
       {/* Quick Actions */}
