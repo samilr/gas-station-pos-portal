@@ -37,10 +37,17 @@ export interface FuelTransactionsPagination {
   hasPrev: boolean;
 }
 
+export interface FuelStats {
+  totalTransactions: number;
+  totalVolume: number;
+  totalAmount: number;
+}
+
 export interface FuelTransactionsResponse {
   successful: boolean;
   data: FuelTransaction[];
   pagination?: FuelTransactionsPagination;
+  statistics?: FuelStats;
   error?: string;
 }
 
@@ -152,15 +159,20 @@ class FuelTransactionService {
       const response = await apiGet<any>(url);
 
       let pagination: FuelTransactionsPagination | undefined;
+      let statistics: FuelStats | undefined;
       let data: FuelTransaction[] = [];
 
       if (response.successful) {
-        // El interceptor devuelve el body completo cuando detecta `pagination`
-        // Estructura: { data: [...], pagination: { page, limit, total, totalPages, hasNext, hasPrev } }
+        // La API devuelve { successful, data, pagination, statistics }
         const body = response.data;
-        data = Array.isArray(body?.data) ? body.data : (Array.isArray(body) ? body : []);
-        if (body?.pagination) {
+        
+        // Manejar respuesta si viene envuelta o directa
+        if (body && typeof body === 'object') {
+          data = Array.isArray(body.data) ? body.data : (Array.isArray(body) ? body : []);
           pagination = body.pagination;
+          statistics = body.statistics;
+        } else if (Array.isArray(body)) {
+          data = body;
         }
       }
 
@@ -168,6 +180,7 @@ class FuelTransactionService {
         successful: response.successful,
         data: data,
         pagination: pagination,
+        statistics: statistics,
         error: response.error
       };
     } catch (error) {

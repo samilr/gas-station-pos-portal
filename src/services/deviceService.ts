@@ -14,7 +14,7 @@ interface CreateHostRequest {
   siteId?: string;
   deviceId?: string;
   connected: boolean;
-  connectedLastTime?: Date;
+  connectedLastTime?: string | Date;
   connectedLastUserId?: number;
   active: boolean;
   hostTypeId?: number;
@@ -28,24 +28,24 @@ interface UpdateHostRequest {
   siteId?: string;
   deviceId?: string;
   connected?: boolean;
-  connectedLastTime?: Date;
+  connectedLastTime?: string | Date;
   connectedLastUserId?: number;
   active?: boolean;
   hostTypeId?: number;
 }
 
 export interface IHost {
-  host_id: number;
+  hostId: number;
   name: string;
   description?: string;
-  ip_address?: string;
-  site_id?: string;
-  device_id?: string;
+  ipAddress?: string;
+  siteId?: string;
+  deviceId?: string;
   connected: boolean;
-  connected_last_time?: Date;
-  connected_last_user_id?: number;
+  connectedLastTime?: string | Date;
+  connectedLastUserId?: number;
   active: boolean;
-  host_type_id?: number;
+  hostTypeId?: number;
 }
 
 export const hostService = {

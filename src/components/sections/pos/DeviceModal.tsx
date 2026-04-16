@@ -13,7 +13,7 @@ interface HostFormData {
   siteId: string;
   deviceId: string;
   connected: boolean;
-  connectedLastTime?: Date;
+  connectedLastTime?: string | Date;
   connectedLastUserId?: number;
   active: boolean;
   hostTypeId?: number;
@@ -62,17 +62,17 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
   useEffect(() => {
     if (device && isOpen && (isEditing || isViewing)) {
       setFormData({
-        hostId: device.host_id || 0,
+        hostId: device.hostId || 0,
         name: device.name || '',
         description: device.description || '',
-        ipAddress: device.ip_address || '',
-        siteId: device.site_id || '',
-        deviceId: device.device_id || '',
+        ipAddress: device.ipAddress || '',
+        siteId: device.siteId || '',
+        deviceId: device.deviceId || '',
         connected: device.connected || false,
-        connectedLastTime: device.connected_last_time,
-        connectedLastUserId: device.connected_last_user_id,
+        connectedLastTime: device.connectedLastTime as any,
+        connectedLastUserId: device.connectedLastUserId,
         active: device.active || true,
-        hostTypeId: device.host_type_id
+        hostTypeId: device.hostTypeId
       });
     } else if (isCreating && isOpen) {
       setFormData({
@@ -117,7 +117,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
     setLoading(true);
     try {
       if (isEditing) {
-        const response = await hostService.updateHost(device!.host_id, formData);
+        const response = await hostService.updateHost(device!.hostId, formData);
         if (response.successful) {
           toast.success(`Dispositivo actualizado exitosamente \n ${formData.name}`, { duration: 5000 });
           onSuccess();
@@ -233,13 +233,13 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
                   <div className="flex items-center gap-1 font-medium text-blue-900 mb-1">
                     <Smartphone className="w-3 h-3" />Host
                   </div>
-                  <div className="flex justify-between"><span className="text-blue-700">Host ID:</span><span className="font-medium text-blue-900">{device.host_id}</span></div>
-                  <div className="flex justify-between"><span className="text-blue-700">IP:</span><span className="font-medium text-blue-900">{device.ip_address || 'N/A'}</span></div>
+                  <div className="flex justify-between"><span className="text-blue-700">Host ID:</span><span className="font-medium text-blue-900">{device.hostId}</span></div>
+                  <div className="flex justify-between"><span className="text-blue-700">IP:</span><span className="font-medium text-blue-900">{device.ipAddress || 'N/A'}</span></div>
                   <div className="flex justify-between"><span className="text-blue-700">Estado:</span><span className={`font-medium ${device.active ? 'text-green-600' : 'text-red-600'}`}>{device.active ? 'Activo' : 'Inactivo'}</span></div>
                   <div className="flex justify-between"><span className="text-blue-700">Tipo:</span><span className="font-medium text-blue-900">
-                    {device.host_type_id === HostType.DATAPHONE ? 'Datáfono' :
-                     device.host_type_id === HostType.ANDROID_SCANNER ? 'Escáner' :
-                     device.host_type_id === HostType.ANDROID_SMARTPHONE ? 'Smartphone' : 'N/A'}
+                    {device.hostTypeId === HostType.DATAPHONE ? 'Datáfono' :
+                     device.hostTypeId === HostType.ANDROID_SCANNER ? 'Escáner' :
+                     device.hostTypeId === HostType.ANDROID_SMARTPHONE ? 'Smartphone' : 'N/A'}
                   </span></div>
                 </div>
                 <div className="bg-gray-50 border border-gray-200 rounded-sm p-2 text-xs space-y-1">
@@ -247,8 +247,8 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
                     <Clock className="w-3 h-3" />Conexión
                   </div>
                   <div className="flex justify-between"><span className="text-text-muted">Estado:</span><span className={`font-medium ${device.connected ? 'text-green-600' : 'text-red-600'}`}>{device.connected ? 'Conectado' : 'Desconectado'}</span></div>
-                  <div className="flex justify-between"><span className="text-text-muted">Último Usuario:</span><span className="font-medium">{device.connected_last_user_id || 'N/A'}</span></div>
-                  <div className="flex justify-between"><span className="text-text-muted">Última:</span><span className="font-medium">{formatDate(device.connected_last_time)}</span></div>
+                  <div className="flex justify-between"><span className="text-text-muted">Último Usuario:</span><span className="font-medium">{device.connectedLastUserId || 'N/A'}</span></div>
+                  <div className="flex justify-between"><span className="text-text-muted">Última:</span><span className="font-medium">{formatDate(device.connectedLastTime)}</span></div>
                 </div>
               </div>
             </div>

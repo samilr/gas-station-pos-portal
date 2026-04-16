@@ -20,7 +20,7 @@ export const ENV_CONFIG = {
   },
   
   PRODUCTION: {
-    API_BASE_URL: 'http://192.168.125.5:5000/api',
+    API_BASE_URL: 'https://gas-station-managment.azurewebsites.net/api',
     LOG_LEVEL: 'error',
     ENABLE_MOCK_DATA: false,
   },

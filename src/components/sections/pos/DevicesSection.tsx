@@ -42,17 +42,20 @@ const DevicesSection: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deviceToDelete, setDeviceToDelete] = useState<IHost | null>(null);
 
-  const filteredDevices = (Array.isArray(devices) ? devices : []).filter(device => {
+  // Garantizar que siempre trabajamos con un array
+  const deviceList = (Array.isArray(devices) ? devices : ((devices as any)?.data || [])) as IHost[];
+
+  const filteredDevices = deviceList.filter(device => {
     const matchesSearch =
       device.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (device.device_id && device.device_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (device.site_id && device.site_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (device.ip_address && device.ip_address.toLowerCase().includes(searchTerm.toLowerCase()));
+      (device.deviceId && device.deviceId.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (device.siteId && device.siteId.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (device.ipAddress && device.ipAddress.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesStatus = statusFilter === '' ||
       (statusFilter === 'active' && device.active) ||
       (statusFilter === 'inactive' && !device.active);
-    const matchesSite = siteFilter === '' || device.site_id === siteFilter;
+    const matchesSite = siteFilter === '' || device.siteId === siteFilter;
     const matchesConnection = connectionFilter === '' ||
       (connectionFilter === 'connected' && device.connected) ||
       (connectionFilter === 'disconnected' && !device.connected);
@@ -75,10 +78,10 @@ const DevicesSection: React.FC = () => {
   };
 
   // Calcular estadísticas
-  const totalDevices = devices.length;
-  const activeDevices = devices.filter(d => d.active).length;
-  const inactiveDevices = devices.filter(d => !d.active).length;
-  const connectedDevices = devices.filter(d => d.connected).length;
+  const totalDevices = deviceList.length;
+  const activeDevices = deviceList.filter(d => d.active).length;
+  const inactiveDevices = deviceList.filter(d => !d.active).length;
+  const connectedDevices = deviceList.filter(d => d.connected).length;
 
   const handleViewDetails = (device: IHost) => {
     setModalDevice(device);
@@ -130,7 +133,7 @@ const DevicesSection: React.FC = () => {
   };
 
   // Obtener valores únicos para los filtros
-  const uniqueSites = Array.from(new Set(devices.map(device => device.site_id).filter(Boolean)));
+  const uniqueSites = Array.from(new Set(deviceList.map(device => device.siteId).filter(Boolean)));
 
   // Calcular paginación
   const totalPages = Math.ceil(filteredDevices.length / itemsPerPage);
@@ -288,7 +291,7 @@ const DevicesSection: React.FC = () => {
             <tbody>
               {paginatedDevices.map((device) => (
                 <tr
-                  key={device.host_id}
+                  key={device.hostId}
                   className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover cursor-pointer transition-colors"
                   onClick={() => handleViewDetails(device)}
                 >
@@ -296,13 +299,13 @@ const DevicesSection: React.FC = () => {
                     <div className="flex items-center gap-1">
                       <Smartphone className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
                       <span className="font-medium text-gray-900 text-ellipsis overflow-hidden whitespace-nowrap">{device.name}</span>
-                      {device.device_id && (
-                        <span className="text-xs text-gray-400">({device.device_id?.toUpperCase().substring(10,16)})</span>
+                      {device.deviceId && (
+                        <span className="text-xs text-gray-400">({device.deviceId?.toUpperCase().substring(0,6)})</span>
                       )}
                     </div>
                   </td>
-                  <td className="px-2 text-sm whitespace-nowrap text-gray-900">{getHostTypeText(device.host_type_id)}</td>
-                  <td className="px-2 text-sm whitespace-nowrap text-gray-900">{device.site_id || 'N/A'}</td>
+                  <td className="px-2 text-sm whitespace-nowrap text-gray-900">{getHostTypeText(device.hostTypeId)}</td>
+                  <td className="px-2 text-sm whitespace-nowrap text-gray-900">{device.siteId || 'N/A'}</td>
                   <td className="px-2 text-sm whitespace-nowrap">
                     <StatusDot
                       color={device.active ? 'green' : 'red'}
@@ -316,8 +319,8 @@ const DevicesSection: React.FC = () => {
                     />
                   </td>
                   <td className="px-2 text-sm whitespace-nowrap text-gray-900">
-                    {device.connected_last_time
-                      ? `${formatConnectionDate(device.connected_last_time)?.date} ${formatConnectionDate(device.connected_last_time)?.time}`
+                    {device.connectedLastTime
+                      ? `${formatConnectionDate(device.connectedLastTime)?.date} ${formatConnectionDate(device.connectedLastTime)?.time}`
                       : <span className="text-gray-400">Nunca</span>
                     }
                   </td>
@@ -365,7 +368,7 @@ const DevicesSection: React.FC = () => {
         onPageChange={handlePageChange}
         onPageSizeChange={(size) => { setItemsPerPage(size); setCurrentPage(1); }}
         itemLabel="dispositivos"
-        filteredTotal={devices.length}
+        filteredTotal={deviceList.length}
       />
 
       {/* Device Modal */}

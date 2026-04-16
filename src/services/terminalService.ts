@@ -13,6 +13,8 @@ interface CreateTerminalRequest {
   sectorId?: number;
   connected: boolean;
   active: boolean;
+  hasIntegratedDispenser: boolean;
+  linkedDispenserId: number | null;
 }
 
 interface UpdateTerminalRequest {
@@ -22,29 +24,33 @@ interface UpdateTerminalRequest {
   connected?: boolean;
   sectorId?: number;
   active?: boolean;
+  hasIntegratedDispenser?: boolean;
+  linkedDispenserId?: number | null;
 }
 
 export interface ITerminal {
-  site_id: string;
-  terminal_id: number;
+  siteId: string;
+  terminalId: number;
   name: string;
-  terminal_type: number;
-  sector_id?: number;
-  product_list: number;
-  use_customer_display: boolean;
-  open_cash_drawer: boolean;
-  print_device: number;
-  cash_fund: number;
+  terminalType: number;
+  sectorId?: number;
+  productList: number;
+  useCustomerDisplay: boolean;
+  openCashDrawer: boolean;
+  printDevice: number;
+  cashFund: number;
   connected: boolean;
-  last_connection_time?: Date;
-  last_connection_hostname?: string;
-  last_connection_username?: string;
-  connected_time?: Date;
-  connected_hostname?: string;
-  connected_username?: string;
-  connected_staft_id?: number;
+  lastConnectionTime?: string | Date;
+  lastConnectionHostname?: string;
+  lastConnectionUsername?: string;
+  connectedTime?: string | Date;
+  connectedHostname?: string | null;
+  connectedUsername?: string | null;
+  connectedStaftId?: number | null;
   active: boolean;
-  product_list_type: number;
+  productListType: number;
+  hasIntegratedDispenser: boolean;
+  linkedDispenserId: number | null;
 }
 
 export const terminalService = {

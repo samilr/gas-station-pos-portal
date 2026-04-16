@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Monitor, Save, X, Edit, Plus, Clock, User, Smartphone, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ITerminal, terminalService } from '../../../services/terminalService';
+import { getPumpsConfig } from '../../../services/dispenserService';
+import { PumpConfig } from '../../../types/dispenser';
 import { CompactButton } from '../../ui';
 
 interface TerminalFormData {
@@ -11,6 +13,8 @@ interface TerminalFormData {
   sectorId?: number;
   connected: boolean;
   active: boolean;
+  hasIntegratedDispenser: boolean;
+  linkedDispenserId: number | null;
 }
 
 interface TerminalModalProps {
@@ -31,34 +35,74 @@ const formatDate = (dateString: string | Date | null | undefined): string => {
 
 const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal, mode, onSuccess }) => {
   const [loading, setLoading] = useState(false);
+  const [dispensers, setDispensers] = useState<PumpConfig[]>([]);
   const [formData, setFormData] = useState<TerminalFormData>({
-    siteId: '', terminalId: 0, name: '', sectorId: undefined, connected: false, active: true
+    siteId: '', 
+    terminalId: 0, 
+    name: '', 
+    sectorId: undefined, 
+    connected: false, 
+    active: true,
+    hasIntegratedDispenser: false,
+    linkedDispenserId: null
   });
 
   const isEditing = mode === 'edit';
   const isViewing = mode === 'view';
 
   useEffect(() => {
+    const fetchDispensers = async () => {
+      try {
+        const config = await getPumpsConfig();
+        if (config && config.Pumps) {
+          setDispensers(config.Pumps);
+        }
+      } catch (error) {
+        console.error('Error al cargar dispensadoras:', error);
+      }
+    };
+    fetchDispensers();
+  }, []);
+
+  useEffect(() => {
     if (terminal && isOpen && (isEditing || isViewing)) {
       setFormData({
-        siteId: terminal.site_id || '',
-        terminalId: terminal.terminal_id || 0,
+        siteId: terminal.siteId || '',
+        terminalId: terminal.terminalId || 0,
         name: terminal.name || '',
-        sectorId: terminal.sector_id,
+        sectorId: terminal.sectorId,
         connected: Boolean(terminal.connected),
-        active: Boolean(terminal.active)
+        active: Boolean(terminal.active),
+        hasIntegratedDispenser: terminal.hasIntegratedDispenser || false,
+        linkedDispenserId: terminal.linkedDispenserId || null
       });
     } else if (mode === 'create' && isOpen) {
-      setFormData({ siteId: '', terminalId: 0, name: '', sectorId: undefined, connected: false, active: true });
+      setFormData({ 
+        siteId: '', 
+        terminalId: 0, 
+        name: '', 
+        sectorId: undefined, 
+        connected: false, 
+        active: true,
+        hasIntegratedDispenser: false,
+        linkedDispenserId: null
+      });
     }
   }, [terminal, isOpen, isEditing, isViewing, mode]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
+    let finalValue: any = value;
+    
+    if (type === 'checkbox') {
+      finalValue = (e.target as HTMLInputElement).checked;
+    } else if (type === 'number' || name === 'linkedDispenserId') {
+      finalValue = value === '' ? null : Number(value);
+    }
+
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked :
-               type === 'number' ? Number(value) : value
+      [name]: finalValue
     }));
   };
 
@@ -69,7 +113,7 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
     setLoading(true);
     try {
       if (isEditing && terminal) {
-        const response = await terminalService.updateTerminal(terminal.site_id, terminal.terminal_id, formData);
+        const response = await terminalService.updateTerminal(terminal.siteId, terminal.terminalId, formData);
         if (response.successful) {
           toast.success(`Terminal actualizada exitosamente \n ${formData.name}`, { duration: 5000 });
           onSuccess();
@@ -171,6 +215,39 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
             </label>
           </div>
 
+          <div className="space-y-3 pt-2 border-t border-gray-100">
+            <h4 className="text-2xs font-semibold uppercase tracking-wide text-text-secondary">Integración con Dispensadora</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="flex items-center justify-between px-2 h-7 bg-blue-50/50 border border-blue-100 rounded-sm cursor-pointer">
+                <span className="text-xs text-blue-900 font-medium">¿Integración Activa?</span>
+                <input type="checkbox" name="hasIntegratedDispenser" checked={formData.hasIntegratedDispenser} onChange={handleInputChange}
+                  disabled={isViewing} className="rounded border-blue-300 text-blue-600 focus:ring-blue-500" />
+              </label>
+              
+              <div>
+                <select 
+                  name="linkedDispenserId" 
+                  value={formData.linkedDispenserId || ''} 
+                  onChange={handleInputChange} 
+                  disabled={isViewing || !formData.hasIntegratedDispenser} 
+                  className={inputCls(isViewing || !formData.hasIntegratedDispenser)}
+                >
+                  <option value="">Selecciona Bomba</option>
+                  {dispensers.map(pump => (
+                    <option key={pump.Id} value={pump.Id}>
+                      BOMBA {pump.Id} {pump.Tag ? `- ${pump.Tag}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {!formData.hasIntegratedDispenser && (
+              <p className="text-2xs text-text-muted italic px-1">
+                Activa para vincular esta terminal directamente a una bomba en el flujo mobile.
+              </p>
+            )}
+          </div>
+
           {terminal && isViewing && (
             <div className="space-y-2">
               <h4 className="text-2xs font-semibold uppercase tracking-wide text-text-secondary mb-2 pb-1 border-b border-gray-200">Información de Conexión</h4>
@@ -178,16 +255,16 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
                 {terminal.connected && (
                   <div className="bg-blue-50 border border-blue-200 rounded-sm p-2 text-xs space-y-1">
                     <div className="flex items-center gap-1 font-medium text-blue-900 mb-1"><User className="w-3 h-3" />Actual</div>
-                    <div className="flex justify-between"><span className="text-blue-700">Usuario:</span><span className="font-medium text-blue-900">{terminal.connected_staft_id + ' - ' + terminal.connected_username || 'N/A'}</span></div>
-                    <div className="flex justify-between"><span className="text-blue-700">Dispositivo:</span><span className="font-medium text-blue-900">{terminal?.connected_hostname?.toUpperCase().substring(10, 16) || 'N/A'}</span></div>
-                    <div className="flex justify-between"><span className="text-blue-700">Hora:</span><span className="font-medium text-blue-900">{formatDate(terminal.connected_time)}</span></div>
+                    <div className="flex justify-between"><span className="text-blue-700">Usuario:</span><span className="font-medium text-blue-900">{terminal.connectedStaftId + ' - ' + terminal.connectedUsername || 'N/A'}</span></div>
+                    <div className="flex justify-between"><span className="text-blue-700">Dispositivo:</span><span className="font-medium text-blue-900">{terminal?.connectedHostname?.toUpperCase().substring(0, 6) || 'N/A'}</span></div>
+                    <div className="flex justify-between"><span className="text-blue-700">Hora:</span><span className="font-medium text-blue-900">{formatDate(terminal.connectedTime)}</span></div>
                   </div>
                 )}
                 <div className="bg-gray-50 border border-gray-200 rounded-sm p-2 text-xs space-y-1">
                   <div className="flex items-center gap-1 font-medium text-text-primary mb-1"><Smartphone className="w-3 h-3" />Última</div>
-                  <div className="flex justify-between"><span className="text-text-muted">Usuario:</span><span className="font-medium">{terminal.last_connection_username || 'N/A'}</span></div>
-                  <div className="flex justify-between"><span className="text-text-muted">Dispositivo:</span><span className="font-medium">{terminal?.last_connection_hostname?.toUpperCase().substring(10, 16) || 'N/A'}</span></div>
-                  <div className="flex justify-between"><span className="text-text-muted">Hora:</span><span className="font-medium">{formatDate(terminal.last_connection_time)}</span></div>
+                  <div className="flex justify-between"><span className="text-text-muted">Usuario:</span><span className="font-medium">{terminal.lastConnectionUsername || 'N/A'}</span></div>
+                  <div className="flex justify-between"><span className="text-text-muted">Dispositivo:</span><span className="font-medium">{terminal?.lastConnectionHostname?.toUpperCase().substring(0, 6) || 'N/A'}</span></div>
+                  <div className="flex justify-between"><span className="text-text-muted">Hora:</span><span className="font-medium">{formatDate(terminal.lastConnectionTime)}</span></div>
                 </div>
               </div>
             </div>

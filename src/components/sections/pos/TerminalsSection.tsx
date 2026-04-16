@@ -41,17 +41,20 @@ const TerminalsSection: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [terminalToDelete, setTerminalToDelete] = useState<ITerminal | null>(null);
 
-  const filteredTerminals = (Array.isArray(terminals) ? terminals : []).filter(terminal => {
+  // Garantizar que siempre trabajamos con un array
+  const terminalList = (Array.isArray(terminals) ? terminals : ((terminals as any)?.data || [])) as ITerminal[];
+
+  const filteredTerminals = terminalList.filter(terminal => {
     const matchesSearch =
       terminal.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      terminal.terminal_id.toString().includes(searchTerm.toLowerCase()) ||
-      terminal.site_id.toLowerCase().includes(searchTerm.toLowerCase());
+      terminal.terminalId.toString().includes(searchTerm.toLowerCase()) ||
+      terminal.siteId.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = statusFilter === '' ||
       (statusFilter === 'active' && terminal.active) ||
       (statusFilter === 'inactive' && !terminal.active);
 
-    const matchesSite = siteFilter === '' || terminal.site_id === siteFilter;
+    const matchesSite = siteFilter === '' || terminal.siteId === siteFilter;
 
     const matchesConnection = connectionFilter === '' ||
       (connectionFilter === 'connected' && terminal.connected) ||
@@ -61,10 +64,10 @@ const TerminalsSection: React.FC = () => {
   });
 
   // Calcular estadísticas
-  const totalTerminals = terminals.length;
-  const activeTerminals = terminals.filter(t => t.active).length;
-  const inactiveTerminals = terminals.filter(t => !t.active).length;
-  const connectedTerminals = terminals.filter(t => t.connected).length;
+  const totalTerminals = terminalList.length;
+  const activeTerminals = terminalList.filter(t => t.active).length;
+  const inactiveTerminals = terminalList.filter(t => !t.active).length;
+  const connectedTerminals = terminalList.filter(t => t.connected).length;
 
   const handleViewDetails = (terminal: ITerminal) => {
     setModalTerminal(terminal);
@@ -116,7 +119,7 @@ const TerminalsSection: React.FC = () => {
   };
 
   // Obtener valores únicos para los filtros
-  const uniqueSites = Array.from(new Set(terminals.map(terminal => terminal.site_id).filter(Boolean)));
+  const uniqueSites = Array.from(new Set(terminalList.map(terminal => terminal.siteId).filter(Boolean)));
 
   // Calcular paginación
   const totalPages = Math.ceil(filteredTerminals.length / itemsPerPage);
@@ -274,7 +277,7 @@ const TerminalsSection: React.FC = () => {
             <tbody>
               {paginatedTerminals.map((terminal) => (
                 <tr
-                  key={`${terminal.site_id}-${terminal.terminal_id}`}
+                  key={`${terminal.siteId}-${terminal.terminalId}`}
                   className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover cursor-pointer transition-colors"
                   onClick={() => handleViewDetails(terminal)}
                 >
@@ -282,11 +285,11 @@ const TerminalsSection: React.FC = () => {
                     <div className="flex items-center gap-1">
                       <Fuel className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
                       <span className="font-medium text-gray-900 text-ellipsis overflow-hidden whitespace-nowrap">{terminal.name}</span>
-                      <span className="text-xs text-gray-400">({terminal.terminal_type})</span>
+                      <span className="text-xs text-gray-400">({terminal.terminalType})</span>
                     </div>
                   </td>
-                  <td className="px-2 text-sm whitespace-nowrap text-gray-900">{terminal.terminal_id}</td>
-                  <td className="px-2 text-sm whitespace-nowrap text-gray-900">{terminal.site_id}</td>
+                  <td className="px-2 text-sm whitespace-nowrap text-gray-900">{terminal.terminalId}</td>
+                  <td className="px-2 text-sm whitespace-nowrap text-gray-900">{terminal.siteId}</td>
                   <td className="px-2 text-sm whitespace-nowrap">
                     <StatusDot
                       color={terminal.active ? 'green' : 'red'}
@@ -300,8 +303,8 @@ const TerminalsSection: React.FC = () => {
                     />
                   </td>
                   <td className="px-2 text-sm whitespace-nowrap text-gray-900">
-                    {terminal.connected_time
-                      ? `${formatTerminalDate(terminal.connected_time).date} ${formatTerminalDate(terminal.connected_time).time}`
+                    {terminal.connectedTime
+                      ? `${formatTerminalDate(terminal.connectedTime).date} ${formatTerminalDate(terminal.connectedTime).time}`
                       : <span className="text-gray-400">Nunca conectada</span>
                     }
                   </td>
@@ -349,7 +352,7 @@ const TerminalsSection: React.FC = () => {
         onPageChange={handlePageChange}
         onPageSizeChange={(size) => { setItemsPerPage(size); setCurrentPage(1); }}
         itemLabel="terminales"
-        filteredTotal={terminals.length}
+        filteredTotal={terminalList.length}
       />
 
       {/* Terminal Modal */}

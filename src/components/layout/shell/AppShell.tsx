@@ -50,12 +50,12 @@ const AppShell: React.FC<AppShellProps> = ({ activeSection }) => {
   return (
     <div className="h-screen flex bg-rail-bg">
       {/* Rail - full-height, collapsible (44px icons / 200px with labels) */}
-      <div className="relative flex-shrink-0 h-full">
+      <div className="relative flex-shrink-0 h-full z-40">
         <Rail activeSection={activeSection} expanded={railExpanded} />
         {/* Rail toggle button */}
         <button
           onClick={() => setRailExpanded(!railExpanded)}
-          className="absolute -right-2 top-3 z-30 bg-white hover:bg-gray-100 border border-gray-300 text-gray-500 hover:text-gray-800 w-4 h-4 rounded-full shadow-sm flex items-center justify-center transition-all"
+          className="absolute -right-2 top-3 z-50 bg-white hover:bg-gray-100 border border-gray-300 text-gray-500 hover:text-gray-800 w-4 h-4 rounded-full shadow-sm flex items-center justify-center transition-all"
           title={railExpanded ? 'Colapsar' : 'Expandir'}
         >
           {railExpanded ? <ChevronLeft className="w-2 h-2" /> : <ChevronRight className="w-2 h-2" />}
@@ -63,7 +63,7 @@ const AppShell: React.FC<AppShellProps> = ({ activeSection }) => {
       </div>
 
       {/* Right column: TopBar + (NavPanel + Content) + StatusBar */}
-      <div className="flex flex-1 flex-col min-w-0 bg-white rounded-l-xl overflow-hidden shadow-lg">
+      <div className="flex flex-1 flex-col min-w-0 bg-white rounded-l-xl overflow-hidden shadow-lg z-10 relative">
         {/* Top bar - beside rail, not above it */}
         <TopBar activeSection={activeSection} />
 
@@ -77,7 +77,7 @@ const AppShell: React.FC<AppShellProps> = ({ activeSection }) => {
           )}
 
           {/* Resize handle + NavPanel toggle */}
-          <div className="relative flex-shrink-0 h-full">
+          <div className="relative flex-shrink-0 h-full z-30">
             {!navCollapsed && (
               <div
                 onMouseDown={handleMouseDown}
@@ -86,7 +86,7 @@ const AppShell: React.FC<AppShellProps> = ({ activeSection }) => {
             )}
             <button
               onClick={() => setNavCollapsed(!navCollapsed)}
-              className="absolute -right-2 top-3 z-30 bg-white hover:bg-gray-100 border border-gray-300 text-gray-500 hover:text-gray-800 w-4 h-4 rounded-full shadow-sm flex items-center justify-center transition-all"
+              className="absolute -right-2 top-3 z-40 bg-white hover:bg-gray-100 border border-gray-300 text-gray-500 hover:text-gray-800 w-4 h-4 rounded-full shadow-sm flex items-center justify-center transition-all"
               title={navCollapsed ? 'Expandir panel' : 'Colapsar panel'}
             >
               {navCollapsed ? <ChevronRight className="w-2 h-2" /> : <ChevronLeft className="w-2 h-2" />}

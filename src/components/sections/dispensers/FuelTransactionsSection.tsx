@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Filter, RefreshCw, X, FuelIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
-import fuelTransactionService, { FuelTransaction, FuelTransactionsPagination } from '../../../services/fuelTransactionService';
+import fuelTransactionService, { FuelTransaction, FuelTransactionsPagination, FuelStats } from '../../../services/fuelTransactionService';
 import { useHeader } from '../../../context/HeaderContext';
 import { mapFuelProductName } from '../../../utils/fuelProductMapping';
 import { CompactButton, Pagination, Toolbar, StatusDot } from '../../ui';
@@ -12,6 +12,7 @@ const FuelTransactionsSection: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [pagination, setPagination] = useState<FuelTransactionsPagination | null>(null);
+  const [serverStats, setServerStats] = useState<FuelStats | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const { setSubtitle } = useHeader();
@@ -60,6 +61,7 @@ const FuelTransactionsSection: React.FC = () => {
 
       if (response.successful) {
         setTransactions(response.data);
+        setServerStats(response.statistics || null);
         
         // Actualizar opciones disponibles solo si no hay filtros aplicados o si es la primera vez
         // para que el usuario no pierda opciones al filtrar, o seguir el requerimiento estricto:
@@ -120,12 +122,13 @@ const FuelTransactionsSection: React.FC = () => {
   };
 
   const stats = useMemo(() => {
-    const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
-    const totalVolume = transactions.reduce((sum, t) => sum + t.volume, 0);
+    // Totales de la página actual para fallback o campos no provistos por el server
+    const pageAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
+    const pageVolume = transactions.reduce((sum, t) => sum + t.volume, 0);
     const onlineCount = transactions.filter(t => !t.isOffline).length;
     const offlineCount = transactions.filter(t => t.isOffline).length;
 
-    // Totales por producto
+    // Totales por producto (locales de la página)
     const byProduct: Record<string, { amount: number; volume: number }> = {};
     transactions.forEach(t => {
       const productName = mapFuelProductName(t.fuelGradeName);
@@ -137,14 +140,15 @@ const FuelTransactionsSection: React.FC = () => {
     });
 
     return {
-      totalAmount,
-      totalVolume,
+      totalAmount: serverStats?.totalAmount ?? pageAmount,
+      totalVolume: serverStats?.totalVolume ?? pageVolume,
+      totalTransactions: serverStats?.totalTransactions ?? transactions.length,
       onlineCount,
       offlineCount,
       count: transactions.length,
       byProduct
     };
-  }, [transactions]);
+  }, [transactions, serverStats]);
 
   const totalPages = pagination?.totalPages || Math.ceil(transactions.length / itemsPerPage);
 
@@ -195,6 +199,7 @@ const FuelTransactionsSection: React.FC = () => {
       {/* Toolbar con contadores */}
       <Toolbar
         chips={[
+          { label: 'Total Trans.', value: stats.totalTransactions, color: 'gray' },
           { label: 'Monto Total', value: formatCurrency(stats.totalAmount), color: 'blue' },
           { label: 'Volumen Total', value: `${stats.totalVolume.toFixed(2)} G.`, color: 'sky' },
           { label: 'Online', value: stats.onlineCount, color: 'green' },
