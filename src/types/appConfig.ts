@@ -5,6 +5,7 @@ export interface IAppConfig {
   urlApk: string;
   required: boolean;
   apiKey?: string;
+  recentTransactionWindowMinutes?: number;
 }
 
 export interface ICreateAppConfigDto {
@@ -13,6 +14,7 @@ export interface ICreateAppConfigDto {
   description: string;
   urlApk: string;
   required: boolean;
+  recentTransactionWindowMinutes?: number;
 }
 
 export interface IUpdateAppConfigDto {
@@ -20,4 +22,5 @@ export interface IUpdateAppConfigDto {
   description?: string;
   urlApk?: string;
   required?: boolean;
+  recentTransactionWindowMinutes?: number;
 }

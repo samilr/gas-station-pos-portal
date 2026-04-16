@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Filter, RefreshCw, X, FuelIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import fuelTransactionService, { FuelTransaction, FuelTransactionsPagination } from '../../../services/fuelTransactionService';
 import { useHeader } from '../../../context/HeaderContext';
 import { mapFuelProductName } from '../../../utils/fuelProductMapping';
-import { CompactButton, Pagination } from '../../ui';
-import StatusDot from '../../ui/StatusDot';
+import { CompactButton, Pagination, Toolbar, StatusDot } from '../../ui';
 
 const FuelTransactionsSection: React.FC = () => {
   const [transactions, setTransactions] = useState<FuelTransaction[]>([]);
@@ -23,6 +22,11 @@ const FuelTransactionsSection: React.FC = () => {
   const [fuelGradeFilter, setFuelGradeFilter] = useState<number | ''>('');
   const [startDateFilter, setStartDateFilter] = useState('');
   const [endDateFilter, setEndDateFilter] = useState('');
+
+  // Estados para opciones de filtros (se actualizan con la data de la API)
+  const [availablePumps, setAvailablePumps] = useState<number[]>([]);
+  const [availableNozzles, setAvailableNozzles] = useState<number[]>([]);
+  const [availableGrades, setAvailableGrades] = useState<{ id: number; name: string }[]>([]);
 
   useEffect(() => {
     setSubtitle('Transacciones de dispensadoras de combustible');
@@ -56,6 +60,24 @@ const FuelTransactionsSection: React.FC = () => {
 
       if (response.successful) {
         setTransactions(response.data);
+        
+        // Actualizar opciones disponibles solo si no hay filtros aplicados o si es la primera vez
+        // para que el usuario no pierda opciones al filtrar, o seguir el requerimiento estricto:
+        // "solo coloca las opciones que tiene la tabla, osea las que devuelve la api"
+        const pumps = Array.from(new Set(response.data.map(t => t.pump))).sort((a, b) => a - b);
+        const nozzles = Array.from(new Set(response.data.map(t => t.nozzle))).sort((a, b) => a - b);
+        const grades = Array.from(new Set(response.data.map(t => t.fuelGradeId))).map(id => ({
+          id,
+          name: response.data.find(t => t.fuelGradeId === id)?.fuelGradeName || `Grado ${id}`
+        })).sort((a, b) => a.id - b.id);
+
+        // Si no estamos filtrando, actualizamos las listas completas disponibles
+        // Si estamos filtrando, mantenemos las que ya teniamos para permitir cambiar a otras,
+        // PERO el usuario pidió que sean las de la tabla.
+        setAvailablePumps(pumps);
+        setAvailableNozzles(nozzles);
+        setAvailableGrades(grades);
+
         if (response.pagination) {
           setPagination(response.pagination);
         } else {
@@ -97,6 +119,33 @@ const FuelTransactionsSection: React.FC = () => {
     setShowFilters(false);
   };
 
+  const stats = useMemo(() => {
+    const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
+    const totalVolume = transactions.reduce((sum, t) => sum + t.volume, 0);
+    const onlineCount = transactions.filter(t => !t.isOffline).length;
+    const offlineCount = transactions.filter(t => t.isOffline).length;
+
+    // Totales por producto
+    const byProduct: Record<string, { amount: number; volume: number }> = {};
+    transactions.forEach(t => {
+      const productName = mapFuelProductName(t.fuelGradeName);
+      if (!byProduct[productName]) {
+        byProduct[productName] = { amount: 0, volume: 0 };
+      }
+      byProduct[productName].amount += t.amount;
+      byProduct[productName].volume += t.volume;
+    });
+
+    return {
+      totalAmount,
+      totalVolume,
+      onlineCount,
+      offlineCount,
+      count: transactions.length,
+      byProduct
+    };
+  }, [transactions]);
+
   const totalPages = pagination?.totalPages || Math.ceil(transactions.length / itemsPerPage);
 
   const formatCurrency = (amount: number) => {
@@ -133,10 +182,6 @@ const FuelTransactionsSection: React.FC = () => {
     }
   };
 
-  const uniquePumps = Array.from(new Set(transactions.map(t => t.pump))).sort((a, b) => a - b);
-  const uniqueNozzles = Array.from(new Set(transactions.map(t => t.nozzle))).sort((a, b) => a - b);
-  const uniqueFuelGrades = Array.from(new Set(transactions.map(t => t.fuelGradeId))).sort((a, b) => a - b);
-
   if (loading && transactions.length === 0) {
     return (
       <div className="flex items-center justify-center h-32">
@@ -147,45 +192,59 @@ const FuelTransactionsSection: React.FC = () => {
 
   return (
     <div className="space-y-1">
-      {/* Toolbar */}
-      <div className="h-8 flex items-center gap-1 px-1 mb-1 flex-shrink-0">
+      {/* Toolbar con contadores */}
+      <Toolbar
+        chips={[
+          { label: 'Monto Total', value: formatCurrency(stats.totalAmount), color: 'blue' },
+          { label: 'Volumen Total', value: `${stats.totalVolume.toFixed(2)} G.`, color: 'sky' },
+          { label: 'Online', value: stats.onlineCount, color: 'green' },
+          { label: 'Offline', value: stats.offlineCount, color: stats.offlineCount > 0 ? 'red' : 'gray' },
+          ...Object.entries(stats.byProduct).map(([name, data]) => ({
+            label: name,
+            value: formatCurrency(data.amount),
+          }))
+        ]}
+      >
         <CompactButton
-          variant={showFilters ? 'primary' : 'ghost'}
+          variant={showFilters ? 'primary' : 'icon'}
           onClick={() => setShowFilters(!showFilters)}
+          title="Filtros"
         >
-          <Filter className="w-3.5 h-3.5" />
-          Filtros
+          <Filter className={`w-3.5 h-3.5 ${showFilters ? 'text-white' : ''}`} />
         </CompactButton>
         <CompactButton
-          variant="ghost"
+          variant="icon"
           onClick={() => fetchTransactions()}
           disabled={loading}
+          title="Actualizar"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          Actualizar
         </CompactButton>
-      </div>
+      </Toolbar>
 
       {/* Panel de filtros */}
       {showFilters && (
-        <div className="bg-white rounded-sm border border-gray-200 p-2">
+        <div className="bg-white rounded-sm border border-gray-200 p-2 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs font-semibold text-gray-900">Filtros de Busqueda</h3>
+            <div className="flex items-center gap-1.5">
+              <Filter className="w-3.5 h-3.5 text-blue-600" />
+              <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider">Filtros de Búsqueda</h3>
+            </div>
             <CompactButton variant="icon" onClick={() => setShowFilters(false)}>
               <X className="w-3.5 h-3.5" />
             </CompactButton>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-0.5">Dispensadora (Pump)</label>
+              <label className="block text-[10px] uppercase font-bold text-gray-500 mb-0.5">Dispensadora (Pump)</label>
               <select
                 value={pumpFilter}
                 onChange={(e) => setPumpFilter(e.target.value === '' ? '' : Number(e.target.value))}
-                className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
               >
                 <option value="">Todas</option>
-                {Array.from({ length: 18 }, (_, i) => i + 1).map((pump) => (
+                {availablePumps.map((pump) => (
                   <option key={pump} value={pump}>
                     Dispensadora {pump}
                   </option>
@@ -194,14 +253,14 @@ const FuelTransactionsSection: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-0.5">Manguera (Nozzle)</label>
+              <label className="block text-[10px] uppercase font-bold text-gray-500 mb-0.5">Manguera (Nozzle)</label>
               <select
                 value={nozzleFilter}
                 onChange={(e) => setNozzleFilter(e.target.value === '' ? '' : Number(e.target.value))}
-                className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
               >
                 <option value="">Todas</option>
-                {Array.from({ length: 6 }, (_, i) => i + 1).map((nozzle) => (
+                {availableNozzles.map((nozzle) => (
                   <option key={nozzle} value={nozzle}>
                     Manguera {nozzle}
                   </option>
@@ -210,50 +269,51 @@ const FuelTransactionsSection: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-0.5">Tipo de Combustible</label>
+              <label className="block text-[10px] uppercase font-bold text-gray-500 mb-0.5">Tipo de Combustible</label>
               <select
                 value={fuelGradeFilter}
                 onChange={(e) => setFuelGradeFilter(e.target.value === '' ? '' : Number(e.target.value))}
-                className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
               >
                 <option value="">Todos</option>
-                {uniqueFuelGrades.map((gradeId) => {
-                  const transaction = transactions.find(t => t.fuelGradeId === gradeId);
-                  return (
-                    <option key={gradeId} value={gradeId}>
-                      {mapFuelProductName(transaction?.fuelGradeName) || `Grado ${gradeId}`}
-                    </option>
-                  );
-                })}
+                {availableGrades.map((grade) => (
+                  <option key={grade.id} value={grade.id}>
+                    {mapFuelProductName(grade.name)}
+                  </option>
+                ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-0.5">Fecha Inicio</label>
+              <label className="block text-[10px] uppercase font-bold text-gray-500 mb-0.5">Fecha Inicio</label>
               <input
                 type="date"
                 value={startDateFilter}
                 onChange={(e) => setStartDateFilter(e.target.value)}
-                className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-0.5">Fecha Fin</label>
+              <label className="block text-[10px] uppercase font-bold text-gray-500 mb-0.5">Fecha Fin</label>
               <input
                 type="date"
                 value={endDateFilter}
                 onChange={(e) => setEndDateFilter(e.target.value)}
-                className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
               />
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-1 mt-2">
+          <div className="flex items-center justify-end gap-1 mt-3 pt-2 border-t border-gray-100">
             <CompactButton variant="ghost" onClick={handleClearFilters}>
               Limpiar
             </CompactButton>
-            <CompactButton variant="primary" onClick={() => setShowFilters(false)}>
+            <CompactButton variant="primary" onClick={() => {
+              setCurrentPage(1);
+              fetchTransactions(1);
+              setShowFilters(false);
+            }}>
               Aplicar Filtros
             </CompactButton>
           </div>
@@ -263,7 +323,7 @@ const FuelTransactionsSection: React.FC = () => {
       {/* Mensaje de error */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-sm p-2 flex items-center space-x-2">
-          <span className="text-red-700 text-xs">{error}</span>
+          <span className="text-red-700 text-xs font-medium">{error}</span>
         </div>
       )}
 
@@ -273,55 +333,62 @@ const FuelTransactionsSection: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="h-8 text-xs uppercase tracking-wide bg-table-header">
-                  <th className="text-left px-2 font-medium text-gray-500">ID</th>
-                  <th className="text-left px-2 font-medium text-gray-500">Fecha/Hora</th>
-                  <th className="text-left px-2 font-medium text-gray-500">Dispensadora</th>
-                  <th className="text-left px-2 font-medium text-gray-500">Manguera</th>
-                  <th className="text-left px-2 font-medium text-gray-500">Producto</th>
-                  <th className="text-left px-2 font-medium text-gray-500">Volumen</th>
-                  <th className="text-left px-2 font-medium text-gray-500">Precio</th>
-                  <th className="text-left px-2 font-medium text-gray-500">Monto</th>
-                  <th className="text-left px-2 font-medium text-gray-500">Estado</th>
+                <tr className="h-8 text-xs uppercase tracking-wide bg-table-header border-b border-table-border">
+                  <th className="text-left px-2 font-semibold text-gray-600">ID</th>
+                  <th className="text-left px-2 font-semibold text-gray-600">Fecha/Hora</th>
+                  <th className="text-left px-2 font-semibold text-gray-600">Dispensadora</th>
+                  <th className="text-left px-2 font-semibold text-gray-600">Manguera</th>
+                  <th className="text-left px-2 font-semibold text-gray-600">Producto</th>
+                  <th className="text-right px-2 font-semibold text-gray-600">Volumen</th>
+                  <th className="text-right px-2 font-semibold text-gray-600">Precio</th>
+                  <th className="text-right px-2 font-semibold text-gray-600">Monto</th>
+                  <th className="text-center px-2 font-semibold text-gray-600 w-20">Estado</th>
                 </tr>
               </thead>
               <tbody>
                 {transactions.map((transaction) => (
                   <tr
                     key={transaction.transactionId}
-                    className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover"
+                    className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover transition-colors"
                   >
-                    <td className="px-2 text-sm text-gray-900 whitespace-nowrap">
-                      {transaction.transactionId}
+                    <td className="px-2 text-sm text-gray-900 font-medium whitespace-nowrap">
+                      #{transaction.transactionId}
+                    </td>
+                    <td className="px-2 text-[13px] whitespace-nowrap">
+                      <span className="text-gray-900 font-medium">{formatDate(transaction.transactionDate)}</span>
+                      <span className="text-gray-500 ml-1.5 text-xs">{formatTime(transaction.transactionDate)}</span>
+                    </td>
+                    <td className="px-2 text-sm text-gray-700 whitespace-nowrap">
+                      <div className="flex items-center gap-1">
+                        <FuelIcon className="w-3 h-3 text-gray-400" />
+                        <span>Pump {transaction.pump}</span>
+                      </div>
+                    </td>
+                    <td className="px-2 text-sm text-gray-700 whitespace-nowrap">
+                      Manguera {transaction.nozzle}
                     </td>
                     <td className="px-2 text-sm whitespace-nowrap">
-                      <span className="text-gray-900">{formatDate(transaction.transactionDate)}</span>
-                      <span className="text-gray-500 ml-1 text-xs">{formatTime(transaction.transactionDate)}</span>
+                      <span className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-700 text-xs font-semibold">
+                        {mapFuelProductName(transaction.fuelGradeName)}
+                      </span>
                     </td>
-                    <td className="px-2 text-sm text-gray-900 whitespace-nowrap">
-                      Pump {transaction.pump}
+                    <td className="px-2 text-[13px] text-gray-900 text-right font-mono whitespace-nowrap">
+                      {transaction.volume.toFixed(3)} <span className="text-gray-400 text-[10px]">G.</span>
                     </td>
-                    <td className="px-2 text-sm text-gray-900 whitespace-nowrap">
-                      Nozzle {transaction.nozzle}
-                    </td>
-                    <td className="px-2 text-sm whitespace-nowrap text-ellipsis overflow-hidden">
-                      {mapFuelProductName(transaction.fuelGradeName)}
-                    </td>
-                    <td className="px-2 text-sm text-gray-900 whitespace-nowrap">
-                      {transaction.volume.toFixed(3)} G.
-                    </td>
-                    <td className="px-2 text-sm text-gray-900 whitespace-nowrap">
+                    <td className="px-2 text-[13px] text-gray-600 text-right font-mono whitespace-nowrap">
                       {formatCurrency(transaction.price)}
                     </td>
-                    <td className="px-2 text-sm font-semibold text-gray-900 whitespace-nowrap">
+                    <td className="px-2 text-sm font-bold text-gray-900 text-right font-mono whitespace-nowrap tabular-nums">
                       {formatCurrency(transaction.amount)}
                     </td>
-                    <td className="px-2 whitespace-nowrap">
-                      {transaction.isOffline ? (
-                        <StatusDot color="gray" label="Offline" />
-                      ) : (
-                        <StatusDot color="green" label="Online" />
-                      )}
+                    <td className="px-2 text-center whitespace-nowrap">
+                      <div className="flex justify-center">
+                        {transaction.isOffline ? (
+                          <StatusDot color="red" label="Offline" />
+                        ) : (
+                          <StatusDot color="green" label="Online" />
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -329,17 +396,17 @@ const FuelTransactionsSection: React.FC = () => {
             </table>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-8 px-3">
-            <FuelIcon className="w-8 h-8 text-gray-400 mb-2" />
-            <h3 className="text-sm font-medium text-gray-900 mb-1">No se encontraron transacciones</h3>
-            <p className="text-gray-500 text-xs text-center max-w-md">
-              No hay transacciones que coincidan con los filtros aplicados.
+          <div className="flex flex-col items-center justify-center py-10 px-3 bg-gray-50/50">
+            <FuelIcon className="w-10 h-10 text-gray-200 mb-2" />
+            <h3 className="text-sm font-semibold text-gray-900 mb-1 uppercase tracking-tight">No se encontraron transacciones</h3>
+            <p className="text-gray-500 text-xs text-center max-w-sm">
+              No hay transacciones registradas que coincidan con los criterios de búsqueda actuales. Prueba ajustando los filtros.
             </p>
           </div>
         )}
       </div>
 
-      {/* Paginacion */}
+      {/* Paginación */}
       {transactions.length > 0 && (
         <Pagination
           currentPage={currentPage}
@@ -362,3 +429,4 @@ const FuelTransactionsSection: React.FC = () => {
 };
 
 export default FuelTransactionsSection;
+

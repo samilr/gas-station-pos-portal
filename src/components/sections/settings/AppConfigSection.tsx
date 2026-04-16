@@ -27,8 +27,8 @@ const AppConfigSection: React.FC = () => {
     e.preventDefault(); setSaving(true);
     const configId = config?.id ?? 1;
     const res = config
-      ? await appConfigService.updateAppConfig(configId, { appVersion: form.appVersion, description: form.description, urlApk: form.urlApk, required: form.required })
-      : await appConfigService.createAppConfig({ appVersion: form.appVersion || '', description: form.description || '', urlApk: form.urlApk || '', required: form.required || false });
+      ? await appConfigService.updateAppConfig(configId, { appVersion: form.appVersion, description: form.description, urlApk: form.urlApk, required: form.required, recentTransactionWindowMinutes: form.recentTransactionWindowMinutes })
+      : await appConfigService.createAppConfig({ appVersion: form.appVersion || '', description: form.description || '', urlApk: form.urlApk || '', required: form.required || false, recentTransactionWindowMinutes: form.recentTransactionWindowMinutes ?? 5 });
     setSaving(false);
     if (res.successful) { toast.success('Configuracion guardada'); setIsEditing(false); load(); }
     else toast.error(res.error || 'Error al guardar');
@@ -85,9 +85,15 @@ const AppConfigSection: React.FC = () => {
               <p className="text-sm text-gray-800">{config.description}</p>
             </div>
           </div>
-          <div className="bg-gray-50 rounded-sm p-2">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-0.5">URL APK</p>
-            <p className="text-xs text-gray-700 break-all">{config.urlApk}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="bg-gray-50 rounded-sm p-2">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-0.5">URL APK</p>
+              <p className="text-xs text-gray-700 break-all">{config.urlApk}</p>
+            </div>
+            <div className="bg-gray-50 rounded-sm p-2">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-0.5">Minutos en Espera / Recientes</p>
+              <p className="text-xs text-gray-700">{config.recentTransactionWindowMinutes ?? 5} min</p>
+            </div>
           </div>
           <div>
             <StatusDot
@@ -107,8 +113,12 @@ const AppConfigSection: React.FC = () => {
               <div><label className="text-xs font-medium text-gray-700">Descripcion</label>
                 <input value={form.description || ''} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="w-full mt-0.5 h-7 px-2 text-sm border border-gray-300 rounded-sm" /></div>
             </div>
-            <div><label className="text-xs font-medium text-gray-700">URL APK</label>
-              <input value={form.urlApk || ''} onChange={e => setForm(f => ({ ...f, urlApk: e.target.value }))} className="w-full mt-0.5 h-7 px-2 text-sm border border-gray-300 rounded-sm" /></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div><label className="text-xs font-medium text-gray-700">URL APK</label>
+                <input value={form.urlApk || ''} onChange={e => setForm(f => ({ ...f, urlApk: e.target.value }))} className="w-full mt-0.5 h-7 px-2 text-sm border border-gray-300 rounded-sm" /></div>
+              <div><label className="text-xs font-medium text-gray-700">Ventana de recientes (Minutos)</label>
+                <input type="number" min="1" value={form.recentTransactionWindowMinutes ?? 5} onChange={e => setForm(f => ({ ...f, recentTransactionWindowMinutes: parseInt(e.target.value) || 5 }))} className="w-full mt-0.5 h-7 px-2 text-sm border border-gray-300 rounded-sm" /></div>
+            </div>
             <label className="flex items-center gap-1.5 cursor-pointer text-xs">
               <input type="checkbox" checked={!!form.required} onChange={e => setForm(f => ({ ...f, required: e.target.checked }))} className="rounded" />
               Actualizacion Requerida
