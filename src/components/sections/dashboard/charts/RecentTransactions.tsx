@@ -44,8 +44,15 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   };
 
   const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', hour12: true });
+    // Si no trae Z ni offset, asumir UTC y convertir a hora GMT-4 (Santo Domingo)
+    const hasTz = /Z$|[+-]\d{2}:?\d{2}$/.test(dateString);
+    const date = new Date(hasTz ? dateString : dateString + 'Z');
+    return date.toLocaleTimeString('es-DO', {
+      timeZone: 'America/Santo_Domingo',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
   };
 
   const Shell: React.FC<{ children: React.ReactNode; right?: React.ReactNode }> = ({ children, right }) => (

@@ -115,8 +115,8 @@ const DataphoneSuppliersSection: React.FC = () => {
                   <td className="px-2 text-sm text-text-primary">{s.name}</td>
                   <td className="px-2 text-sm text-text-secondary font-mono">{s.posRequestPort}</td>
                   <td className="px-2 text-sm text-text-secondary font-mono">{s.dataphoneResponsePort}</td>
-                  <td className="px-2 text-sm text-text-secondary font-mono">{s.transTimeout}ms</td>
-                  <td className="px-2 text-sm text-text-secondary truncate max-w-[180px]">{s.comment || '—'}</td>
+                  <td className="px-2 text-sm text-text-secondary font-mono">{(s.transTimeout / 1000).toFixed(0)}s</td>
+                  <td className="px-2 text-xs text-text-secondary max-w-[180px] truncate" title={s.comment || ''}>{s.comment?.trim() || '—'}</td>
                   <td className="px-2 text-sm">
                     <button onClick={() => toggleActive(s)} className="cursor-pointer">
                       <StatusDot color={s.active ? 'green' : 'gray'} label={s.active ? 'Activo' : 'Inactivo'} />

@@ -17,10 +17,19 @@ export const formatNumber = (num: number): string => {
   return num.toString();
 };
 
+// Parsea una fecha tratando strings sin timezone como UTC
+export const parseUtcDate = (date: Date | string): Date => {
+  if (date instanceof Date) return date;
+  // Si ya incluye Z o un offset (+HH:MM / -HH:MM), parsear tal cual
+  if (/Z$|[+-]\d{2}:?\d{2}$/.test(date)) return new Date(date);
+  // Datetime "naive" (sin zona) → asumir UTC
+  return new Date(date + 'Z');
+};
+
 // Formatear fecha relativa
 export const formatRelativeTime = (date: Date | string): string => {
   const now = new Date();
-  const targetDate = new Date(date);
+  const targetDate = parseUtcDate(date);
   const diffInSeconds = Math.floor((now.getTime() - targetDate.getTime()) / 1000);
 
   if (diffInSeconds < 60) {

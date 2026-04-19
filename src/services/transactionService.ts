@@ -10,6 +10,18 @@ import {
 import { buildApiUrl } from '../config/api';
 import { apiGet, apiPost } from './apiInterceptor';
 
+/**
+ * Convierte YYYY-MM-DD a ISO datetime con offset GMT-4 (inicio del día en Santo Domingo).
+ * Si ya incluye hora u offset, se devuelve sin cambios.
+ * Evita que el backend interprete la fecha como UTC midnight y traiga transacciones
+ * del día anterior en horario local.
+ */
+const toSantoDomingoStartOfDay = (date: string): string => {
+  if (!date) return date;
+  if (date.includes('T')) return date;
+  return `${date}T00:00:00-04:00`;
+};
+
 class TransactionService {
   /**
    * Obtiene transacciones desde la API con filtros opcionales y paginación
@@ -293,7 +305,7 @@ class TransactionService {
   async getSalesAndReturnsSummary(startDate: string): Promise<ISalesAndReturnsSummary> {
     try {
       const queryParams = new URLSearchParams();
-      queryParams.append('startDate', startDate);
+      queryParams.append('startDate', toSantoDomingoStartOfDay(startDate));
       
       const url = buildApiUrl(`trans/dashboard/sales-returns-summary?${queryParams.toString()}`);
       const response = await apiGet<ISalesAndReturnsSummary>(url);
@@ -315,7 +327,7 @@ class TransactionService {
   async getDailySales(startDate: string): Promise<IDailySales[]> {
     try {
       const queryParams = new URLSearchParams();
-      queryParams.append('startDate', startDate);
+      queryParams.append('startDate', toSantoDomingoStartOfDay(startDate));
       
       const url = buildApiUrl(`trans/dashboard/daily-sales?${queryParams.toString()}`);
       const response = await apiGet<IDailySales[]>(url);
@@ -337,7 +349,7 @@ class TransactionService {
   async getTopTransactions(startDate: string, limit: number = 4): Promise<ITopTransaction[]> {
     try {
       const queryParams = new URLSearchParams();
-      queryParams.append('startDate', startDate);
+      queryParams.append('startDate', toSantoDomingoStartOfDay(startDate));
       queryParams.append('limit', limit.toString());
       
       const url = buildApiUrl(`trans/dashboard/top-transactions?${queryParams.toString()}`);
@@ -360,7 +372,7 @@ class TransactionService {
   async getTopProducts(startDate: string, categoryId?: string, limit: number = 5): Promise<ITopProduct[]> {
     try {
       const queryParams = new URLSearchParams();
-      queryParams.append('startDate', startDate);
+      queryParams.append('startDate', toSantoDomingoStartOfDay(startDate));
       queryParams.append('limit', limit.toString());
       
       if (categoryId) {
@@ -387,7 +399,7 @@ class TransactionService {
   async getSalesBySite(startDate: string): Promise<ISalesBySite[]> {
     try {
       const queryParams = new URLSearchParams();
-      queryParams.append('startDate', startDate);
+      queryParams.append('startDate', toSantoDomingoStartOfDay(startDate));
       
       const url = buildApiUrl(`trans/dashboard/sales-by-site?${queryParams.toString()}`);
       const response = await apiGet<ISalesBySite[]>(url);

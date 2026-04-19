@@ -47,7 +47,11 @@ class DataphoneService {
     const query = qs.toString();
     const url = buildApiUrl(`dataphones${query ? `?${query}` : ''}`);
     const res = await apiGet<any>(url);
-    return { successful: res.successful, data: Array.isArray(res.data) ? res.data : [], error: res.error };
+    const raw = res.data;
+    const items: Dataphone[] = Array.isArray(raw)
+      ? raw
+      : Array.isArray(raw?.data) ? raw.data : [];
+    return { successful: res.successful, data: items, error: res.error };
   }
 
   async getById(id: number): Promise<ItemResponse> {

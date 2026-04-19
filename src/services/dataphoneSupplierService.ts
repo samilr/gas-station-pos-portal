@@ -38,7 +38,11 @@ export interface ItemResponse {
 class DataphoneSupplierService {
   async list(): Promise<ListResponse> {
     const res = await apiGet<any>(buildApiUrl('dataphone-suppliers'));
-    return { successful: res.successful, data: Array.isArray(res.data) ? res.data : [], error: res.error };
+    const raw = res.data;
+    const items: DataphoneSupplier[] = Array.isArray(raw)
+      ? raw
+      : Array.isArray(raw?.data) ? raw.data : [];
+    return { successful: res.successful, data: items, error: res.error };
   }
 
   async getById(id: number): Promise<ItemResponse> {

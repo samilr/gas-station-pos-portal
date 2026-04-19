@@ -6,10 +6,6 @@ import {
   Plus,
   Edit,
   Trash2,
-  Phone,
-  Mail,
-  MapPin,
-  DollarSign,
 } from "lucide-react";
 import SiteModal from "./SiteModal";
 import DeleteSiteDialog from "./DeleteSiteDialog";
@@ -19,7 +15,6 @@ import { usePermissions } from "../../../hooks/usePermissions";
 import { ISite } from "../../../types/site";
 import { PermissionGate } from "../../common";
 import { CompactButton, Pagination } from '../../ui';
-import StatusDot from '../../ui/StatusDot';
 import Toolbar from '../../ui/Toolbar';
 
 const SitesSection: React.FC = () => {
@@ -255,11 +250,13 @@ const SitesSection: React.FC = () => {
           <table className="min-w-full">
             <thead>
               <tr className="h-8 text-xs uppercase tracking-wide bg-table-header border-b border-table-border">
-                <th className="text-left px-2 text-xs font-medium text-gray-500">Sucursal</th>
-                <th className="text-left px-2 text-xs font-medium text-gray-500">Contacto</th>
-                <th className="text-left px-2 text-xs font-medium text-gray-500">Config</th>
-                <th className="text-left px-2 text-xs font-medium text-gray-500">Estado</th>
-                <th className="text-left px-2 text-xs font-medium text-gray-500">Acciones</th>
+                <th className="text-left px-2 text-xs font-medium text-gray-500">Site ID</th>
+                <th className="text-left px-2 text-xs font-medium text-gray-500">Nombre</th>
+                <th className="text-left px-2 text-xs font-medium text-gray-500">Dirección</th>
+                <th className="text-left px-2 text-xs font-medium text-gray-500">Teléfono</th>
+                <th className="text-left px-2 text-xs font-medium text-gray-500">Email</th>
+                <th className="text-center px-2 text-xs font-medium text-gray-500">Estado</th>
+                <th className="text-right px-2 text-xs font-medium text-gray-500">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -272,52 +269,21 @@ const SitesSection: React.FC = () => {
                   <td className="px-2 text-sm whitespace-nowrap">
                     <div className="flex items-center gap-1.5">
                       <Building2 className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
-                      <span className="font-medium text-gray-900 text-ellipsis overflow-hidden whitespace-nowrap max-w-[200px]">
-                        {site.site_id} {site.name}
-                      </span>
-                      {site.address1 && (
-                        <span className="text-xs text-gray-400 text-ellipsis overflow-hidden whitespace-nowrap max-w-[120px]">
-                          <MapPin className="w-3 h-3 inline mr-0.5" />{site.address1}
-                        </span>
-                      )}
+                      <span className="font-medium text-gray-900">{site.site_id}</span>
                     </div>
                   </td>
-                  <td className="px-2 text-sm whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      {site.phone && (
-                        <span className="text-xs text-gray-500 flex items-center">
-                          <Phone className="w-3 h-3 mr-0.5" />{site.phone}
-                        </span>
-                      )}
-                      {site.email && (
-                        <span className="text-xs text-gray-500 flex items-center">
-                          <Mail className="w-3 h-3 mr-0.5" />{site.email}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-2 text-sm whitespace-nowrap">
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-gray-500">
-                        <DollarSign className="w-3 h-3 inline" />
-                        {site.pos ? "POS" : "Sin POS"}
-                      </span>
-                      {site.head_office && (
-                        <span className="text-xs text-blue-600">HQ</span>
-                      )}
-                      {site.pos_is_restaurant && (
-                        <span className="text-xs text-orange-600">Rest.</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-2 text-sm whitespace-nowrap">
-                    <StatusDot
-                      color={site.active ? "green" : "red"}
-                      label={site.active ? "Activa" : "Inactiva"}
+                  <td className="px-2 text-sm whitespace-nowrap text-gray-900 max-w-[200px] truncate" title={site.name || ''}>{site.name || '—'}</td>
+                  <td className="px-2 text-xs text-gray-600 max-w-[180px] truncate" title={site.address1 || ''}>{site.address1 || '—'}</td>
+                  <td className="px-2 text-xs text-gray-600 whitespace-nowrap">{site.phone || '—'}</td>
+                  <td className="px-2 text-xs text-gray-600 max-w-[180px] truncate" title={site.email || ''}>{site.email || '—'}</td>
+                  <td className="px-2 text-sm whitespace-nowrap text-center">
+                    <span
+                      className={`inline-block w-2 h-2 rounded-full ${site.active ? 'bg-green-500' : 'bg-red-500'}`}
+                      title={site.active ? 'Activa' : 'Inactiva'}
                     />
                   </td>
                   <td className="px-2 text-sm whitespace-nowrap">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center justify-end gap-1">
                       <PermissionGate permissions={['sites.edit']}>
                         <button
                           onClick={(e) => {

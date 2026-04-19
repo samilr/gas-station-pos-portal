@@ -10,7 +10,12 @@ export interface SiteApiResponse<T> {
 
 export const siteService = {
   async getAllSites(): Promise<SiteApiResponse<ISite[]>> {
-    return await apiGet<ISite[]>(buildApiUrl('sites/all'));
+    const res = await apiGet<any>(buildApiUrl('sites/all'));
+    const raw = res.data;
+    const items: ISite[] = Array.isArray(raw)
+      ? raw
+      : Array.isArray(raw?.data) ? raw.data : [];
+    return { successful: res.successful, data: items, error: res.error };
   },
 
   async createSite(siteData: ICreateSiteDto): Promise<SiteApiResponse<ISite>> {

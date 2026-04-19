@@ -1,12 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, RefreshCw, Edit, Trash2, Eye, Package, ImageOff } from 'lucide-react';
-import toast from 'react-hot-toast';
 import { useHeader } from '../../../context/HeaderContext';
 import { CompactButton, Pagination } from '../../ui';
-import StatusDot from '../../ui/StatusDot';
 import Toolbar from '../../ui/Toolbar';
 import useCategories from '../../../hooks/useCategories';
-import categoryService, { Category } from '../../../services/categoryService';
+import { Category } from '../../../services/categoryService';
 import CategoryModal from './CategoryModal';
 import DeleteCategoryDialog from './DeleteCategoryDialog';
 
@@ -30,7 +28,6 @@ const CategoriesSection: React.FC = () => {
   const { categories, loading, error, refresh } = useCategories();
 
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'' | 'active' | 'inactive'>('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -48,59 +45,33 @@ const CategoriesSection: React.FC = () => {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
-    return categories.filter((c) => {
-      const matchesSearch = !q ||
-        c.categoryId.toLowerCase().includes(q) ||
-        c.categoryName.toLowerCase().includes(q);
-      const isActive = c.active !== false;
-      const matchesStatus = !statusFilter
-        || (statusFilter === 'active' && isActive)
-        || (statusFilter === 'inactive' && !isActive);
-      return matchesSearch && matchesStatus;
-    });
-  }, [categories, search, statusFilter]);
+    if (!q) return categories;
+    return categories.filter((c) =>
+      c.categoryId.toLowerCase().includes(q) ||
+      c.categoryName.toLowerCase().includes(q) ||
+      (c.unitId || '').toLowerCase().includes(q)
+    );
+  }, [categories, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const pageItems = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-
-  const totals = {
-    total: categories.length,
-    active: categories.filter((c) => c.active !== false).length,
-    inactive: categories.filter((c) => c.active === false).length,
-  };
 
   const openCreate = () => { setSelected(null); setModalMode('create'); setModalOpen(true); };
   const openEdit = (c: Category) => { setSelected(c); setModalMode('edit'); setModalOpen(true); };
   const openView = (c: Category) => { setSelected(c); setModalMode('view'); setModalOpen(true); };
   const openDelete = (c: Category) => { setToDelete(c); setDeleteOpen(true); };
 
-  const toggleActive = async (c: Category) => {
-    const nextActive = !(c.active !== false);
-    const res = await categoryService.update(c.categoryId, { active: nextActive });
-    if (res.successful) { toast.success(`Categoría ${nextActive ? 'activada' : 'desactivada'}`); refresh(); }
-    else toast.error(res.error || 'Error al cambiar estado');
-  };
-
   return (
     <div className="space-y-1">
       <Toolbar
         searchValue={search}
         onSearchChange={(v) => { setSearch(v); setPage(1); }}
-        searchPlaceholder="Buscar por ID o nombre..."
+        searchPlaceholder="Buscar por ID, nombre o unidad..."
         chips={[
-          { label: 'Total', value: totals.total, color: 'blue' },
-          { label: 'Activas', value: totals.active, color: 'green' },
-          { label: 'Inactivas', value: totals.inactive, color: 'red' },
+          { label: 'Total', value: categories.length, color: 'blue' },
         ]}
       >
-        <select value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value as any); setPage(1); }}
-          className="h-7 px-2 text-xs border border-gray-300 rounded-sm">
-          <option value="">Todas</option>
-          <option value="active">Activas</option>
-          <option value="inactive">Inactivas</option>
-        </select>
         <CompactButton variant="ghost" onClick={refresh} disabled={loading}>
           <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} /> Actualizar
         </CompactButton>
@@ -120,42 +91,33 @@ const CategoriesSection: React.FC = () => {
                 <th className="text-left px-2 font-medium text-gray-500 w-24">ID</th>
                 <th className="text-left px-2 font-medium text-gray-500">Nombre</th>
                 <th className="text-left px-2 font-medium text-gray-500 w-20">Unidad</th>
-                <th className="text-left px-2 font-medium text-gray-500 w-24">Estado</th>
                 <th className="text-right px-2 font-medium text-gray-500">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {loading && <tr><td colSpan={6} className="px-2 py-6 text-center text-text-muted text-xs">
+              {loading && <tr><td colSpan={5} className="px-2 py-6 text-center text-text-muted text-xs">
                 <RefreshCw className="w-4 h-4 animate-spin inline mr-1" /> Cargando...</td></tr>}
               {!loading && pageItems.length === 0 && (
-                <tr><td colSpan={6} className="px-2 py-6 text-center text-text-muted text-xs">
+                <tr><td colSpan={5} className="px-2 py-6 text-center text-text-muted text-xs">
                   <Package className="w-5 h-5 mx-auto mb-1 text-text-muted" />
-                  No hay categorías {search || statusFilter ? 'con esos filtros' : 'registradas'}
+                  No hay categorías {search ? 'con ese filtro' : 'registradas'}
                 </td></tr>
               )}
-              {!loading && pageItems.map((c) => {
-                const isActive = c.active !== false;
-                return (
-                  <tr key={c.categoryId} className="h-10 border-b border-table-border hover:bg-row-hover">
-                    <td className="px-2"><CategoryThumb url={c.image} name={c.categoryName} /></td>
-                    <td className="px-2 text-sm font-medium text-text-primary font-mono">{c.categoryId}</td>
-                    <td className="px-2 text-sm text-text-primary">{c.categoryName}</td>
-                    <td className="px-2 text-sm text-text-secondary">{c.unitId || '—'}</td>
-                    <td className="px-2 text-sm">
-                      <button onClick={() => toggleActive(c)} className="cursor-pointer" title="Click para cambiar estado">
-                        <StatusDot color={isActive ? 'green' : 'gray'} label={isActive ? 'Activa' : 'Inactiva'} />
-                      </button>
-                    </td>
-                    <td className="px-2 text-sm whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-1">
-                        <CompactButton variant="icon" onClick={() => openView(c)} title="Ver detalles"><Eye className="w-3.5 h-3.5 text-text-secondary" /></CompactButton>
-                        <CompactButton variant="icon" onClick={() => openEdit(c)} title="Editar"><Edit className="w-3.5 h-3.5 text-blue-600" /></CompactButton>
-                        <CompactButton variant="icon" onClick={() => openDelete(c)} title="Eliminar"><Trash2 className="w-3.5 h-3.5 text-red-600" /></CompactButton>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+              {!loading && pageItems.map((c) => (
+                <tr key={c.categoryId} className="h-10 border-b border-table-border hover:bg-row-hover">
+                  <td className="px-2"><CategoryThumb url={c.image} name={c.categoryName} /></td>
+                  <td className="px-2 text-sm font-medium text-text-primary font-mono">{c.categoryId.trim()}</td>
+                  <td className="px-2 text-sm text-text-primary">{c.categoryName}</td>
+                  <td className="px-2 text-sm text-text-secondary font-mono">{c.unitId || '—'}</td>
+                  <td className="px-2 text-sm whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1">
+                      <CompactButton variant="icon" onClick={() => openView(c)} title="Ver detalles"><Eye className="w-3.5 h-3.5 text-text-secondary" /></CompactButton>
+                      <CompactButton variant="icon" onClick={() => openEdit(c)} title="Editar"><Edit className="w-3.5 h-3.5 text-blue-600" /></CompactButton>
+                      <CompactButton variant="icon" onClick={() => openDelete(c)} title="Eliminar"><Trash2 className="w-3.5 h-3.5 text-red-600" /></CompactButton>
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

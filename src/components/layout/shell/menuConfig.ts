@@ -94,7 +94,7 @@ export const menuItems: MenuItem[] = [
       { id: 'sites.list', label: 'Sucursales', icon: Building2, permission: 'sites.view' },
       { id: 'dataphones.suppliers', label: 'Proveedores Dataphone', icon: CreditCard, permission: 'settings.view' },
       { id: 'dataphones.list', label: 'Dataphones', icon: Smartphone, permission: 'settings.view' },
-      { id: 'dataphones.terminals', label: 'Mapeo Dataphone-Terminal', icon: Monitor, permission: 'settings.view' },
+      { id: 'dataphones.terminals', label: 'Dataphone-Terminal', icon: Monitor, permission: 'settings.view' },
       { id: 'card-payments.list', label: 'Pagos con Tarjeta', icon: CreditCard, permission: 'settings.view' },
       { id: 'gov.taxes', label: 'Impuestos', icon: Receipt, permission: 'settings.view' },
       { id: 'gov.tax-types', label: 'Tipos de Impuesto', icon: Percent, permission: 'settings.view' },

@@ -4,7 +4,12 @@ import { IStaftGroup, ICreateStaftGroupDto, IUpdateStaftGroupDto } from '../type
 
 export const staftGroupService = {
   async getStaftGroups(): Promise<ApiResponse<IStaftGroup[]>> {
-    return apiGet<IStaftGroup[]>(buildApiUrl('staft-groups'));
+    const res = await apiGet<any>(buildApiUrl('staft-groups'));
+    const raw = res.data;
+    const items: IStaftGroup[] = Array.isArray(raw)
+      ? raw
+      : Array.isArray(raw?.data) ? raw.data : [];
+    return { successful: res.successful, data: items, error: res.error };
   },
   async getStaftGroupById(id: number): Promise<ApiResponse<IStaftGroup>> {
     return apiGet<IStaftGroup>(buildApiUrl(`staft-groups/${id}`));

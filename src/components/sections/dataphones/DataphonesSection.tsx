@@ -94,15 +94,17 @@ const DataphonesSection: React.FC = () => {
                 <th className="text-left px-2 font-medium text-gray-500">Proveedor</th>
                 <th className="text-left px-2 font-medium text-gray-500">IP Dataphone</th>
                 <th className="text-left px-2 font-medium text-gray-500">Puertos</th>
+                <th className="text-left px-2 font-medium text-gray-500">Timeout</th>
+                <th className="text-left px-2 font-medium text-gray-500">Comentario</th>
                 <th className="text-left px-2 font-medium text-gray-500">Estado</th>
                 <th className="text-right px-2 font-medium text-gray-500">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {loading && <tr><td colSpan={8} className="px-2 py-6 text-center text-text-muted text-xs">
+              {loading && <tr><td colSpan={10} className="px-2 py-6 text-center text-text-muted text-xs">
                 <RefreshCw className="w-4 h-4 animate-spin inline mr-1" /> Cargando...</td></tr>}
               {!loading && pageItems.length === 0 && (
-                <tr><td colSpan={8} className="px-2 py-6 text-center text-text-muted text-xs">
+                <tr><td colSpan={10} className="px-2 py-6 text-center text-text-muted text-xs">
                   <Smartphone className="w-5 h-5 mx-auto mb-1 text-text-muted" />
                   No hay dataphones {search || siteFilter ? 'con esos filtros' : 'registrados'}
                 </td></tr>
@@ -115,6 +117,8 @@ const DataphonesSection: React.FC = () => {
                   <td className="px-2 text-sm text-text-secondary">#{d.dataphoneSupplierId}</td>
                   <td className="px-2 text-sm text-text-secondary font-mono">{d.dataphoneIpAddress}</td>
                   <td className="px-2 text-sm text-text-secondary font-mono">{d.terminalRequestPort} → {d.dataphoneResponsePort}</td>
+                  <td className="px-2 text-sm text-text-secondary font-mono">{(d.transTimeout / 1000).toFixed(0)}s</td>
+                  <td className="px-2 text-xs text-text-secondary max-w-[160px] truncate" title={d.comment || ''}>{d.comment?.trim() || '—'}</td>
                   <td className="px-2 text-sm">
                     <button onClick={() => toggleActive(d)} className="cursor-pointer">
                       <StatusDot color={d.active ? 'green' : 'gray'} label={d.active ? 'Activo' : 'Inactivo'} />

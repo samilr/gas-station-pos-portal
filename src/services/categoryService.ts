@@ -57,7 +57,11 @@ export interface ItemResponse {
 class CategoryService {
   async list(): Promise<ListResponse> {
     const res = await apiGet<any>(buildApiUrl('categories'));
-    return { successful: res.successful, data: Array.isArray(res.data) ? res.data : [], error: res.error };
+    const raw = res.data;
+    const items: Category[] = Array.isArray(raw)
+      ? raw
+      : Array.isArray(raw?.data) ? raw.data : [];
+    return { successful: res.successful, data: items, error: res.error };
   }
 
   async create(payload: CreateCategoryRequest): Promise<ItemResponse> {
