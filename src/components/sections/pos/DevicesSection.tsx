@@ -8,7 +8,7 @@ import { PermissionGate } from '../../common';
 import { useDevices } from '../../../hooks/useDevices';
 import { IHost } from '../../../services/deviceService';
 import { formatDateDMY } from '../../../utils/dateUtils';
-import { HostType } from '../../../types/host_type.enum';
+import { getHostTypeLabel } from '../../../types/host_type.enum';
 import { CompactButton, Pagination } from '../../ui';
 import StatusDot from '../../ui/StatusDot';
 import Toolbar from '../../ui/Toolbar';
@@ -63,18 +63,10 @@ const DevicesSection: React.FC = () => {
     return matchesSearch && matchesStatus && matchesSite && matchesConnection;
   });
 
-  const getHostTypeText = (hostTypeId?: number): string => {
-    if (!hostTypeId) return 'N/A';
-    switch (hostTypeId) {
-      case HostType.DATAPHONE:
-        return 'Datáfono';
-      case HostType.ANDROID_SCANNER:
-        return 'Escáner Android';
-      case HostType.ANDROID_SMARTPHONE:
-        return 'Smartphone Android';
-      default:
-        return 'Desconocido';
-    }
+  const getHostTypeText = (device: IHost): string => {
+    if (device.hostTypeName) return device.hostTypeName;
+    if (device.hostTypeCode) return getHostTypeLabel(device.hostTypeCode);
+    return 'N/A';
   };
 
   // Calcular estadísticas
@@ -304,7 +296,7 @@ const DevicesSection: React.FC = () => {
                       )}
                     </div>
                   </td>
-                  <td className="px-2 text-sm whitespace-nowrap text-gray-900">{getHostTypeText(device.hostTypeId)}</td>
+                  <td className="px-2 text-sm whitespace-nowrap text-gray-900">{getHostTypeText(device)}</td>
                   <td className="px-2 text-sm whitespace-nowrap text-gray-900">{device.siteId || 'N/A'}</td>
                   <td className="px-2 text-sm whitespace-nowrap">
                     <StatusDot

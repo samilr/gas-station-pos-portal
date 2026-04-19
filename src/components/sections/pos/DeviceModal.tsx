@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Smartphone, Save, X, Edit, Plus, Clock, Globe, RefreshCw } from 'lucide-react';
+import { Smartphone, Save, X, Edit, Plus, Clock, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { hostService, IHost } from '../../../services/deviceService';
-import { HostType } from '../../../types/host_type.enum';
+import { getHostTypeLabel } from '../../../types/host_type.enum';
 import { CompactButton } from '../../ui';
 
 interface HostFormData {
@@ -205,9 +205,9 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
               <select name="hostTypeId" value={formData.hostTypeId || ''} onChange={handleInputChange} disabled={isViewing}
                 className={inputCls(isViewing)}>
                 <option value="">Seleccione un tipo</option>
-                <option value={HostType.DATAPHONE}>Datáfono</option>
-                <option value={HostType.ANDROID_SCANNER}>Escáner Android</option>
-                <option value={HostType.ANDROID_SMARTPHONE}>Smartphone Android</option>
+                <option value={1}>POS Android</option>
+                <option value={2}>Smartphone Android</option>
+                <option value={3}>Escáner Android</option>
               </select>
             </div>
           </div>
@@ -236,11 +236,10 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
                   <div className="flex justify-between"><span className="text-blue-700">Host ID:</span><span className="font-medium text-blue-900">{device.hostId}</span></div>
                   <div className="flex justify-between"><span className="text-blue-700">IP:</span><span className="font-medium text-blue-900">{device.ipAddress || 'N/A'}</span></div>
                   <div className="flex justify-between"><span className="text-blue-700">Estado:</span><span className={`font-medium ${device.active ? 'text-green-600' : 'text-red-600'}`}>{device.active ? 'Activo' : 'Inactivo'}</span></div>
-                  <div className="flex justify-between"><span className="text-blue-700">Tipo:</span><span className="font-medium text-blue-900">
-                    {device.hostTypeId === HostType.DATAPHONE ? 'Datáfono' :
-                     device.hostTypeId === HostType.ANDROID_SCANNER ? 'Escáner' :
-                     device.hostTypeId === HostType.ANDROID_SMARTPHONE ? 'Smartphone' : 'N/A'}
-                  </span></div>
+                  <div className="flex justify-between"><span className="text-blue-700">Tipo:</span><span className="font-medium text-blue-900">{device.hostTypeName || getHostTypeLabel(device.hostTypeCode)}</span></div>
+                  {device.hasPrinter != null && (
+                    <div className="flex justify-between"><span className="text-blue-700">Impresora:</span><span className={`font-medium ${device.hasPrinter ? 'text-green-600' : 'text-gray-500'}`}>{device.hasPrinter ? 'Sí' : 'No'}</span></div>
+                  )}
                 </div>
                 <div className="bg-gray-50 border border-gray-200 rounded-sm p-2 text-xs space-y-1">
                   <div className="flex items-center gap-1 font-medium text-text-primary mb-1">

@@ -7,29 +7,21 @@ interface HostResponse {
 }
 
 interface CreateHostRequest {
-  hostId: number;
   name: string;
   description?: string;
   ipAddress?: string;
   siteId?: string;
   deviceId?: string;
-  connected: boolean;
-  connectedLastTime?: string | Date;
-  connectedLastUserId?: number;
   active: boolean;
   hostTypeId?: number;
 }
 
 interface UpdateHostRequest {
-  hostId?: number;
   name?: string;
   description?: string;
   ipAddress?: string;
   siteId?: string;
   deviceId?: string;
-  connected?: boolean;
-  connectedLastTime?: string | Date;
-  connectedLastUserId?: number;
   active?: boolean;
   hostTypeId?: number;
 }
@@ -46,6 +38,10 @@ export interface IHost {
   connectedLastUserId?: number;
   active: boolean;
   hostTypeId?: number;
+  hostTypeName?: string;
+  hostTypeDescription?: string;
+  hostTypeCode?: string;
+  hasPrinter?: boolean;
 }
 
 export const hostService = {

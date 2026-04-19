@@ -1,20 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { Monitor, Save, X, Edit, Plus, Clock, User, Smartphone, RefreshCw } from 'lucide-react';
+import { Monitor, Save, X, Edit, Plus, User, Smartphone, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ITerminal, terminalService } from '../../../services/terminalService';
 import { getPumpsConfig } from '../../../services/dispenserService';
 import { PumpConfig } from '../../../types/dispenser';
 import { CompactButton } from '../../ui';
+import { getHostTypeLabel } from '../../../types/host_type.enum';
 
 interface TerminalFormData {
   siteId: string;
   terminalId: number;
   name: string;
   sectorId?: number;
-  connected: boolean;
   active: boolean;
   hasIntegratedDispenser: boolean;
   linkedDispenserId: number | null;
+  terminalType: number;
+  productList: number;
+  useCustomerDisplay: boolean;
+  openCashDrawer: boolean;
+  printDevice: number;
+  cashFund: number;
+  productListType: number;
 }
 
 interface TerminalModalProps {
@@ -37,14 +44,20 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
   const [loading, setLoading] = useState(false);
   const [dispensers, setDispensers] = useState<PumpConfig[]>([]);
   const [formData, setFormData] = useState<TerminalFormData>({
-    siteId: '', 
-    terminalId: 0, 
-    name: '', 
-    sectorId: undefined, 
-    connected: false, 
+    siteId: '',
+    terminalId: 0,
+    name: '',
+    sectorId: undefined,
     active: true,
     hasIntegratedDispenser: false,
-    linkedDispenserId: null
+    linkedDispenserId: null,
+    terminalType: 1,
+    productList: 1,
+    useCustomerDisplay: false,
+    openCashDrawer: false,
+    printDevice: 1,
+    cashFund: 0,
+    productListType: 1,
   });
 
   const isEditing = mode === 'edit';
@@ -71,21 +84,33 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
         terminalId: terminal.terminalId || 0,
         name: terminal.name || '',
         sectorId: terminal.sectorId,
-        connected: Boolean(terminal.connected),
         active: Boolean(terminal.active),
         hasIntegratedDispenser: terminal.hasIntegratedDispenser || false,
-        linkedDispenserId: terminal.linkedDispenserId || null
+        linkedDispenserId: terminal.linkedDispenserId || null,
+        terminalType: terminal.terminalType ?? 1,
+        productList: terminal.productList ?? 1,
+        useCustomerDisplay: terminal.useCustomerDisplay ?? false,
+        openCashDrawer: terminal.openCashDrawer ?? false,
+        printDevice: terminal.printDevice ?? 1,
+        cashFund: terminal.cashFund ?? 0,
+        productListType: terminal.productListType ?? 1,
       });
     } else if (mode === 'create' && isOpen) {
-      setFormData({ 
-        siteId: '', 
-        terminalId: 0, 
-        name: '', 
-        sectorId: undefined, 
-        connected: false, 
+      setFormData({
+        siteId: '',
+        terminalId: 0,
+        name: '',
+        sectorId: undefined,
         active: true,
         hasIntegratedDispenser: false,
-        linkedDispenserId: null
+        linkedDispenserId: null,
+        terminalType: 1,
+        productList: 1,
+        useCustomerDisplay: false,
+        openCashDrawer: false,
+        printDevice: 1,
+        cashFund: 0,
+        productListType: 1,
       });
     }
   }, [terminal, isOpen, isEditing, isViewing, mode]);
@@ -202,17 +227,48 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <label className="flex items-center justify-between px-2 h-7 bg-gray-50 border border-gray-200 rounded-sm cursor-pointer">
-              <span className="text-xs text-text-primary">Conectada</span>
-              <input type="checkbox" name="connected" checked={formData.connected} onChange={handleInputChange}
-                disabled={isViewing} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-            </label>
+          <div className="grid grid-cols-1 gap-3">
             <label className="flex items-center justify-between px-2 h-7 bg-gray-50 border border-gray-200 rounded-sm cursor-pointer">
               <span className="text-xs text-text-primary">Activa</span>
               <input type="checkbox" name="active" checked={formData.active} onChange={handleInputChange}
                 disabled={isViewing} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
             </label>
+          </div>
+
+          <div className="space-y-3 pt-2 border-t border-gray-100">
+            <h4 className="text-2xs font-semibold uppercase tracking-wide text-text-secondary">Configuración</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Tipo Terminal</label>
+                <input type="number" name="terminalType" value={formData.terminalType} onChange={handleInputChange} disabled={isViewing}
+                  className={inputCls(isViewing)} min={1} />
+              </div>
+              <div>
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Lista de Productos</label>
+                <input type="number" name="productList" value={formData.productList} onChange={handleInputChange} disabled={isViewing}
+                  className={inputCls(isViewing)} min={1} />
+              </div>
+              <div>
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Dispositivo Impresión</label>
+                <input type="number" name="printDevice" value={formData.printDevice} onChange={handleInputChange} disabled={isViewing}
+                  className={inputCls(isViewing)} min={1} />
+              </div>
+              <div>
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Fondo de Caja</label>
+                <input type="number" name="cashFund" value={formData.cashFund} onChange={handleInputChange} disabled={isViewing}
+                  className={inputCls(isViewing)} min={0} step="0.01" />
+              </div>
+              <label className="flex items-center justify-between px-2 h-7 bg-gray-50 border border-gray-200 rounded-sm cursor-pointer">
+                <span className="text-xs text-text-primary">Display Cliente</span>
+                <input type="checkbox" name="useCustomerDisplay" checked={formData.useCustomerDisplay} onChange={handleInputChange}
+                  disabled={isViewing} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+              </label>
+              <label className="flex items-center justify-between px-2 h-7 bg-gray-50 border border-gray-200 rounded-sm cursor-pointer">
+                <span className="text-xs text-text-primary">Abrir Cajón</span>
+                <input type="checkbox" name="openCashDrawer" checked={formData.openCashDrawer} onChange={handleInputChange}
+                  disabled={isViewing} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+              </label>
+            </div>
           </div>
 
           <div className="space-y-3 pt-2 border-t border-gray-100">
@@ -249,8 +305,8 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
           </div>
 
           {terminal && isViewing && (
-            <div className="space-y-2">
-              <h4 className="text-2xs font-semibold uppercase tracking-wide text-text-secondary mb-2 pb-1 border-b border-gray-200">Información de Conexión</h4>
+            <div className="space-y-3 pt-2 border-t border-gray-100">
+              <h4 className="text-2xs font-semibold uppercase tracking-wide text-text-secondary pb-1 border-b border-gray-200">Información de Conexión</h4>
               <div className="grid grid-cols-2 gap-3">
                 {terminal.connected && (
                   <div className="bg-blue-50 border border-blue-200 rounded-sm p-2 text-xs space-y-1">
@@ -267,6 +323,18 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
                   <div className="flex justify-between"><span className="text-text-muted">Hora:</span><span className="font-medium">{formatDate(terminal.lastConnectionTime)}</span></div>
                 </div>
               </div>
+
+              {terminal.device && (
+                <div>
+                  <h4 className="text-2xs font-semibold uppercase tracking-wide text-text-secondary pb-1 border-b border-gray-200 mb-2">Dispositivo Conectado</h4>
+                  <div className="bg-gray-50 border border-gray-200 rounded-sm p-2 text-xs space-y-1">
+                    <div className="flex justify-between"><span className="text-text-muted">Nombre:</span><span className="font-medium">{terminal.device.name}</span></div>
+                    <div className="flex justify-between"><span className="text-text-muted">Tipo:</span><span className="font-medium">{terminal.device.hostTypeName || getHostTypeLabel(terminal.device.hostTypeCode)}</span></div>
+                    <div className="flex justify-between"><span className="text-text-muted">Código:</span><span className="font-medium font-mono text-xs">{terminal.device.hostTypeCode}</span></div>
+                    <div className="flex justify-between"><span className="text-text-muted">Impresora:</span><span className={`font-medium ${terminal.device.hasPrinter ? 'text-green-600' : 'text-gray-500'}`}>{terminal.device.hasPrinter ? 'Sí' : 'No'}</span></div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
