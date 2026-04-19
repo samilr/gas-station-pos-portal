@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Users, Settings, BarChart3, FileText,
   TrendingUp, Activity, AlertTriangle, Sliders, Receipt,
-  Package, Monitor, Smartphone, Building2, FuelIcon, Store,
+  Package, Monitor, Smartphone, Building2, FuelIcon, Store, Layers,
   DollarSign, Landmark, Zap, CreditCard, Shield, BookUser,
   Gauge, DollarSign as PriceIcon, Container, Cpu, Wrench,
   Tag, ClipboardList, History, Barcode, Wrench as MaintenanceIcon,
@@ -88,8 +88,9 @@ export const menuItems: MenuItem[] = [
     subItems: [
       { id: 'settings.payments', label: 'Métodos de Pago', icon: CreditCard, permission: 'settings.view' },
       { id: 'settings.appconfig', label: 'App Config Móvil', icon: Smartphone, permission: 'settings.view' },
-      { id: 'pos.terminals', label: 'Terminales POS', icon: Monitor, permission: 'terminals.view' },
-      { id: 'pos.devices', label: 'Dispositivos POS', icon: Smartphone, permission: 'devices.view' },
+      { id: 'pos.terminals', label: 'Terminales', icon: Monitor, permission: 'terminals.view' },
+      { id: 'pos.devices', label: 'Dispositivos', icon: Smartphone, permission: 'devices.view' },
+      { id: 'pos.host-types', label: 'Tipos de Dispositivo', icon: Layers, permission: 'devices.view' },
       { id: 'sites.list', label: 'Sucursales', icon: Building2, permission: 'sites.view' },
       { id: 'dataphones.suppliers', label: 'Proveedores Dataphone', icon: CreditCard, permission: 'settings.view' },
       { id: 'dataphones.list', label: 'Dataphones', icon: Smartphone, permission: 'settings.view' },
@@ -128,6 +129,7 @@ export const sectionTitles: Record<string, string> = {
   pos: 'Puntos de Venta',
   'pos.terminals': 'Terminales',
   'pos.devices': 'Dispositivos',
+  'pos.host-types': 'Tipos de Dispositivo',
   sites: 'Sucursales',
   'sites.list': 'Sucursales',
   dispensers: 'Control Estación',

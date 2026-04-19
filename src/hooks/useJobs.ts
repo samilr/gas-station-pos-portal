@@ -1,52 +1,52 @@
-import { useCallback, useState } from 'react';
-import jobsService from '../services/jobsService';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { jobsService, ScheduledJob } from '../services/jobsService';
 
-export type JobStatus = 'idle' | 'running' | 'success' | 'error';
+const AUTO_REFRESH_MS = 15000;
 
-export interface JobState {
-  status: JobStatus;
-  message?: string;
-  error?: string;
-  lastRunAt?: string;
-}
+export const useScheduledJobs = (autoRefresh: boolean = true) => {
+  const [jobs, setJobs] = useState<ScheduledJob[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const intervalRef = useRef<number | null>(null);
 
-const initial: JobState = { status: 'idle' };
-
-export function useJobs() {
-  const [encf, setEncf] = useState<JobState>(initial);
-  const [taxpayers, setTaxpayers] = useState<JobState>(initial);
-
-  const runEncfStatus = useCallback(async () => {
-    setEncf({ status: 'running' });
-    const res = await jobsService.getEncfStatus();
-    const now = new Date().toISOString();
-    if (res.successful) {
-      setEncf({ status: 'success', message: res.message, lastRunAt: now });
-    } else {
-      setEncf({ status: 'error', error: res.error || 'Error al ejecutar el job', lastRunAt: now });
+  const loadJobs = useCallback(async (silent: boolean = false) => {
+    if (!silent) setLoading(true);
+    setError(null);
+    try {
+      const res = await jobsService.getJobs();
+      if (res.successful) {
+        setJobs(res.data || []);
+      } else {
+        setError(res.error || 'Error al cargar jobs');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al cargar jobs');
+    } finally {
+      if (!silent) setLoading(false);
     }
-    return res;
   }, []);
 
-  const runDownloadTaxpayers = useCallback(async () => {
-    setTaxpayers({ status: 'running' });
-    const res = await jobsService.downloadTaxpayers();
-    const now = new Date().toISOString();
-    if (res.successful) {
-      setTaxpayers({
-        status: 'success',
-        message: res.inserted !== undefined
-          ? `${res.inserted.toLocaleString()} contribuyentes insertados`
-          : 'Descarga completada',
-        lastRunAt: now,
-      });
-    } else {
-      setTaxpayers({ status: 'error', error: res.error || 'Error al ejecutar el job', lastRunAt: now });
-    }
-    return res;
-  }, []);
+  const refresh = useCallback(() => loadJobs(false), [loadJobs]);
+  const silentRefresh = useCallback(() => loadJobs(true), [loadJobs]);
 
-  return { encf, taxpayers, runEncfStatus, runDownloadTaxpayers };
-}
+  useEffect(() => {
+    loadJobs(false);
+  }, [loadJobs]);
 
-export default useJobs;
+  useEffect(() => {
+    if (!autoRefresh) return;
+    intervalRef.current = window.setInterval(() => {
+      loadJobs(true);
+    }, AUTO_REFRESH_MS);
+    return () => {
+      if (intervalRef.current) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [autoRefresh, loadJobs]);
+
+  return { jobs, loading, error, refresh, silentRefresh };
+};
+
+export default useScheduledJobs;

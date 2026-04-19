@@ -69,6 +69,7 @@ export const useNavigation = () => {
     'pos': '/dashboard/pos',
     'pos.terminals': '/dashboard/pos/terminals',
     'pos.devices': '/dashboard/pos/devices',
+    'pos.host-types': '/dashboard/pos/host-types',
     'sites': '/dashboard/sites',
     'sites.list': '/dashboard/sites',
     'sites.create': '/dashboard/sites/create',

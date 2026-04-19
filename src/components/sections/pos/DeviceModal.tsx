@@ -236,9 +236,9 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
                   <div className="flex justify-between"><span className="text-blue-700">Host ID:</span><span className="font-medium text-blue-900">{device.hostId}</span></div>
                   <div className="flex justify-between"><span className="text-blue-700">IP:</span><span className="font-medium text-blue-900">{device.ipAddress || 'N/A'}</span></div>
                   <div className="flex justify-between"><span className="text-blue-700">Estado:</span><span className={`font-medium ${device.active ? 'text-green-600' : 'text-red-600'}`}>{device.active ? 'Activo' : 'Inactivo'}</span></div>
-                  <div className="flex justify-between"><span className="text-blue-700">Tipo:</span><span className="font-medium text-blue-900">{device.hostTypeName || getHostTypeLabel(device.hostTypeCode)}</span></div>
-                  {device.hasPrinter != null && (
-                    <div className="flex justify-between"><span className="text-blue-700">Impresora:</span><span className={`font-medium ${device.hasPrinter ? 'text-green-600' : 'text-gray-500'}`}>{device.hasPrinter ? 'Sí' : 'No'}</span></div>
+                  <div className="flex justify-between"><span className="text-blue-700">Tipo:</span><span className="font-medium text-blue-900">{device.hostType?.name || getHostTypeLabel(device.hostType?.code)}</span></div>
+                  {device.hostType?.hasPrinter != null && (
+                    <div className="flex justify-between"><span className="text-blue-700">Impresora:</span><span className={`font-medium ${device.hostType.hasPrinter ? 'text-green-600' : 'text-gray-500'}`}>{device.hostType.hasPrinter ? 'Sí' : 'No'}</span></div>
                   )}
                 </div>
                 <div className="bg-gray-50 border border-gray-200 rounded-sm p-2 text-xs space-y-1">

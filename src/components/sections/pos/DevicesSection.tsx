@@ -64,8 +64,8 @@ const DevicesSection: React.FC = () => {
   });
 
   const getHostTypeText = (device: IHost): string => {
-    if (device.hostTypeName) return device.hostTypeName;
-    if (device.hostTypeCode) return getHostTypeLabel(device.hostTypeCode);
+    if (device.hostType?.name) return device.hostType.name;
+    if (device.hostType?.code) return getHostTypeLabel(device.hostType.code);
     return 'N/A';
   };
 

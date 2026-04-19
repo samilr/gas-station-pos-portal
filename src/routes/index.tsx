@@ -9,6 +9,7 @@ import UserProfile from '../components/sections/users/UserProfile';
 import TransactionsSection from '../components/sections/transactions/TransactionsSection';
 import TerminalsSection from '../components/sections/pos/TerminalsSection';
 import DevicesSection from '../components/sections/pos/DevicesSection';
+import HostTypesSection from '../components/sections/pos/HostTypesSection';
 import SitesSection from '../components/sections/sites/SitesSection';
 import GenericSection from '../components/sections/GenericSection';
 import SettingsGeneralSection from '../components/sections/settings/SettingsGeneralSection';
@@ -374,6 +375,10 @@ export const router = createBrowserRouter([
           {
             path: 'devices',
             element: <PermissionRoute permission="devices.view"><DevicesSection /></PermissionRoute>
+          },
+          {
+            path: 'host-types',
+            element: <PermissionRoute permission="devices.view"><HostTypesSection /></PermissionRoute>
           }
         ]
       },

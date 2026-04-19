@@ -1,5 +1,6 @@
 import { buildApiUrl } from "../config/api";
 import { apiGet, apiPost, apiPut, apiDelete, ApiResponse } from "./apiInterceptor";
+import { IHostType } from "./hostTypeService";
 
 interface HostResponse {
   successful: boolean;
@@ -38,10 +39,7 @@ export interface IHost {
   connectedLastUserId?: number;
   active: boolean;
   hostTypeId?: number;
-  hostTypeName?: string;
-  hostTypeDescription?: string;
-  hostTypeCode?: string;
-  hasPrinter?: boolean;
+  hostType?: IHostType | null;
 }
 
 export const hostService = {

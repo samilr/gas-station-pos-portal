@@ -160,6 +160,18 @@ export const apiPut = async <T = any>(
   });
 };
 
+export const apiPatch = async <T = any>(
+  url: string,
+  body?: any,
+  headers?: Record<string, string>
+): Promise<ApiResponse<T>> => {
+  return apiRequest<T>(url, {
+    method: 'PATCH',
+    headers,
+    body: body ? JSON.stringify(body) : undefined
+  });
+};
+
 export const apiDelete = async <T = any>(url: string, headers?: Record<string, string>): Promise<ApiResponse<T>> => {
   return apiRequest<T>(url, { method: 'DELETE', headers });
 };
