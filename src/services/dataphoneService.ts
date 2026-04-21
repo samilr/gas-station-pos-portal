@@ -40,6 +40,36 @@ export interface ItemResponse {
   error?: string;
 }
 
+export interface TestConnectionRequest {
+  siteId: string;
+  terminalId: number;
+  amountCents?: number;
+}
+
+export interface CardPaymentResult {
+  approved: boolean;
+  authorizationNumber: string | null;
+  reference: number | null;
+  retrievalReference: number | null;
+  host: number | null;
+  batch: number | null;
+  cardProduct: string | null;
+  maskedPan: string | null;
+  holderName: string | null;
+  terminalId: string | null;
+  merchantId: string | null;
+  transactionDateTime: string | null;
+  messages: string[];
+  rawRequest: string | null;
+  rawResponse: string | null;
+}
+
+export interface TestConnectionResponse {
+  successful: boolean;
+  data: CardPaymentResult | null;
+  error?: string;
+}
+
 class DataphoneService {
   async list(filters?: { siteId?: string }): Promise<ListResponse> {
     const qs = new URLSearchParams();
@@ -72,6 +102,11 @@ class DataphoneService {
   async remove(id: number): Promise<{ successful: boolean; error?: string }> {
     const res = await apiDelete(buildApiUrl(`dataphones/${id}`));
     return { successful: res.successful, error: res.error };
+  }
+
+  async testConnection(id: number, payload: TestConnectionRequest): Promise<TestConnectionResponse> {
+    const res = await apiPost<CardPaymentResult>(buildApiUrl(`dataphones/${id}/test-connection`), payload);
+    return { successful: res.successful, data: res.data || null, error: res.error };
   }
 }
 
