@@ -4,6 +4,63 @@ import { apiGet, apiPost } from './apiInterceptor';
 export type CardPaymentStatus =
   | 'Staged' | 'Approved' | 'LinkedToTrans' | 'Voided' | 'Refunded' | 'Declined' | 'Error';
 
+// Mapas de enums numéricos (como devuelve el API) a strings legibles
+const STATUS_MAP: Record<number, CardPaymentStatus> = {
+  0: 'Staged',
+  1: 'Approved',
+  2: 'Error',
+  3: 'LinkedToTrans',
+  4: 'Voided',
+  5: 'Refunded',
+  6: 'Declined',
+};
+
+const OPERATION_MAP: Record<number, string> = {
+  0: 'Sale',
+  1: 'Refund',
+  2: 'Void',
+  3: 'Close',
+};
+
+const normalizeStatus = (s: unknown): CardPaymentStatus => {
+  if (typeof s === 'number') return STATUS_MAP[s] ?? 'Error';
+  if (typeof s === 'string') return s as CardPaymentStatus;
+  return 'Error';
+};
+
+const normalizeOperation = (o: unknown): string => {
+  if (typeof o === 'number') return OPERATION_MAP[o] ?? String(o);
+  if (typeof o === 'string') return o;
+  return '';
+};
+
+const normalizePayment = (raw: any): CardPayment => ({
+  cardPaymentId: raw.cardPaymentId,
+  siteId: raw.siteId,
+  terminalId: raw.terminalId,
+  posTransNumber: raw.posTransNumber ?? null,
+  // API expone `linkedTransNumber`/`linkedTransPaymLine`; mantenemos alias legacy
+  transNumber: raw.transNumber ?? raw.linkedTransNumber ?? null,
+  transPaymLine: raw.transPaymLine ?? raw.linkedTransPaymLine ?? null,
+  amountCents: raw.amountCents ?? 0,
+  taxCents: raw.taxCents ?? 0,
+  otherTaxesCents: raw.otherTaxesCents ?? 0,
+  approved: raw.approved ?? (raw.status === 1 || raw.status === 'Approved'),
+  authorizationNumber: raw.authorizationNumber ?? null,
+  reference: raw.reference ?? null,
+  host: raw.host ?? null,
+  batch: raw.batch ?? null,
+  cardProduct: raw.cardProduct ?? null,
+  maskedPan: raw.maskedPan ?? null,
+  status: normalizeStatus(raw.status),
+  operation: normalizeOperation(raw.operation),
+  message: raw.message ?? null,
+  rawRequest: raw.rawRequest ?? null,
+  rawResponse: raw.rawResponse ?? null,
+  createdAt: raw.createdAt,
+  updatedAt: raw.updatedAt ?? null,
+});
+
 export interface CardPayment {
   cardPaymentId: string;
   siteId: string;
@@ -64,20 +121,24 @@ class CardPaymentService {
     const raw: any = res.data;
     if (!res.successful) return { successful: false, data: [], error: res.error };
     if (raw?.pagination) {
-      return { successful: true, data: Array.isArray(raw.data) ? raw.data : [], pagination: raw.pagination };
+      const list = Array.isArray(raw.data) ? raw.data.map(normalizePayment) : [];
+      return { successful: true, data: list, pagination: raw.pagination };
     }
-    return { successful: true, data: Array.isArray(raw) ? raw : [] };
+    const list = Array.isArray(raw) ? raw.map(normalizePayment) : [];
+    return { successful: true, data: list };
   }
 
   async getOrphaned(siteId?: string): Promise<{ successful: boolean; data: CardPayment[]; error?: string }> {
     const url = buildApiUrl(`card-payments/orphaned${siteId ? `?siteId=${encodeURIComponent(siteId)}` : ''}`);
     const res = await apiGet<any>(url);
-    return { successful: res.successful, data: Array.isArray(res.data) ? res.data : [], error: res.error };
+    const list = Array.isArray(res.data) ? res.data.map(normalizePayment) : [];
+    return { successful: res.successful, data: list, error: res.error };
   }
 
   async getById(id: string): Promise<{ successful: boolean; data: CardPayment | null; error?: string }> {
-    const res = await apiGet<CardPayment>(buildApiUrl(`card-payments/${id}`));
-    return { successful: res.successful, data: (res.data as CardPayment) || null, error: res.error };
+    const res = await apiGet<any>(buildApiUrl(`card-payments/${id}`));
+    const data = res.data ? normalizePayment(res.data) : null;
+    return { successful: res.successful, data, error: res.error };
   }
 
   async voidPayment(id: string): Promise<{ successful: boolean; data: any; error?: string }> {

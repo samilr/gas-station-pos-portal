@@ -3,6 +3,7 @@ import { Package, Save, X, Edit, Plus, RefreshCw, Image as ImageIcon } from 'luc
 import toast from 'react-hot-toast';
 import categoryService, { Category } from '../../../services/categoryService';
 import { CompactButton } from '../../ui';
+import { CategoryAutocomplete } from '../../ui/autocompletes';
 
 interface Props {
   isOpen: boolean;
@@ -171,11 +172,14 @@ const CategoryModal: React.FC<Props> = ({ isOpen, onClose, category, mode, onSuc
                   className={inputCls(isViewing)} placeholder="Bebidas Alcohólicas" />
               </div>
               <div>
-                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Ctrl Category ID</label>
-                <input type="text" value={form.ctrlCategoryId}
-                  onChange={(e) => update('ctrlCategoryId', e.target.value.toUpperCase())}
-                  disabled={isViewing} maxLength={10}
-                  className={inputCls(isViewing)} placeholder="(Por defecto = Category ID)" />
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Categoría padre (Ctrl)</label>
+                <CategoryAutocomplete
+                  value={form.ctrlCategoryId}
+                  onChange={(v) => update('ctrlCategoryId', v ?? '')}
+                  disabled={isViewing}
+                  excludeId={isEditing ? form.categoryId : undefined}
+                  placeholder="(Por defecto = Category ID)"
+                />
               </div>
               <div>
                 <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">URL de imagen</label>

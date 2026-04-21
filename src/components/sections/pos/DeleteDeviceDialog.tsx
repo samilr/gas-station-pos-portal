@@ -18,7 +18,7 @@ const DeleteDeviceDialog: React.FC<DeleteDeviceDialogProps> = ({ isOpen, onClose
     if (!device) return;
     setDeleting(true);
     try {
-      const response = await hostService.deleteHost(device.host_id);
+      const response = await hostService.deleteHost(device.hostId);
       if (response.successful) {
         toast.success(`Dispositivo eliminado exitosamente \n ${device.name}`, { duration: 5000 });
         onSuccess();

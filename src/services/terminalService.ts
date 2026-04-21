@@ -12,8 +12,8 @@ interface CreateTerminalRequest {
   name: string;
   sectorId?: number;
   active?: boolean;
-  hasIntegratedDispenser?: boolean;
-  linkedDispenserId?: number | null;
+  fuelIslandId?: number | null;
+  fuelIslandEnabled?: boolean;
   terminalType?: number;
   productList?: number;
   useCustomerDisplay?: boolean;
@@ -27,8 +27,9 @@ interface UpdateTerminalRequest {
   name?: string;
   sectorId?: number;
   active?: boolean;
-  hasIntegratedDispenser?: boolean;
-  linkedDispenserId?: number | null;
+  fuelIslandId?: number | null;
+  unassignFuelIsland?: boolean;
+  fuelIslandEnabled?: boolean;
   terminalType?: number;
   productList?: number;
   useCustomerDisplay?: boolean;
@@ -71,8 +72,8 @@ export interface ITerminal {
   connectedStaftId?: number | null;
   active: boolean;
   productListType: number;
-  hasIntegratedDispenser: boolean;
-  linkedDispenserId: number | null;
+  fuelIslandId: number | null;
+  fuelIslandEnabled: boolean;
   device?: ITerminalDevice | null;
 }
 

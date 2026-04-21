@@ -6,6 +6,7 @@ import { IUser, userService } from "../../../services/userService";
 import { PermissionGate } from "../../common";
 import { Role } from "../../../config/permissions";
 import { CompactButton } from "../../ui";
+import { SiteAutocomplete, RoleAutocomplete, StaftGroupAutocomplete } from "../../ui/autocompletes";
 
 interface UserFormData {
   username: string;
@@ -287,16 +288,12 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Rol *</label>
-                  <select name="role" value={formData.role} onChange={handleInputChange} required disabled={isViewing || !canEditUsers}
-                    className={inputCls(isViewing || !canEditUsers)}>
-                    <option value="1">ADMIN</option>
-                    <option value="2">CONFIGURATION</option>
-                    <option value="3">SUPERVISOR</option>
-                    <option value="4">MANAGER</option>
-                    <option value="5">SELLER</option>
-                    <option value="6">AUDIT</option>
-                    <option value="7">ACCOUNTANT</option>
-                  </select>
+                  <RoleAutocomplete
+                    value={formData.role === '' ? null : parseInt(formData.role, 10)}
+                    onChange={(v) => setFormData(prev => ({ ...prev, role: v == null ? '' : String(v) }))}
+                    disabled={isViewing || !canEditUsers}
+                    required
+                  />
                 </div>
                 <div>
                   <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Acceso al Portal</label>
@@ -314,13 +311,12 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Grupo de Personal *</label>
-                <select name="staft_group" value={formData.staft_group} onChange={handleInputChange} required disabled={isViewing} className={inputCls(isViewing)}>
-                  <option value="">Seleccionar grupo</option>
-                  <option value="1">Vendedor Pista</option>
-                  <option value="2">Vendedor Tienda</option>
-                  <option value="3">Administrador Estacion</option>
-                  <option value="4">Administracion ISLA</option>
-                </select>
+                <StaftGroupAutocomplete
+                  value={formData.staft_group === '' ? null : parseInt(formData.staft_group, 10)}
+                  onChange={(v) => setFormData(prev => ({ ...prev, staft_group: v == null ? '' : String(v) }))}
+                  disabled={isViewing}
+                  required
+                />
               </div>
               <div>
                 <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Código de empleado *</label>
@@ -328,7 +324,12 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
               </div>
               <div>
                 <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Sucursal *</label>
-                <input type="text" name="site_id" value={formData.site_id} onChange={handleInputChange} required disabled={isViewing} className={inputCls(isViewing)} />
+                <SiteAutocomplete
+                  value={formData.site_id}
+                  onChange={(v) => setFormData(prev => ({ ...prev, site_id: v ?? '' }))}
+                  disabled={isViewing}
+                  required
+                />
               </div>
               <div>
                 <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Turno</label>

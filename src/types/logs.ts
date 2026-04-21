@@ -18,7 +18,7 @@ export interface IErrorLog {
   siteId?: string | null;
   errorCode?: string;
   message: string;
-  stacktrace?: string;
+  stackTrace?: string | null;
   context?: string;
   deviceId?: string | null;
   terminalId?: number | null;

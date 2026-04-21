@@ -87,6 +87,7 @@ export const useNavigation = () => {
     'dispensers.tags': '/dashboard/dispensers/tags',
     'dispensers.reports': '/dashboard/dispensers/reports',
     'dispensers.transactions': '/dashboard/dispensers/transactions',
+    'dispensers.islands': '/dashboard/dispensers/islands',
     'logs': '/dashboard/logs',
     'logs.actions': '/dashboard/logs/actions',
     'logs.errors': '/dashboard/logs/errors',

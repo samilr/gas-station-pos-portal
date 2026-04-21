@@ -31,6 +31,7 @@ import ReportsSection from '../components/sections/dispensers/ReportsSection';
 import FuelTransactionsSection from '../components/sections/dispensers/FuelTransactionsSection';
 import FuelDashboardSection from '../components/sections/dispensers/FuelDashboardSection';
 import DispensersConfigSection from '../components/sections/dispensers/DispensersConfigSection';
+import FuelIslandsSection from '../components/sections/dispensers/FuelIslandsSection';
 import RolesSection from '../components/sections/users/RolesSection';
 import StaftGroupsSection from '../components/sections/users/StaftGroupsSection';
 import TaxpayersSection from '../components/sections/gov/TaxpayersSection';
@@ -409,6 +410,10 @@ export const router = createBrowserRouter([
           {
             path: 'config',
             element: <PermissionRoute permission="dispensers.view"><DispensersConfigSection /></PermissionRoute>
+          },
+          {
+            path: 'islands',
+            element: <PermissionRoute permission="dispensers.view"><FuelIslandsSection /></PermissionRoute>
           },
           {
             path: 'monitor',

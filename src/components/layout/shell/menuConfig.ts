@@ -77,6 +77,7 @@ export const menuItems: MenuItem[] = [
       { id: 'dispensers.tags', label: 'Tags RFID', icon: Tag, permission: 'dispensers.view' },
       { id: 'dispensers.reports', label: 'Reportes', icon: ClipboardList, permission: 'dispensers.view' },
       { id: 'dispensers.config', label: 'Configuración', icon: Settings, permission: 'dispensers.view' },
+      { id: 'dispensers.islands', label: 'Fuel Islands', icon: Layers, permission: 'dispensers.view' },
     ],
   },
   {
@@ -135,6 +136,7 @@ export const sectionTitles: Record<string, string> = {
   dispensers: 'Control Estación',
   'dispensers.dashboard': 'Dashboard',
   'dispensers.config': 'Configuración',
+  'dispensers.islands': 'Fuel Islands',
   'dispensers.monitor': 'Monitoreo',
   'dispensers.control': 'Control',
   'dispensers.prices': 'Precios',

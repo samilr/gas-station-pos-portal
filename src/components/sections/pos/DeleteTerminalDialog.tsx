@@ -18,7 +18,7 @@ const DeleteTerminalDialog: React.FC<DeleteTerminalDialogProps> = ({ isOpen, onC
     if (!terminal) return;
     setDeleting(true);
     try {
-      const response = await terminalService.deleteTerminal(terminal.site_id, terminal.terminal_id);
+      const response = await terminalService.deleteTerminal(terminal.siteId, terminal.terminalId);
       if (response.successful) {
         toast.success(`Terminal eliminada exitosamente \n ${terminal.name}`, { duration: 5000 });
         onSuccess();

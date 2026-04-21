@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Package, Save, RefreshCw } from 'lucide-react';
-import { IProduct, ICreateProductDto, IUpdateProductDto } from '../../../../types/product';
+import { IProduct, ICreateProductDto, IUpdateProductDto } from '../../../types/product';
 import { CompactButton } from '../../ui';
+import { CategoryAutocomplete, TaxAutocomplete } from '../../ui/autocompletes';
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -138,7 +139,12 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
               </div>
               <div>
                 <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Categoría *</label>
-                <input type="text" value={formData.categoryId} onChange={(e) => handleInputChange('categoryId', e.target.value)} disabled={isDisabled} className={inputCls} required />
+                <CategoryAutocomplete
+                  value={formData.categoryId}
+                  onChange={(v) => handleInputChange('categoryId', v ?? '')}
+                  disabled={isDisabled}
+                  required
+                />
               </div>
               <div>
                 <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Grupo de Cuenta</label>
@@ -149,8 +155,13 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
             <div className="space-y-3">
               <h4 className="text-2xs font-semibold uppercase tracking-wide text-text-secondary mb-2 pb-1 border-b border-gray-200">Configuración</h4>
               <div>
-                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">ID de Impuesto *</label>
-                <input type="text" value={formData.taxId} onChange={(e) => handleInputChange('taxId', e.target.value)} disabled={isDisabled} className={inputCls} required />
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Impuesto *</label>
+                <TaxAutocomplete
+                  value={formData.taxId}
+                  onChange={(v) => handleInputChange('taxId', v ?? '')}
+                  disabled={isDisabled}
+                  required
+                />
               </div>
               <div>
                 <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Precio</label>
