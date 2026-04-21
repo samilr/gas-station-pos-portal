@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { AlertCircle, Lock, Unlock, LayoutGrid, List } from 'lucide-react';
+import {
+  AlertCircle, Lock, Unlock, LayoutGrid, List, Fuel, Play, Square, Pause, RotateCcw, Zap, X,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import DispenserCard from './DispenserCard';
+import DispenserMonitorCard from './DispenserMonitorCard';
+import TanksSidebar from './TanksSidebar';
+import AuthorizeModal from './AuthorizeModal';
+import ConfirmActionModal from './ConfirmActionModal';
 import {
   getAllPumpStatuses,
   lockAllPumps,
@@ -10,6 +16,11 @@ import {
   getPumpNumber,
   lockPump,
   unlockPump,
+  stopPump,
+  emergencyStopPump,
+  suspendPump,
+  resumePump,
+  closeTransaction,
 } from '../../../services/dispenserService';
 import type {
   PumpStatusPacket,
@@ -18,12 +29,23 @@ import type {
   PumpOfflineStatusData,
   PumpEndOfTransactionStatusData,
   PumpVisualState,
+  NozzlePrice,
 } from '../../../types/dispenser';
 import { useHeader } from '../../../context/HeaderContext';
 import { mapFuelProductName } from '../../../utils/fuelProductMapping';
 import { CompactButton } from '../../ui';
 import StatusDot from '../../ui/StatusDot';
 import Toolbar from '../../ui/Toolbar';
+
+// Mapeo de indice de pistola a codigo de grado de combustible (usado para autorizar)
+const NOZZLE_FUEL_GRADE_MAP: Record<number, { id: number; code: string }> = {
+  1: { id: 1, code: '1-025' },
+  2: { id: 2, code: '1-001' },
+  3: { id: 3, code: '2-025' },
+  4: { id: 4, code: '2-001' },
+  5: { id: 5, code: '' },
+  6: { id: 6, code: '' },
+};
 
 const POLLING_INTERVAL = 2000;
 
@@ -44,14 +66,24 @@ const STATE_DOT_COLOR: Record<PumpVisualState, string> = {
 };
 
 const DispensersSection: React.FC = () => {
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards');
+  const [viewMode, setViewMode] = useState<'table' | 'cards' | 'visual'>('visual');
   const [pumpStatuses, setPumpStatuses] = useState<Map<number, PumpStatusPacket | null>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isLockingAll, setIsLockingAll] = useState(false);
-  const [isUnlockingAll, setIsUnlockingAll] = useState(false);
   const [filterState, setFilterState] = useState<string>('all');
   const { setSubtitle } = useHeader();
+
+  // Estado de selección + acciones
+  const [selectedPumps, setSelectedPumps] = useState<Set<number>>(new Set());
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [authorizeModal, setAuthorizeModal] = useState<{ pump: number; nozzlePrices: NozzlePrice[] } | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{
+    title: string;
+    message: string;
+    confirmLabel: string;
+    confirmColor: 'red' | 'orange' | 'green';
+    onConfirm: () => Promise<void>;
+  } | null>(null);
 
   useEffect(() => {
     setSubtitle('Monitoreo en tiempo real del estado de las dispensadoras');
@@ -90,36 +122,6 @@ const DispensersSection: React.FC = () => {
     const interval = setInterval(fetchPumpStatuses, POLLING_INTERVAL);
     return () => clearInterval(interval);
   }, [fetchPumpStatuses]);
-
-  const handleLockAll = async () => {
-    if (isLockingAll || isUnlockingAll) return;
-    try {
-      setIsLockingAll(true);
-      await lockAllPumps();
-      toast.success('Todas las dispensadoras han sido bloqueadas', { duration: 3000 });
-      setTimeout(fetchPumpStatuses, 500);
-    } catch (err) {
-      console.error('Error al bloquear todas:', err);
-      toast.error('Error al bloquear todas las dispensadoras', { duration: 3000 });
-    } finally {
-      setIsLockingAll(false);
-    }
-  };
-
-  const handleUnlockAll = async () => {
-    if (isLockingAll || isUnlockingAll) return;
-    try {
-      setIsUnlockingAll(true);
-      await unlockAllPumps();
-      toast.success('Todas las dispensadoras han sido desbloqueadas', { duration: 3000 });
-      setTimeout(fetchPumpStatuses, 500);
-    } catch (err) {
-      console.error('Error al desbloquear todas:', err);
-      toast.error('Error al desbloquear todas las dispensadoras', { duration: 3000 });
-    } finally {
-      setIsUnlockingAll(false);
-    }
-  };
 
   const handlePumpLockToggle = async (pumpNumber: number, isLocked: boolean) => {
     try {
@@ -188,6 +190,168 @@ const DispensersSection: React.FC = () => {
     return getPumpVisualState(packet) === filterState;
   });
 
+  // ===== Selección + acciones =====
+  const togglePumpSelection = (num: number) => {
+    setSelectedPumps((prev) => {
+      const next = new Set(prev);
+      if (next.has(num)) next.delete(num);
+      else next.add(num);
+      return next;
+    });
+  };
+  const selectAll = () => setSelectedPumps(new Set(pumpStatuses.keys()));
+  const clearSelection = () => setSelectedPumps(new Set());
+
+  const hasSelection = selectedPumps.size > 0;
+  const hasDispensingSelected = Array.from(selectedPumps).some((n) =>
+    getPumpVisualState(pumpStatuses.get(n) || null) === 'dispensing'
+  );
+  // Hay al menos una bomba bloqueada en todo el set
+  const hasLockedPumps = Array.from(pumpStatuses.values()).some(
+    (p) => getPumpVisualState(p) === 'locked'
+  );
+  // Hay al menos una bomba bloqueada dentro de la selección
+  const hasLockedSelected = Array.from(selectedPumps).some(
+    (n) => getPumpVisualState(pumpStatuses.get(n) || null) === 'locked'
+  );
+  // Mostrar botón "Desbloquear" solo si aplica: (sin selección → hay al menos 1 bloqueada) ó (con selección → hay al menos 1 bloqueada en la selección)
+  const showUnlockButton = hasSelection ? hasLockedSelected : hasLockedPumps;
+
+  const runBulkAction = async (label: string, action: () => Promise<void>) => {
+    setActionLoading(label);
+    try {
+      await action();
+      setTimeout(fetchPumpStatuses, 500);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Bloquear: si hay selección → masivo sobre los seleccionados; si no → todas (con confirmación)
+  const handleLock = () => {
+    if (hasSelection) {
+      runBulkAction('lock', async () => {
+        for (const num of selectedPumps) {
+          try { await lockPump(num); } catch { toast.error(`Error al bloquear bomba ${num}`); }
+        }
+        toast.success(`${selectedPumps.size} bomba(s) bloqueada(s)`, { duration: 2000 });
+      });
+      return;
+    }
+    setConfirmModal({
+      title: 'Bloquear Todas',
+      message: '¿Bloquear TODAS las bombas? Ninguna podrá dispensar hasta desbloquearlas.',
+      confirmLabel: 'Bloquear Todas',
+      confirmColor: 'red',
+      onConfirm: async () => {
+        await lockAllPumps();
+        toast.success('Todas las bombas bloqueadas', { duration: 3000 });
+        setTimeout(fetchPumpStatuses, 500);
+      },
+    });
+  };
+  const handleUnlock = () => {
+    if (hasSelection) {
+      runBulkAction('unlock', async () => {
+        for (const num of selectedPumps) {
+          try { await unlockPump(num); } catch { toast.error(`Error al desbloquear bomba ${num}`); }
+        }
+        toast.success(`${selectedPumps.size} bomba(s) desbloqueada(s)`, { duration: 2000 });
+      });
+      return;
+    }
+    setConfirmModal({
+      title: 'Desbloquear Todas',
+      message: '¿Desbloquear TODAS las bombas?',
+      confirmLabel: 'Desbloquear Todas',
+      confirmColor: 'green',
+      onConfirm: async () => {
+        await unlockAllPumps();
+        toast.success('Todas las bombas desbloqueadas', { duration: 3000 });
+        setTimeout(fetchPumpStatuses, 500);
+      },
+    });
+  };
+  const handleBulkStop = () => {
+    if (!hasSelection) return;
+    runBulkAction('stop', async () => {
+      for (const num of selectedPumps) {
+        try { await stopPump(num); } catch { toast.error(`Error al detener bomba ${num}`); }
+      }
+      toast.success(`${selectedPumps.size} bomba(s) detenida(s)`, { duration: 2000 });
+    });
+  };
+  const handleBulkSuspend = () => {
+    if (!hasSelection) return;
+    runBulkAction('suspend', async () => {
+      for (const num of selectedPumps) {
+        try { await suspendPump(num); } catch { toast.error(`Error al suspender bomba ${num}`); }
+      }
+      toast.success(`${selectedPumps.size} bomba(s) suspendida(s)`, { duration: 2000 });
+    });
+  };
+  const handleBulkResume = () => {
+    if (!hasSelection) return;
+    runBulkAction('resume', async () => {
+      for (const num of selectedPumps) {
+        try { await resumePump(num); } catch { toast.error(`Error al reanudar bomba ${num}`); }
+      }
+      toast.success(`${selectedPumps.size} bomba(s) reanudada(s)`, { duration: 2000 });
+    });
+  };
+  const handleBulkCloseTransaction = () => {
+    if (!hasSelection) return;
+    runBulkAction('close', async () => {
+      for (const num of selectedPumps) {
+        try { await closeTransaction(num); } catch { toast.error(`Error al cerrar transaccion bomba ${num}`); }
+      }
+      toast.success('Transaccion(es) cerrada(s)', { duration: 2000 });
+    });
+  };
+  const handleBulkEmergencyStop = () => {
+    if (!hasSelection) return;
+    const pumps = Array.from(selectedPumps).sort((a, b) => a - b).join(', ');
+    setConfirmModal({
+      title: 'Parada de Emergencia',
+      message: `¿Ejecutar PARADA DE EMERGENCIA en las bombas ${pumps}? Detiene el dispensado de forma inmediata.`,
+      confirmLabel: 'Parada de Emergencia',
+      confirmColor: 'red',
+      onConfirm: async () => {
+        for (const num of selectedPumps) {
+          try { await emergencyStopPump(num); } catch { toast.error(`Error emergencia bomba ${num}`); }
+        }
+        toast.success('Parada de emergencia ejecutada', { duration: 3000 });
+        setTimeout(fetchPumpStatuses, 500);
+      },
+    });
+  };
+
+  const handleAuthorize = () => {
+    if (selectedPumps.size !== 1) {
+      toast.error('Seleccione exactamente una bomba para autorizar');
+      return;
+    }
+    const pumpNum = Array.from(selectedPumps)[0];
+    const packet = pumpStatuses.get(pumpNum);
+    let nozzlePrices: NozzlePrice[] = [];
+    if (packet?.Type === 'PumpIdleStatus') {
+      const d = packet.Data as any;
+      const rawPrices: number[] = d.NozzlePrices || d.nozzlePrices || [];
+      rawPrices.forEach((price: number, index: number) => {
+        if (price > 0) {
+          const nozzleNum = index + 1;
+          const gradeInfo = NOZZLE_FUEL_GRADE_MAP[nozzleNum];
+          const gradeName = gradeInfo?.code ? mapFuelProductName(gradeInfo.code) : `Pistola ${nozzleNum}`;
+          nozzlePrices.push({ Nozzle: nozzleNum, FuelGradeId: gradeInfo?.id || nozzleNum, FuelGradeName: gradeName, Price: price });
+        }
+      });
+    }
+    if (nozzlePrices.length === 0) {
+      nozzlePrices = [{ Nozzle: 1, FuelGradeId: 1, FuelGradeName: 'Combustible', Price: 0 }];
+    }
+    setAuthorizeModal({ pump: pumpNum, nozzlePrices });
+  };
+
   if (loading && pumpStatuses.size === 0) {
     return (
       <div className="space-y-1">
@@ -206,32 +370,128 @@ const DispensersSection: React.FC = () => {
 
   return (
     <div className="space-y-1">
-      {/* Toolbar */}
+      {/* Toolbar — todas las acciones de Control integradas */}
       <Toolbar>
+        {/* Selección */}
+        <CompactButton variant="ghost" onClick={selectAll} disabled={pumpStatuses.size === 0}>
+          Seleccionar todas
+        </CompactButton>
+        {hasSelection && (
+          <>
+            <CompactButton variant="ghost" onClick={clearSelection}>
+              <X className="w-3 h-3" /> Limpiar
+            </CompactButton>
+            <span className="text-xs text-blue-600 font-semibold px-1">
+              {selectedPumps.size} sel.
+            </span>
+          </>
+        )}
+
+        <div className="w-px h-5 bg-gray-200 mx-1" />
+
+        {/* Acciones — contexto-dependientes */}
+        <CompactButton
+          variant="primary"
+          onClick={handleAuthorize}
+          disabled={selectedPumps.size !== 1 || !!actionLoading}
+          title={selectedPumps.size !== 1 ? 'Seleccione exactamente 1 bomba' : ''}
+        >
+          <Fuel className="w-3.5 h-3.5" /> Autorizar
+        </CompactButton>
+
         <CompactButton
           variant="danger"
-          onClick={handleLockAll}
-          disabled={isLockingAll || isUnlockingAll}
+          onClick={handleLock}
+          disabled={!!actionLoading}
         >
-          {isLockingAll ? (
+          {actionLoading === 'lock' ? (
             <><div className="w-3 h-3 border-2 border-red-400 border-t-transparent rounded-full animate-spin" /> Bloqueando...</>
           ) : (
-            <><Lock className="w-3.5 h-3.5" /> Bloquear Todas</>
+            <><Lock className="w-3.5 h-3.5" /> {hasSelection ? 'Bloquear' : 'Bloquear Todas'}</>
+          )}
+        </CompactButton>
+
+        {showUnlockButton && (
+          <CompactButton
+            variant="ghost"
+            onClick={handleUnlock}
+            disabled={!!actionLoading}
+            className="border-green-300 text-green-600 hover:bg-green-50"
+          >
+            {actionLoading === 'unlock' ? (
+              <><div className="w-3 h-3 border-2 border-green-400 border-t-transparent rounded-full animate-spin" /> Desbloqueando...</>
+            ) : (
+              <><Unlock className="w-3.5 h-3.5" /> {hasSelection ? 'Desbloquear' : 'Desbloquear Todas'}</>
+            )}
+          </CompactButton>
+        )}
+
+        <CompactButton
+          variant="ghost"
+          onClick={handleBulkStop}
+          disabled={!hasDispensingSelected || !!actionLoading}
+          className="border-orange-300 text-orange-600 hover:bg-orange-50"
+          title={!hasDispensingSelected ? 'Requiere bomba dispensando seleccionada' : ''}
+        >
+          {actionLoading === 'stop' ? (
+            <><div className="w-3 h-3 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" /> ...</>
+          ) : (
+            <><Square className="w-3.5 h-3.5" /> Detener</>
           )}
         </CompactButton>
 
         <CompactButton
           variant="ghost"
-          onClick={handleUnlockAll}
-          disabled={isLockingAll || isUnlockingAll}
-          className="border-green-300 text-green-600 hover:bg-green-50"
+          onClick={handleBulkSuspend}
+          disabled={!hasDispensingSelected || !!actionLoading}
+          className="border-yellow-400 text-yellow-700 hover:bg-yellow-50"
+          title={!hasDispensingSelected ? 'Requiere bomba dispensando seleccionada' : ''}
         >
-          {isUnlockingAll ? (
-            <><div className="w-3 h-3 border-2 border-green-400 border-t-transparent rounded-full animate-spin" /> Desbloqueando...</>
+          {actionLoading === 'suspend' ? (
+            <><div className="w-3 h-3 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" /> ...</>
           ) : (
-            <><Unlock className="w-3.5 h-3.5" /> Desbloquear Todas</>
+            <><Pause className="w-3.5 h-3.5" /> Suspender</>
           )}
         </CompactButton>
+
+        <CompactButton
+          variant="ghost"
+          onClick={handleBulkResume}
+          disabled={!hasSelection || !!actionLoading}
+          className="border-teal-300 text-teal-600 hover:bg-teal-50"
+          title={!hasSelection ? 'Seleccione al menos 1 bomba' : ''}
+        >
+          {actionLoading === 'resume' ? (
+            <><div className="w-3 h-3 border-2 border-teal-400 border-t-transparent rounded-full animate-spin" /> ...</>
+          ) : (
+            <><Play className="w-3.5 h-3.5" /> Reanudar</>
+          )}
+        </CompactButton>
+
+        <CompactButton
+          variant="ghost"
+          onClick={handleBulkCloseTransaction}
+          disabled={!hasSelection || !!actionLoading}
+          className="border-indigo-300 text-indigo-600 hover:bg-indigo-50"
+          title={!hasSelection ? 'Seleccione al menos 1 bomba' : ''}
+        >
+          {actionLoading === 'close' ? (
+            <><div className="w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" /> ...</>
+          ) : (
+            <><RotateCcw className="w-3.5 h-3.5" /> Cerrar Trans.</>
+          )}
+        </CompactButton>
+
+        <CompactButton
+          onClick={handleBulkEmergencyStop}
+          disabled={!hasSelection || !!actionLoading}
+          className="bg-red-600 text-white hover:bg-red-700 border border-red-700"
+          title={!hasSelection ? 'Seleccione al menos 1 bomba' : ''}
+        >
+          <Zap className="w-3.5 h-3.5" /> Emergencia
+        </CompactButton>
+
+        <div className="w-px h-5 bg-gray-200 mx-1" />
 
         <select
           value={filterState}
@@ -250,6 +510,7 @@ const DispensersSection: React.FC = () => {
           variant="icon"
           onClick={() => setViewMode('table')}
           className={viewMode === 'table' ? 'bg-blue-100 text-blue-600' : ''}
+          title="Vista de tabla"
         >
           <List className="w-4 h-4" />
         </CompactButton>
@@ -257,8 +518,17 @@ const DispensersSection: React.FC = () => {
           variant="icon"
           onClick={() => setViewMode('cards')}
           className={viewMode === 'cards' ? 'bg-blue-100 text-blue-600' : ''}
+          title="Vista compacta"
         >
           <LayoutGrid className="w-4 h-4" />
+        </CompactButton>
+        <CompactButton
+          variant="icon"
+          onClick={() => setViewMode('visual')}
+          className={viewMode === 'visual' ? 'bg-blue-100 text-blue-600' : ''}
+          title="Vista visual (surtidoras con SVG)"
+        >
+          <Fuel className="w-4 h-4" />
         </CompactButton>
       </Toolbar>
 
@@ -328,7 +598,7 @@ const DispensersSection: React.FC = () => {
             </table>
           </div>
         </div>
-      ) : (
+      ) : viewMode === 'cards' ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
           {filteredPumps.map(([number, packet]) => (
             <DispenserCard
@@ -341,19 +611,63 @@ const DispensersSection: React.FC = () => {
             />
           ))}
         </div>
+      ) : (
+        <div className="flex gap-2 items-start">
+          {/* 70% izquierda: dispensadoras */}
+          <div className="flex-1 min-w-0" style={{ flexBasis: '70%' }}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+              {filteredPumps.map(([number, packet]) => (
+                <DispenserMonitorCard
+                  key={number}
+                  pumpNumber={number}
+                  packet={packet}
+                  isLoading={loading && packet === null}
+                  error={error && packet === null ? error : undefined}
+                  onStatusChange={fetchPumpStatuses}
+                  selected={selectedPumps.has(number)}
+                  onToggleSelect={() => togglePumpSelection(number)}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* 30% derecha: monitoreo de tanques (fijo, ocupa todo el alto) */}
+          <div className="flex-shrink-0" style={{ flexBasis: '30%', maxWidth: '30%' }}>
+            <TanksSidebar />
+          </div>
+        </div>
       )}
 
-      {/* Leyenda */}
-      <div className="flex items-center flex-wrap gap-3 px-2 py-1 text-xs text-text-muted">
-        <StatusDot color="green" label="Disponible" />
-        <StatusDot color="orange" label="Dispensando" />
-        <StatusDot color="red" label="Bloqueada" />
-        <StatusDot color="gray" label="Offline" />
-        <StatusDot color="blue" label="Fin Transaccion" />
-        <span className="ml-auto text-2xs opacity-75">Actualizacion cada 2s</span>
+
+      {/* Footer: indicador de auto-refresh */}
+      <div className="flex items-center justify-end px-2 py-1 text-2xs text-text-muted opacity-75">
+        Actualizacion cada 2s
       </div>
+
+      {/* Modales */}
+      {authorizeModal && (
+        <AuthorizeModal
+          isOpen={true}
+          onClose={() => setAuthorizeModal(null)}
+          pumpNumber={authorizeModal.pump}
+          nozzlePrices={authorizeModal.nozzlePrices}
+          onSuccess={() => setTimeout(fetchPumpStatuses, 500)}
+        />
+      )}
+      {confirmModal && (
+        <ConfirmActionModal
+          isOpen={true}
+          onClose={() => setConfirmModal(null)}
+          onConfirm={confirmModal.onConfirm}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          confirmLabel={confirmModal.confirmLabel}
+          confirmColor={confirmModal.confirmColor}
+        />
+      )}
     </div>
   );
 };
+
 
 export default DispensersSection;

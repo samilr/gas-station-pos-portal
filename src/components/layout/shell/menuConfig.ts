@@ -1,11 +1,11 @@
 import {
   LayoutDashboard, Users, Settings, BarChart3, FileText,
-  TrendingUp, Activity, AlertTriangle, Sliders, Receipt,
+  TrendingUp, Activity, AlertTriangle, Receipt,
   Package, Monitor, Smartphone, Building2, FuelIcon, Store, Layers,
   DollarSign, Landmark, Zap, CreditCard, Shield, BookUser,
   Gauge, DollarSign as PriceIcon, Container, Cpu, Wrench,
   Tag, ClipboardList, History, Barcode, Wrench as MaintenanceIcon,
-  PlayCircle, Percent, Rows3
+  PlayCircle, Percent, Rows3, Columns
 } from 'lucide-react';
 
 export interface SubMenuItem {
@@ -68,7 +68,6 @@ export const menuItems: MenuItem[] = [
     subItems: [
       { id: 'dispensers.dashboard', label: 'Dashboard', icon: BarChart3, permission: 'dispensers.view' },
       { id: 'dispensers.monitor', label: 'Monitoreo', icon: Gauge, permission: 'dispensers.view' },
-      { id: 'dispensers.control', label: 'Control', icon: Sliders, permission: 'dispensers.view' },
       { id: 'dispensers.prices', label: 'Precios', icon: PriceIcon, permission: 'dispensers.view' },
       { id: 'dispensers.tanks', label: 'Tanques', icon: Container, permission: 'dispensers.view' },
       { id: 'dispensers.transactions', label: 'Ventas', icon: FuelIcon, permission: 'dispensers.view' },
@@ -78,6 +77,7 @@ export const menuItems: MenuItem[] = [
       { id: 'dispensers.reports', label: 'Reportes', icon: ClipboardList, permission: 'dispensers.view' },
       { id: 'dispensers.config', label: 'Configuración', icon: Settings, permission: 'dispensers.view' },
       { id: 'dispensers.islands', label: 'Fuel Islands', icon: Layers, permission: 'dispensers.view' },
+      { id: 'dispensers.workbench', label: 'Workbench', icon: Columns, permission: 'dispensers.view' },
     ],
   },
   {
@@ -137,8 +137,8 @@ export const sectionTitles: Record<string, string> = {
   'dispensers.dashboard': 'Dashboard',
   'dispensers.config': 'Configuración',
   'dispensers.islands': 'Fuel Islands',
+  'dispensers.workbench': 'Workbench',
   'dispensers.monitor': 'Monitoreo',
-  'dispensers.control': 'Control',
   'dispensers.prices': 'Precios',
   'dispensers.tanks': 'Tanques',
   'dispensers.system': 'Sistema',

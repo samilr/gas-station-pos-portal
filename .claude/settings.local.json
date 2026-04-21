@@ -40,7 +40,9 @@
       "Bash(echo \"--- EXIT $? ---\")",
       "Bash(curl -s -m 5 -o /tmp/curl-cp2.out -w \"HTTP:%{http_code}\\\\n\" \"http://10.10.11.100:5274/api/card-payments?limit=3\")",
       "Bash(git stash *)",
-      "Bash(echo \"EXIT: $?\")"
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(sed -i '291,472d' src/components/sections/dispensers/DispensersWorkbenchSection.tsx)",
+      "Bash(sed -i '23,218d' src/components/sections/dispensers/DispensersWorkbenchSection.tsx)"
     ]
   }
 }

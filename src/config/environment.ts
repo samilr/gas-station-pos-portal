@@ -14,7 +14,7 @@ export const ENV_CONFIG = {
   
   // Configuración específica por ambiente
   DEVELOPMENT: {
-    API_BASE_URL: 'http://10.10.11.100:5274/api',
+    API_BASE_URL: 'http://192.168.1.2:5274/api',
     LOG_LEVEL: 'debug',
     ENABLE_MOCK_DATA: false,
   },
