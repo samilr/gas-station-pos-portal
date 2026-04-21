@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
-import { ISite } from '../../../../types/site';
+import { ISite } from '../../../types/site';
 import { CompactButton } from '../../ui';
 
 interface DeleteSiteDialogProps {
@@ -25,7 +25,7 @@ const DeleteSiteDialog: React.FC<DeleteSiteDialogProps> = ({
           </div>
           <h3 className="text-base font-semibold text-text-primary text-center mb-1">Eliminar Sucursal</h3>
           <p className="text-sm text-text-secondary text-center mb-4">
-            ¿Eliminar la sucursal <strong>{site.name}</strong> (#{site.site_number})?
+            ¿Eliminar la sucursal <strong>{site.name}</strong> (#{site.siteNumber})?
             <br /><span className="font-medium text-red-600">Esta acción no se puede deshacer.</span>
           </p>
           <div className="flex gap-2">

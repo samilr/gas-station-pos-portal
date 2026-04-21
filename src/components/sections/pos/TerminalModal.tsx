@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Monitor, Save, X, Edit, Plus, User, Smartphone, RefreshCw } from 'lucide-react';
+import { Monitor, Save, X, Edit, Plus, User, Smartphone, RefreshCw, Layers, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ITerminal, terminalService } from '../../../services/terminalService';
-import { getPumpsConfig } from '../../../services/dispenserService';
-import { PumpConfig } from '../../../types/dispenser';
+import fuelIslandService, { FuelIsland } from '../../../services/fuelIslandService';
 import { CompactButton } from '../../ui';
+import { SiteAutocomplete } from '../../ui/autocompletes';
 import { getHostTypeLabel } from '../../../types/host_type.enum';
 
 interface TerminalFormData {
@@ -13,8 +13,9 @@ interface TerminalFormData {
   name: string;
   sectorId?: number;
   active: boolean;
-  hasIntegratedDispenser: boolean;
-  linkedDispenserId: number | null;
+  fuelIslandId: number | null;
+  unassignFuelIsland: boolean;
+  fuelIslandEnabled: boolean;
   terminalType: number;
   productList: number;
   useCustomerDisplay: boolean;
@@ -40,42 +41,33 @@ const formatDate = (dateString: string | Date | null | undefined): string => {
   });
 };
 
+const EMPTY_FORM: TerminalFormData = {
+  siteId: '',
+  terminalId: 0,
+  name: '',
+  sectorId: undefined,
+  active: true,
+  fuelIslandId: null,
+  unassignFuelIsland: false,
+  fuelIslandEnabled: true,
+  terminalType: 1,
+  productList: 1,
+  useCustomerDisplay: false,
+  openCashDrawer: false,
+  printDevice: 1,
+  cashFund: 0,
+  productListType: 1,
+};
+
 const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal, mode, onSuccess }) => {
   const [loading, setLoading] = useState(false);
-  const [dispensers, setDispensers] = useState<PumpConfig[]>([]);
-  const [formData, setFormData] = useState<TerminalFormData>({
-    siteId: '',
-    terminalId: 0,
-    name: '',
-    sectorId: undefined,
-    active: true,
-    hasIntegratedDispenser: false,
-    linkedDispenserId: null,
-    terminalType: 1,
-    productList: 1,
-    useCustomerDisplay: false,
-    openCashDrawer: false,
-    printDevice: 1,
-    cashFund: 0,
-    productListType: 1,
-  });
+  const [fuelIslands, setFuelIslands] = useState<FuelIsland[]>([]);
+  const [loadingIslands, setLoadingIslands] = useState(false);
+  const [formData, setFormData] = useState<TerminalFormData>(EMPTY_FORM);
 
   const isEditing = mode === 'edit';
   const isViewing = mode === 'view';
-
-  useEffect(() => {
-    const fetchDispensers = async () => {
-      try {
-        const config = await getPumpsConfig();
-        if (config && config.Pumps) {
-          setDispensers(config.Pumps);
-        }
-      } catch (error) {
-        console.error('Error al cargar dispensadoras:', error);
-      }
-    };
-    fetchDispensers();
-  }, []);
+  const isCreating = mode === 'create';
 
   useEffect(() => {
     if (terminal && isOpen && (isEditing || isViewing)) {
@@ -85,8 +77,9 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
         name: terminal.name || '',
         sectorId: terminal.sectorId,
         active: Boolean(terminal.active),
-        hasIntegratedDispenser: terminal.hasIntegratedDispenser || false,
-        linkedDispenserId: terminal.linkedDispenserId || null,
+        fuelIslandId: terminal.fuelIslandId ?? null,
+        unassignFuelIsland: false,
+        fuelIslandEnabled: terminal.fuelIslandEnabled ?? true,
         terminalType: terminal.terminalType ?? 1,
         productList: terminal.productList ?? 1,
         useCustomerDisplay: terminal.useCustomerDisplay ?? false,
@@ -95,33 +88,39 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
         cashFund: terminal.cashFund ?? 0,
         productListType: terminal.productListType ?? 1,
       });
-    } else if (mode === 'create' && isOpen) {
-      setFormData({
-        siteId: '',
-        terminalId: 0,
-        name: '',
-        sectorId: undefined,
-        active: true,
-        hasIntegratedDispenser: false,
-        linkedDispenserId: null,
-        terminalType: 1,
-        productList: 1,
-        useCustomerDisplay: false,
-        openCashDrawer: false,
-        printDevice: 1,
-        cashFund: 0,
-        productListType: 1,
-      });
+    } else if (isCreating && isOpen) {
+      setFormData(EMPTY_FORM);
     }
-  }, [terminal, isOpen, isEditing, isViewing, mode]);
+  }, [terminal, isOpen, isEditing, isViewing, isCreating]);
+
+  // Cargar isletas del sitio para el selector
+  useEffect(() => {
+    if (!isOpen || isViewing) return;
+    if (!formData.siteId) {
+      setFuelIslands([]);
+      return;
+    }
+    const loadIslands = async () => {
+      setLoadingIslands(true);
+      try {
+        const res = await fuelIslandService.list({ siteId: formData.siteId });
+        setFuelIslands(res.successful ? res.data : []);
+      } catch {
+        setFuelIslands([]);
+      } finally {
+        setLoadingIslands(false);
+      }
+    };
+    loadIslands();
+  }, [isOpen, isViewing, formData.siteId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     let finalValue: any = value;
-    
+
     if (type === 'checkbox') {
       finalValue = (e.target as HTMLInputElement).checked;
-    } else if (type === 'number' || name === 'linkedDispenserId') {
+    } else if (type === 'number') {
       finalValue = value === '' ? null : Number(value);
     }
 
@@ -131,29 +130,61 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
     }));
   };
 
+  const handleFuelIslandChange = (value: string) => {
+    if (value === '__UNASSIGN__') {
+      setFormData((f) => ({ ...f, fuelIslandId: null, unassignFuelIsland: true }));
+    } else if (value === '') {
+      setFormData((f) => ({ ...f, fuelIslandId: null, unassignFuelIsland: false }));
+    } else {
+      setFormData((f) => ({ ...f, fuelIslandId: parseInt(value, 10), unassignFuelIsland: false }));
+    }
+  };
+
+  const buildPayload = () => {
+    // Para create: enviar fuelIslandId si hay selección
+    // Para update: usar tri-estado (unassignFuelIsland tiene prioridad)
+    const { unassignFuelIsland, fuelIslandId, ...rest } = formData;
+    if (isCreating) {
+      return {
+        ...rest,
+        fuelIslandId: fuelIslandId ?? null,
+      };
+    }
+    // editing
+    return {
+      ...rest,
+      ...(unassignFuelIsland
+        ? { unassignFuelIsland: true }
+        : fuelIslandId != null
+          ? { fuelIslandId }
+          : {}),
+    };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isViewing) return;
 
     setLoading(true);
     try {
+      const payload = buildPayload();
       if (isEditing && terminal) {
-        const response = await terminalService.updateTerminal(terminal.siteId, terminal.terminalId, formData);
+        const response = await terminalService.updateTerminal(terminal.siteId, terminal.terminalId, payload);
         if (response.successful) {
-          toast.success(`Terminal actualizada exitosamente \n ${formData.name}`, { duration: 5000 });
+          toast.success(`Terminal actualizada exitosamente\n${formData.name}`, { duration: 5000 });
           onSuccess();
           onClose();
         } else {
-          toast.error('Error al actualizar terminal.', { duration: 5000 });
+          toast.error(response.error || 'Error al actualizar terminal.', { duration: 6000 });
         }
       } else {
-        const response = await terminalService.createTerminal(formData);
+        const response = await terminalService.createTerminal(payload as any);
         if (response.successful) {
-          toast.success(`Terminal creada exitosamente \n ${formData.name}`, { duration: 5000 });
+          toast.success(`Terminal creada exitosamente\n${formData.name}`, { duration: 5000 });
           onSuccess();
           onClose();
         } else {
-          toast.error('Error al crear terminal.', { duration: 5000 });
+          toast.error(response.error || 'Error al crear terminal.', { duration: 6000 });
         }
       }
     } catch (error) {
@@ -176,6 +207,10 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
 
   const inputCls = (disabled: boolean) =>
     `w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}`;
+
+  const fuelIslandSelectValue = formData.unassignFuelIsland
+    ? '__UNASSIGN__'
+    : (formData.fuelIslandId == null ? '' : String(formData.fuelIslandId));
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -208,13 +243,19 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
             </div>
             <div>
               <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Terminal *</label>
-              <input type="number" name="terminalId" value={formData.terminalId} onChange={handleInputChange} required disabled={isViewing}
-                className={inputCls(isViewing)} placeholder="ID de la terminal" />
+              <input type="number" name="terminalId" value={formData.terminalId} onChange={handleInputChange} required disabled={isViewing || isEditing}
+                className={inputCls(isViewing || isEditing)} placeholder="ID de la terminal" />
             </div>
             <div>
-              <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">ID del Sitio *</label>
-              <input type="text" name="siteId" value={formData.siteId} onChange={handleInputChange} required disabled={isViewing}
-                className={inputCls(isViewing)} placeholder="ID del sitio" />
+              <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Sucursal *</label>
+              <SiteAutocomplete
+                name="siteId"
+                value={formData.siteId}
+                onChange={(v) => setFormData(prev => ({ ...prev, siteId: v ?? '' }))}
+                required
+                disabled={isViewing || isEditing}
+                placeholder="Selecciona una sucursal"
+              />
             </div>
             <div>
               <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Sector</label>
@@ -233,6 +274,66 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
               <input type="checkbox" name="active" checked={formData.active} onChange={handleInputChange}
                 disabled={isViewing} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
             </label>
+          </div>
+
+          {/* Fuel Island */}
+          <div className="space-y-2 pt-2 border-t border-gray-100">
+            <h4 className="text-2xs font-semibold uppercase tracking-wide text-text-secondary flex items-center gap-1">
+              <Layers className="w-3 h-3 text-orange-500" /> Fuel Island
+            </h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2">
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Isleta asignada</label>
+                <select
+                  value={fuelIslandSelectValue}
+                  onChange={(e) => handleFuelIslandChange(e.target.value)}
+                  disabled={isViewing || !formData.siteId || loadingIslands}
+                  className={inputCls(isViewing || !formData.siteId || loadingIslands)}
+                >
+                  <option value="">
+                    {!formData.siteId
+                      ? 'Primero ingresa el Site ID'
+                      : loadingIslands
+                        ? 'Cargando isletas...'
+                        : isEditing ? '— No cambiar —' : '— Sin asignar —'}
+                  </option>
+                  {isEditing && <option value="__UNASSIGN__">— Sin asignar —</option>}
+                  {!isEditing && formData.fuelIslandId == null && null}
+                  {fuelIslands.map((i) => (
+                    <option key={i.fuelIslandId} value={i.fuelIslandId}>
+                      {i.name}{!i.active ? ' (inactiva)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <label
+                className={`col-span-2 flex items-center justify-between px-2 h-7 rounded-sm cursor-pointer border ${
+                  formData.fuelIslandEnabled
+                    ? 'bg-blue-50/50 border-blue-100'
+                    : 'bg-amber-50 border-amber-200'
+                }`}
+              >
+                <span className={`text-xs font-medium ${formData.fuelIslandEnabled ? 'text-blue-900' : 'text-amber-900'}`}>
+                  Integración activa (flujo automático)
+                </span>
+                <input
+                  type="checkbox"
+                  name="fuelIslandEnabled"
+                  checked={formData.fuelIslandEnabled}
+                  onChange={handleInputChange}
+                  disabled={isViewing}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+              </label>
+
+              <p className="col-span-2 text-2xs text-text-muted flex items-start gap-1">
+                <Info className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                {formData.fuelIslandEnabled
+                  ? 'El POS usará la isleta asignada para operar en modo automático.'
+                  : 'Bypass: el POS ignora la isleta y cae a flujo manual. La asignación se conserva.'}
+              </p>
+            </div>
           </div>
 
           <div className="space-y-3 pt-2 border-t border-gray-100">
@@ -269,39 +370,6 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
                   disabled={isViewing} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
               </label>
             </div>
-          </div>
-
-          <div className="space-y-3 pt-2 border-t border-gray-100">
-            <h4 className="text-2xs font-semibold uppercase tracking-wide text-text-secondary">Integración con Dispensadora</h4>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="flex items-center justify-between px-2 h-7 bg-blue-50/50 border border-blue-100 rounded-sm cursor-pointer">
-                <span className="text-xs text-blue-900 font-medium">¿Integración Activa?</span>
-                <input type="checkbox" name="hasIntegratedDispenser" checked={formData.hasIntegratedDispenser} onChange={handleInputChange}
-                  disabled={isViewing} className="rounded border-blue-300 text-blue-600 focus:ring-blue-500" />
-              </label>
-              
-              <div>
-                <select 
-                  name="linkedDispenserId" 
-                  value={formData.linkedDispenserId || ''} 
-                  onChange={handleInputChange} 
-                  disabled={isViewing || !formData.hasIntegratedDispenser} 
-                  className={inputCls(isViewing || !formData.hasIntegratedDispenser)}
-                >
-                  <option value="">Selecciona Bomba</option>
-                  {dispensers.map(pump => (
-                    <option key={pump.Id} value={pump.Id}>
-                      BOMBA {pump.Id} {pump.Tag ? `- ${pump.Tag}` : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            {!formData.hasIntegratedDispenser && (
-              <p className="text-2xs text-text-muted italic px-1">
-                Activa para vincular esta terminal directamente a una bomba en el flujo mobile.
-              </p>
-            )}
           </div>
 
           {terminal && isViewing && (

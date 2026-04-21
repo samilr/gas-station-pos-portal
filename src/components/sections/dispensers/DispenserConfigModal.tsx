@@ -5,6 +5,7 @@ import dispensersConfigService, {
   ConnectionType, Dispenser, Parity, StopBits,
 } from '../../../services/dispensersConfigService';
 import { CompactButton } from '../../ui';
+import { SiteAutocomplete } from '../../ui/autocompletes';
 
 interface Props {
   isOpen: boolean;
@@ -213,10 +214,13 @@ const DispenserConfigModal: React.FC<Props> = ({ isOpen, onClose, dispenser, mod
             <h4 className={sectionHeader}><Fuel className="w-3 h-3" /> Identidad</h4>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Site ID *</label>
-                <input type="text" value={form.siteId} onChange={(e) => update('siteId', e.target.value)}
-                  disabled={isViewing || isEditing} required maxLength={10}
-                  className={inputCls(isViewing || isEditing)} placeholder="CO-0017" />
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Sucursal *</label>
+                <SiteAutocomplete
+                  value={form.siteId}
+                  onChange={(v) => update('siteId', v ?? '')}
+                  disabled={isViewing || isEditing}
+                  required
+                />
               </div>
               <div>
                 <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Pump Number *</label>

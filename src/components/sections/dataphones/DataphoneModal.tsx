@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Smartphone, Save, X, Edit, Plus, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import dataphoneService, { Dataphone } from '../../../services/dataphoneService';
-import dataphoneSupplierService, { DataphoneSupplier } from '../../../services/dataphoneSupplierService';
 import { CompactButton } from '../../ui';
+import { SiteAutocomplete, DataphoneSupplierAutocomplete } from '../../ui/autocompletes';
 
 interface Props {
   isOpen: boolean;
@@ -35,7 +35,6 @@ const EMPTY: FormState = {
 const DataphoneModal: React.FC<Props> = ({ isOpen, onClose, dataphone, mode, onSuccess }) => {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [loading, setLoading] = useState(false);
-  const [suppliers, setSuppliers] = useState<DataphoneSupplier[]>([]);
 
   const isEditing = mode === 'edit';
   const isViewing = mode === 'view';
@@ -43,7 +42,6 @@ const DataphoneModal: React.FC<Props> = ({ isOpen, onClose, dataphone, mode, onS
 
   useEffect(() => {
     if (!isOpen) return;
-    dataphoneSupplierService.list().then((r) => setSuppliers(r.data));
     if (dataphone && (isEditing || isViewing)) {
       setForm({
         dataphoneId: dataphone.dataphoneId,
@@ -157,18 +155,22 @@ const DataphoneModal: React.FC<Props> = ({ isOpen, onClose, dataphone, mode, onS
                 disabled={isViewing} required className={inputCls(isViewing)} placeholder="CARDNET" />
             </div>
             <div>
-              <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Site ID *</label>
-              <input type="text" value={form.siteId} onChange={(e) => update('siteId', e.target.value)}
-                disabled={isViewing} required className={inputCls(isViewing)} placeholder="CO-0017" />
+              <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Sucursal *</label>
+              <SiteAutocomplete
+                value={form.siteId}
+                onChange={(v) => update('siteId', v ?? '')}
+                disabled={isViewing}
+                required
+              />
             </div>
             <div className="col-span-2">
               <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Proveedor *</label>
-              <select value={form.dataphoneSupplierId}
-                onChange={(e) => update('dataphoneSupplierId', e.target.value === '' ? '' : parseInt(e.target.value, 10))}
-                disabled={isViewing} required className={inputCls(isViewing)}>
-                <option value="">— Selecciona —</option>
-                {suppliers.map((s) => <option key={s.dataphoneSupplierId} value={s.dataphoneSupplierId}>{s.name}</option>)}
-              </select>
+              <DataphoneSupplierAutocomplete
+                value={form.dataphoneSupplierId === '' ? null : form.dataphoneSupplierId}
+                onChange={(v) => update('dataphoneSupplierId', v ?? '')}
+                disabled={isViewing}
+                required
+              />
             </div>
             <div className="col-span-2">
               <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">IP Dataphone *</label>

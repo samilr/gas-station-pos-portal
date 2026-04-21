@@ -400,12 +400,12 @@ const ErrorLogSection: React.FC = () => {
                 </div>
               )}
 
-              {selectedError.stacktrace && (
+              {selectedError.stackTrace && (
                 <div>
                   <h4 className="text-xs font-semibold text-gray-900 uppercase mb-1">Stacktrace</h4>
                   <div className="bg-gray-900 border border-gray-700 rounded-sm p-2 overflow-x-auto">
                     <pre className="text-xs text-green-400 font-mono whitespace-pre-wrap">
-                      {selectedError.stacktrace}
+                      {selectedError.stackTrace}
                     </pre>
                   </div>
                 </div>

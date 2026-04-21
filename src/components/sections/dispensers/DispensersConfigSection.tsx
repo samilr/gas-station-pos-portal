@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Plus, RefreshCw, Edit, Trash2, Eye, Fuel, Network, Cable } from 'lucide-react';
+import { Plus, RefreshCw, Edit, Trash2, Eye, Fuel, Network, Cable, Droplet } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useHeader } from '../../../context/HeaderContext';
 import { CompactButton, Pagination } from '../../ui';
@@ -9,6 +9,7 @@ import useDispensersConfig from '../../../hooks/useDispensersConfig';
 import dispensersConfigService, { Dispenser } from '../../../services/dispensersConfigService';
 import DispenserConfigModal from './DispenserConfigModal';
 import DeleteDispenserConfigDialog from './DeleteDispenserConfigDialog';
+import NozzlesModal from './NozzlesModal';
 
 const DispensersConfigSection: React.FC = () => {
   const { setSubtitle } = useHeader();
@@ -26,6 +27,9 @@ const DispensersConfigSection: React.FC = () => {
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Dispenser | null>(null);
+
+  const [nozzlesOpen, setNozzlesOpen] = useState(false);
+  const [nozzlesDispenser, setNozzlesDispenser] = useState<Dispenser | null>(null);
 
   useEffect(() => {
     setSubtitle('Configuración de dispensadoras');
@@ -70,6 +74,7 @@ const DispensersConfigSection: React.FC = () => {
   const openEdit = (d: Dispenser) => { setSelected(d); setModalMode('edit'); setModalOpen(true); };
   const openView = (d: Dispenser) => { setSelected(d); setModalMode('view'); setModalOpen(true); };
   const openDelete = (d: Dispenser) => { setToDelete(d); setDeleteOpen(true); };
+  const openNozzles = (d: Dispenser) => { setNozzlesDispenser(d); setNozzlesOpen(true); };
 
   const toggleActive = async (d: Dispenser) => {
     try {
@@ -188,6 +193,9 @@ const DispensersConfigSection: React.FC = () => {
                   </td>
                   <td className="px-2 text-sm whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1">
+                      <CompactButton variant="icon" onClick={() => openNozzles(d)} title="Mangueras">
+                        <Droplet className="w-3.5 h-3.5 text-orange-600" />
+                      </CompactButton>
                       <CompactButton variant="icon" onClick={() => openView(d)} title="Ver detalles">
                         <Eye className="w-3.5 h-3.5 text-text-secondary" />
                       </CompactButton>
@@ -231,6 +239,12 @@ const DispensersConfigSection: React.FC = () => {
         onClose={() => setDeleteOpen(false)}
         dispenser={toDelete}
         onSuccess={refresh}
+      />
+
+      <NozzlesModal
+        isOpen={nozzlesOpen}
+        onClose={() => setNozzlesOpen(false)}
+        dispenser={nozzlesDispenser}
       />
     </div>
   );

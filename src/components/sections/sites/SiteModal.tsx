@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Building2, RefreshCw } from 'lucide-react';
-import { ISite, ICreateSiteDto, IUpdateSiteDto } from '../../../../types/site';
+import { ISite, ICreateSiteDto, IUpdateSiteDto } from '../../../types/site';
 import { CompactButton } from '../../ui';
 
 interface SiteModalProps {
@@ -17,7 +17,7 @@ const SiteModal: React.FC<SiteModalProps> = ({ isOpen, onClose, onSave, site, mo
     phone: '', email: '', address1: '', address2: '', storeId: '', managerId: undefined,
     headOffice: false, pos: false, posLevelPrice: 1, posDeliveryTypes: '',
     posDeliveryType: false, posCashFund: 0, posIsRestaurant: false, posUseTip: false,
-    useSector: false, productListType: false, active: true, status: true
+    useSector: false, productListType: 0, active: true, status: 1
   });
 
   const [loading, setLoading] = useState(false);
@@ -26,16 +26,16 @@ const SiteModal: React.FC<SiteModalProps> = ({ isOpen, onClose, onSave, site, mo
   useEffect(() => {
     if (site && (mode === 'edit' || mode === 'view')) {
       setFormData({
-        siteId: site.site_id, name: site.name, siteNumber: site.site_number,
-        countryId: site.country_id, currencyId: site.currency_id || 'DOP',
+        siteId: site.siteId, name: site.name, siteNumber: site.siteNumber,
+        countryId: site.countryId, currencyId: site.currencyId || 'DOP',
         phone: site.phone || '', email: site.email || '',
         address1: site.address1 || '', address2: site.address2 || '',
-        storeId: site.store_id || '', managerId: site.manager_id,
-        headOffice: site.head_office, pos: site.pos,
-        posLevelPrice: site.pos_level_price, posDeliveryTypes: site.pos_delivery_types || '',
-        posDeliveryType: site.pos_delivery_type, posCashFund: site.pos_cash_fund || 0,
-        posIsRestaurant: site.pos_is_restaurant, posUseTip: site.pos_use_tip,
-        useSector: site.use_sector, productListType: site.product_list_type,
+        storeId: site.storeId || '', managerId: site.managerId,
+        headOffice: site.headOffice, pos: site.pos,
+        posLevelPrice: site.posLevelPrice, posDeliveryTypes: site.posDeliveryTypes || '',
+        posDeliveryType: site.posDeliveryType, posCashFund: site.posCashFund || 0,
+        posIsRestaurant: site.posIsRestaurant, posUseTip: site.posUseTip,
+        useSector: site.useSector, productListType: site.productListType,
         active: site.active, status: site.status
       });
     } else if (mode === 'create') {
@@ -44,20 +44,27 @@ const SiteModal: React.FC<SiteModalProps> = ({ isOpen, onClose, onSave, site, mo
         phone: '', email: '', address1: '', address2: '', storeId: '', managerId: undefined,
         headOffice: false, pos: false, posLevelPrice: 1, posDeliveryTypes: '',
         posDeliveryType: false, posCashFund: 0, posIsRestaurant: false, posUseTip: false,
-        useSector: false, productListType: false, active: true, status: true
+        useSector: false, productListType: 0, active: true, status: 1
       });
     }
   }, [site, mode, isOpen]);
+
+  const numericFlagFields = new Set(['productListType', 'status']);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
-      setFormData(prev => ({ ...prev, [name]: checked }));
+      // Algunos flags son numéricos en el backend (0/1)
+      if (numericFlagFields.has(name)) {
+        setFormData(prev => ({ ...prev, [name]: checked ? 1 : 0 } as ICreateSiteDto));
+      } else {
+        setFormData(prev => ({ ...prev, [name]: checked } as ICreateSiteDto));
+      }
     } else if (type === 'number') {
-      setFormData(prev => ({ ...prev, [name]: value === '' ? undefined : Number(value) }));
+      setFormData(prev => ({ ...prev, [name]: value === '' ? undefined : Number(value) } as ICreateSiteDto));
     } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+      setFormData(prev => ({ ...prev, [name]: value } as ICreateSiteDto));
     }
   };
 
@@ -211,9 +218,9 @@ const SiteModal: React.FC<SiteModalProps> = ({ isOpen, onClose, onSave, site, mo
             <div className="grid grid-cols-2 gap-3 mb-3">
               {checkboxItem('headOffice', 'Oficina Principal', formData.headOffice)}
               {checkboxItem('useSector', 'Usar Sectores', formData.useSector)}
-              {checkboxItem('productListType', 'Lista de Productos', formData.productListType)}
+              {checkboxItem('productListType', 'Lista de Productos', !!formData.productListType)}
               {checkboxItem('active', 'Activa', formData.active)}
-              {checkboxItem('status', 'Estado Activo', formData.status)}
+              {checkboxItem('status', 'Estado Activo', !!formData.status)}
             </div>
             <div>
               <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">ID del Manager</label>

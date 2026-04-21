@@ -44,9 +44,9 @@ const SitesSection: React.FC = () => {
 
   const filteredSites = (Array.isArray(sites) ? sites : []).filter((site) => {
     const matchesSearch =
-      (site.site_id || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (site.siteId || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       (site.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (site.store_id || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (site.storeId || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       (site.phone || "").includes(searchTerm) ||
       (site.email || "").toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -118,7 +118,7 @@ const SitesSection: React.FC = () => {
       let result;
 
       if (modalMode === "edit" && selectedSite) {
-        result = await updateSite(selectedSite.site_id, data);
+        result = await updateSite(selectedSite.siteId, data);
         if (result.successful) {
           toast.success("Sucursal actualizada correctamente");
         } else {
@@ -146,7 +146,7 @@ const SitesSection: React.FC = () => {
 
     setDeleteLoading(true);
     try {
-      const result = await deleteSite(selectedSite.site_id);
+      const result = await deleteSite(selectedSite.siteId);
       if (result.successful) {
         toast.success("Sucursal eliminada correctamente");
         setShowDeleteDialog(false);
@@ -262,14 +262,14 @@ const SitesSection: React.FC = () => {
             <tbody>
               {currentSites.map((site) => (
                 <tr
-                  key={site.site_id}
+                  key={site.siteId}
                   className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover cursor-pointer transition-colors"
                   onClick={() => handleViewDetails(site)}
                 >
                   <td className="px-2 text-sm whitespace-nowrap">
                     <div className="flex items-center gap-1.5">
                       <Building2 className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
-                      <span className="font-medium text-gray-900">{site.site_id}</span>
+                      <span className="font-medium text-gray-900">{site.siteId}</span>
                     </div>
                   </td>
                   <td className="px-2 text-sm whitespace-nowrap text-gray-900 max-w-[200px] truncate" title={site.name || ''}>{site.name || '—'}</td>

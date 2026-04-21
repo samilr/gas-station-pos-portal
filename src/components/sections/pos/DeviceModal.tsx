@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { hostService, IHost } from '../../../services/deviceService';
 import { getHostTypeLabel } from '../../../types/host_type.enum';
 import { CompactButton } from '../../ui';
+import { SiteAutocomplete, HostTypeAutocomplete } from '../../ui/autocompletes';
 
 interface HostFormData {
   hostId: number;
@@ -191,9 +192,13 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
                 className={inputCls(isViewing)} placeholder="Descripción" />
             </div>
             <div>
-              <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">ID del Sitio</label>
-              <input type="text" name="siteId" value={formData.siteId} onChange={handleInputChange} disabled={isViewing}
-                className={inputCls(isViewing)} placeholder="ID del sitio" />
+              <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Sucursal</label>
+              <SiteAutocomplete
+                name="siteId"
+                value={formData.siteId}
+                onChange={(v) => setFormData(prev => ({ ...prev, siteId: v ?? '' }))}
+                disabled={isViewing}
+              />
             </div>
             <div>
               <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">ID del Dispositivo</label>
@@ -202,13 +207,12 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
             </div>
             <div className="col-span-2">
               <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Tipo de Dispositivo</label>
-              <select name="hostTypeId" value={formData.hostTypeId || ''} onChange={handleInputChange} disabled={isViewing}
-                className={inputCls(isViewing)}>
-                <option value="">Seleccione un tipo</option>
-                <option value={1}>POS Android</option>
-                <option value={2}>Smartphone Android</option>
-                <option value={3}>Escáner Android</option>
-              </select>
+              <HostTypeAutocomplete
+                name="hostTypeId"
+                value={formData.hostTypeId ?? null}
+                onChange={(v) => setFormData(prev => ({ ...prev, hostTypeId: v ?? undefined }))}
+                disabled={isViewing}
+              />
             </div>
           </div>
 

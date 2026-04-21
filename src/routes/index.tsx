@@ -21,7 +21,6 @@ import ActionsLogSection from '../components/sections/audit/ActionsLogSection';
 import ErrorLogSection from '../components/sections/audit/ErrorLogSection';
 import AnalyticsSection from '../components/sections/analytics/AnalyticsSection';
 import DispensersSection from '../components/sections/dispensers/DispensersSection';
-import ControlSection from '../components/sections/dispensers/ControlSection';
 import PricesSection from '../components/sections/dispensers/PricesSection';
 import TanksSection from '../components/sections/dispensers/TanksSection';
 import SystemSection from '../components/sections/dispensers/SystemSection';
@@ -31,6 +30,8 @@ import ReportsSection from '../components/sections/dispensers/ReportsSection';
 import FuelTransactionsSection from '../components/sections/dispensers/FuelTransactionsSection';
 import FuelDashboardSection from '../components/sections/dispensers/FuelDashboardSection';
 import DispensersConfigSection from '../components/sections/dispensers/DispensersConfigSection';
+import FuelIslandsSection from '../components/sections/dispensers/FuelIslandsSection';
+import DispensersWorkbenchSection from '../components/sections/dispensers/DispensersWorkbenchSection';
 import RolesSection from '../components/sections/users/RolesSection';
 import StaftGroupsSection from '../components/sections/users/StaftGroupsSection';
 import TaxpayersSection from '../components/sections/gov/TaxpayersSection';
@@ -411,12 +412,16 @@ export const router = createBrowserRouter([
             element: <PermissionRoute permission="dispensers.view"><DispensersConfigSection /></PermissionRoute>
           },
           {
-            path: 'monitor',
-            element: <PermissionRoute permission="dispensers.view"><DispensersSection /></PermissionRoute>
+            path: 'islands',
+            element: <PermissionRoute permission="dispensers.view"><FuelIslandsSection /></PermissionRoute>
           },
           {
-            path: 'control',
-            element: <PermissionRoute permission="dispensers.view"><ControlSection /></PermissionRoute>
+            path: 'workbench',
+            element: <PermissionRoute permission="dispensers.view"><DispensersWorkbenchSection /></PermissionRoute>
+          },
+          {
+            path: 'monitor',
+            element: <PermissionRoute permission="dispensers.view"><DispensersSection /></PermissionRoute>
           },
           {
             path: 'prices',
