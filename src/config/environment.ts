@@ -14,13 +14,13 @@ export const ENV_CONFIG = {
   
   // Configuración específica por ambiente
   DEVELOPMENT: {
-    API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://192.168.125.23:5000/api',
+    API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://192.168.125.5:5000/api',
     LOG_LEVEL: 'debug',
     ENABLE_MOCK_DATA: false,
   },
 
   PRODUCTION: {
-    API_BASE_URL: 'https://isladominicana-pos-mobile-api.azurewebsites.net/api',
+    API_BASE_URL: 'https://gas-station-managment.azurewebsites.net/api',
     LOG_LEVEL: 'error',
     ENABLE_MOCK_DATA: false,
   },
