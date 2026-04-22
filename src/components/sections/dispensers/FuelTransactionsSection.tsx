@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Filter, RefreshCw, X, FuelIcon } from 'lucide-react';
+import { Filter, RefreshCw, X, FuelIcon, UserCheck, UserX } from 'lucide-react';
 import toast from 'react-hot-toast';
 import fuelTransactionService, { FuelTransaction, FuelTransactionsPagination, FuelStats } from '../../../services/fuelTransactionService';
 import { useHeader } from '../../../context/HeaderContext';
 import { mapFuelProductName } from '../../../utils/fuelProductMapping';
 import { CompactButton, Pagination, Toolbar, StatusDot } from '../../ui';
+import AssignStaftModal from './AssignStaftModal';
 
 const FuelTransactionsSection: React.FC = () => {
   const [transactions, setTransactions] = useState<FuelTransaction[]>([]);
@@ -28,6 +29,8 @@ const FuelTransactionsSection: React.FC = () => {
   const [availablePumps, setAvailablePumps] = useState<number[]>([]);
   const [availableNozzles, setAvailableNozzles] = useState<number[]>([]);
   const [availableGrades, setAvailableGrades] = useState<{ id: number; name: string }[]>([]);
+
+  const [assignModalId, setAssignModalId] = useState<number | null>(null);
 
   useEffect(() => {
     setSubtitle('Transacciones de dispensadoras de combustible');
@@ -347,6 +350,7 @@ const FuelTransactionsSection: React.FC = () => {
                   <th className="text-right px-2 font-semibold text-gray-600">Volumen</th>
                   <th className="text-right px-2 font-semibold text-gray-600">Precio</th>
                   <th className="text-right px-2 font-semibold text-gray-600">Monto</th>
+                  <th className="text-center px-2 font-semibold text-gray-600 w-24">Cajero</th>
                   <th className="text-center px-2 font-semibold text-gray-600 w-20">Estado</th>
                 </tr>
               </thead>
@@ -385,6 +389,24 @@ const FuelTransactionsSection: React.FC = () => {
                     </td>
                     <td className="px-2 text-sm font-bold text-gray-900 text-right font-mono whitespace-nowrap tabular-nums">
                       {formatCurrency(transaction.amount)}
+                    </td>
+                    <td className="px-2 text-center whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => setAssignModalId(transaction.transactionId)}
+                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-xs transition-colors ${
+                          transaction.staftId != null
+                            ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                            : 'bg-gray-50 text-gray-500 hover:bg-gray-100 border border-dashed border-gray-300'
+                        }`}
+                        title={transaction.staftId != null ? 'Cambiar cajero asignado' : 'Asignar cajero'}
+                      >
+                        {transaction.staftId != null ? (
+                          <><UserCheck className="w-3 h-3" /><span className="font-mono">#{transaction.staftId}</span></>
+                        ) : (
+                          <><UserX className="w-3 h-3" /><span>Asignar</span></>
+                        )}
+                      </button>
                     </td>
                     <td className="px-2 text-center whitespace-nowrap">
                       <div className="flex justify-center">
@@ -427,6 +449,14 @@ const FuelTransactionsSection: React.FC = () => {
             }
           }}
           itemLabel="transacciones"
+        />
+      )}
+
+      {assignModalId != null && (
+        <AssignStaftModal
+          transactionId={assignModalId}
+          onClose={() => setAssignModalId(null)}
+          onSaved={() => { setAssignModalId(null); fetchTransactions(); }}
         />
       )}
     </div>

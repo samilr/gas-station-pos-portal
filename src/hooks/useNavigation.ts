@@ -138,6 +138,7 @@ export const useNavigation = () => {
     // Users extras
     'users.roles': '/dashboard/users/roles',
     'users.staft-groups': '/dashboard/users/staft-groups',
+    'users.period-staft': '/dashboard/users/period-staft',
   };
 
   return {

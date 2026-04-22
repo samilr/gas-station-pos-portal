@@ -17,7 +17,8 @@ interface TerminalAutocompleteProps {
 
 const TerminalAutocomplete: React.FC<TerminalAutocompleteProps> = ({ siteId, ...props }) => {
   const fetchTerminals = async (): Promise<ITerminal[]> => {
-    const res = await terminalService.getTerminals();
+    // Pedimos un límite alto porque el endpoint pagina con default 50 y el autocomplete necesita todo.
+    const res = await terminalService.getTerminals({ limit: 1000 });
     const items = res.successful ? (res.data ?? []) : [];
     return siteId ? items.filter((t) => t.siteId === siteId) : items;
   };

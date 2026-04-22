@@ -5,7 +5,7 @@ import {
   DollarSign, Landmark, Zap, CreditCard, Shield, BookUser,
   Gauge, DollarSign as PriceIcon, Container, Cpu, Wrench,
   Tag, ClipboardList, History, Barcode, Wrench as MaintenanceIcon,
-  PlayCircle, Percent, Rows3, Columns
+  PlayCircle, Percent, Rows3, Columns, CalendarClock
 } from 'lucide-react';
 
 export interface SubMenuItem {
@@ -58,6 +58,7 @@ export const menuItems: MenuItem[] = [
       { id: 'users.list', label: 'Usuarios', icon: Users, permission: 'users.view' },
       { id: 'users.roles', label: 'Roles', icon: Shield, permission: 'users.view' },
       { id: 'users.staft-groups', label: 'Grupos de Cajeros', icon: BookUser, permission: 'users.view' },
+      { id: 'users.period-staft', label: 'Programación de Cajeros', icon: CalendarClock, permission: 'users.view' },
     ],
   },
   {
@@ -116,6 +117,7 @@ export const sectionTitles: Record<string, string> = {
   'users.profile': 'Mi Perfil',
   'users.roles': 'Roles',
   'users.staft-groups': 'Grupos de Cajeros',
+  'users.period-staft': 'Programación de Cajeros',
   transactions: 'Transacciones',
   'transactions.list': 'Transacciones',
   'transactions.tienda': 'Tienda',

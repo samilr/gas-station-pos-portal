@@ -42,7 +42,8 @@
       "Bash(git stash *)",
       "Bash(echo \"EXIT: $?\")",
       "Bash(sed -i '291,472d' src/components/sections/dispensers/DispensersWorkbenchSection.tsx)",
-      "Bash(sed -i '23,218d' src/components/sections/dispensers/DispensersWorkbenchSection.tsx)"
+      "Bash(sed -i '23,218d' src/components/sections/dispensers/DispensersWorkbenchSection.tsx)",
+      "Bash(echo \"EXIT:$?\")"
     ]
   }
 }

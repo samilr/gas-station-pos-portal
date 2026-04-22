@@ -82,10 +82,15 @@ export const terminalService = {
     const query = params ? '?' + new URLSearchParams(
       Object.fromEntries(Object.entries(params).filter(([, v]) => v != null).map(([k, v]) => [k, String(v)]))
     ).toString() : '';
-    const response = await apiGet<ITerminal[]>(buildApiUrl('terminals') + query);
+    const response = await apiGet<any>(buildApiUrl('terminals') + query);
+    // El endpoint es paginado: el body llega como { data: [...], pagination: {...} }.
+    const raw = response.data;
+    const items: ITerminal[] = Array.isArray(raw)
+      ? raw
+      : Array.isArray(raw?.data) ? raw.data : [];
     return {
       successful: response.successful,
-      data: response.data || []
+      data: items
     };
   },
 

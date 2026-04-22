@@ -1,5 +1,6 @@
 import { buildApiUrl } from '../config/api';
-import { apiGet, apiPut, apiDelete } from './apiInterceptor';
+import { apiGet, apiPost, apiPut, apiDelete } from './apiInterceptor';
+import { IShiftCandidatesResponse } from '../types/periodStaft';
 
 export interface FuelTransaction {
   transactionId: number;
@@ -26,6 +27,8 @@ export interface FuelTransaction {
   pumpTransactionsTotal: number;
   configurationId: string;
   createdAt: string;
+  staftId?: number | null;
+  siteId?: string | null;
 }
 
 export interface FuelTransactionsPagination {
@@ -217,6 +220,23 @@ class FuelTransactionService {
 
   async deleteFuelTransaction(id: number): Promise<{ successful: boolean; error?: string }> {
     const response = await apiDelete(buildApiUrl(`fuel-transactions/${id}`));
+    return { successful: response.successful, error: response.error };
+  }
+
+  async getRecentByPump(pump: number): Promise<{ successful: boolean; data: FuelTransaction[]; error?: string }> {
+    const response = await apiGet<any>(buildApiUrl(`fuel-transactions/recent-by-pump/${pump}`));
+    const raw = response.data;
+    const data: FuelTransaction[] = Array.isArray(raw) ? raw : (Array.isArray(raw?.data) ? raw.data : []);
+    return { successful: response.successful, data, error: response.error };
+  }
+
+  async getShiftCandidates(id: number): Promise<{ successful: boolean; data: IShiftCandidatesResponse | null; error?: string }> {
+    const response = await apiGet<IShiftCandidatesResponse>(buildApiUrl(`fuel-transactions/${id}/shift-candidates`));
+    return { successful: response.successful, data: response.data ?? null, error: response.error };
+  }
+
+  async assignStaft(id: number, staftId: number | null): Promise<{ successful: boolean; error?: string }> {
+    const response = await apiPost(buildApiUrl(`fuel-transactions/${id}/assign-staft`), { staftId });
     return { successful: response.successful, error: response.error };
   }
 
