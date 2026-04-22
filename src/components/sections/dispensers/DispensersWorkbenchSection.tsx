@@ -9,9 +9,15 @@ import { CompactButton } from '../../ui';
 import StatusDot from '../../ui/StatusDot';
 import useFuelIslands from '../../../hooks/useFuelIslands';
 import useDispensersConfig from '../../../hooks/useDispensersConfig';
-import fuelIslandService, { FuelIsland } from '../../../services/fuelIslandService';
-import dispensersConfigService, { Dispenser } from '../../../services/dispensersConfigService';
-import nozzleService, { Nozzle } from '../../../services/nozzleService';
+import { useSelectedSiteId } from '../../../hooks/useSelectedSite';
+import { FuelIsland } from '../../../services/fuelIslandService';
+import { Dispenser } from '../../../services/dispensersConfigService';
+import { Nozzle } from '../../../services/nozzleService';
+import { useUpdateDispenserConfigMutation } from '../../../store/api/dispensersConfigApi';
+import { useUnassignDispenserFromIslandMutation } from '../../../store/api/fuelIslandsApi';
+import { useUpdateNozzleMutation, useDeleteNozzleMutation, nozzlesApi } from '../../../store/api/nozzlesApi';
+import { store } from '../../../store';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { SiteAutocomplete } from '../../ui/autocompletes';
 import FuelIslandModal from './FuelIslandModal';
 import DeleteFuelIslandDialog from './DeleteFuelIslandDialog';
@@ -25,11 +31,17 @@ const formatPrice = (v: number) =>
 
 const DispensersWorkbenchSection: React.FC = () => {
   const { setSubtitle } = useHeader();
-  const [selectedSite, setSelectedSite] = useState<string | null>(null);
+  const globalSiteId = useSelectedSiteId();
+  const [selectedSite, setSelectedSite] = useState<string | null>(globalSiteId);
 
   const { fuelIslands, loading: loadingIslands, error: errIslands, refresh: refreshIslands, setFilters } =
     useFuelIslands();
   const { dispensers: allDispensers, refresh: refreshDispensers } = useDispensersConfig();
+
+  const [updateDispenser] = useUpdateDispenserConfigMutation();
+  const [unassignIslandDispenser] = useUnassignDispenserFromIslandMutation();
+  const [updateNozzle] = useUpdateNozzleMutation();
+  const [deleteNozzle] = useDeleteNozzleMutation();
 
   // Selecciones entre columnas
   const [selectedIslandId, setSelectedIslandId] = useState<number | null>(null);
@@ -74,6 +86,14 @@ const DispensersWorkbenchSection: React.FC = () => {
     setSubtitle('Workbench · Isletas, Bombas y Mangueras');
     return () => setSubtitle('');
   }, [setSubtitle]);
+
+  // Si el sitio global cambia y aún no hay selección local, adoptarlo.
+  useEffect(() => {
+    if (selectedSite === null && globalSiteId) {
+      setSelectedSite(globalSiteId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [globalSiteId]);
 
   useEffect(() => {
     setFilters({ siteId: selectedSite ?? undefined });
@@ -134,14 +154,14 @@ const DispensersWorkbenchSection: React.FC = () => {
     let cancelled = false;
     setLoadingNozzles(true);
     setNozzleError(null);
-    nozzleService.list({ dispenserId: selectedDispenserId })
-      .then((res) => {
-        if (cancelled) return;
-        if (res.successful) setNozzles(res.data);
-        else setNozzleError(res.error || 'Error al cargar mangueras');
+    store
+      .dispatch(nozzlesApi.endpoints.listNozzles.initiate({ dispenserId: selectedDispenserId }))
+      .unwrap()
+      .then((data) => {
+        if (!cancelled) setNozzles(data ?? []);
       })
       .catch((err) => {
-        if (!cancelled) setNozzleError(err instanceof Error ? err.message : 'Error de conexión');
+        if (!cancelled) setNozzleError(getErrorMessage(err, 'Error al cargar mangueras'));
       })
       .finally(() => { if (!cancelled) setLoadingNozzles(false); });
     return () => { cancelled = true; };
@@ -176,8 +196,14 @@ const DispensersWorkbenchSection: React.FC = () => {
 
   const refreshNozzles = async () => {
     if (selectedDispenserId == null) return;
-    const fresh = await nozzleService.list({ dispenserId: selectedDispenserId });
-    if (fresh.successful) setNozzles(fresh.data);
+    try {
+      const fresh = await store
+        .dispatch(nozzlesApi.endpoints.listNozzles.initiate({ dispenserId: selectedDispenserId }, { forceRefetch: true }))
+        .unwrap();
+      setNozzles(fresh ?? []);
+    } catch {
+      // noop
+    }
   };
 
   const refreshAll = () => {
@@ -198,24 +224,22 @@ const DispensersWorkbenchSection: React.FC = () => {
 
   const toggleDispenserActive = async (d: Dispenser) => {
     try {
-      const res = await dispensersConfigService.update(d.dispenserId, { active: !d.active });
-      if (res.successful) {
-        toast.success(`Bomba ${d.active ? 'desactivada' : 'activada'}`);
-        refreshAll();
-      } else toast.error(res.error || 'Error al cambiar estado');
-    } catch { toast.error('Error de conexión'); }
+      await updateDispenser({ id: d.dispenserId, body: { active: !d.active } }).unwrap();
+      toast.success(`Bomba ${d.active ? 'desactivada' : 'activada'}`);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Error al cambiar estado') ?? 'Error al cambiar estado');
+    }
   };
 
   const unassignDispenser = async (island: FuelIsland, d: Dispenser) => {
     const label = d.name || `Bomba #${d.pumpNumber}`;
     if (!window.confirm(`¿Remover ${label} de ${island.name}?`)) return;
     try {
-      const res = await fuelIslandService.unassignDispenser(island.fuelIslandId, d.dispenserId);
-      if (res.successful) {
-        toast.success(`${label} removido de ${island.name}`);
-        refreshAll();
-      } else toast.error(res.error || 'Error al remover');
-    } catch { toast.error('Error de conexión'); }
+      await unassignIslandDispenser({ islandId: island.fuelIslandId, dispenserId: d.dispenserId }).unwrap();
+      toast.success(`${label} removido de ${island.name}`);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Error al remover') ?? 'Error al remover');
+    }
   };
 
   const openCreateNozzle = () => {
@@ -232,26 +256,27 @@ const DispensersWorkbenchSection: React.FC = () => {
 
   const toggleNozzleActive = async (n: Nozzle) => {
     try {
-      const res = await nozzleService.update(n.nozzleId, { active: !n.active });
-      if (res.successful) {
-        toast.success(`Manguera ${n.active ? 'desactivada' : 'activada'}`);
-        refreshNozzles();
-      } else toast.error(res.error || 'Error al cambiar estado');
-    } catch { toast.error('Error de conexión'); }
+      await updateNozzle({ id: n.nozzleId, body: { active: !n.active } }).unwrap();
+      toast.success(`Manguera ${n.active ? 'desactivada' : 'activada'}`);
+      refreshNozzles();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Error al cambiar estado') ?? 'Error al cambiar estado');
+    }
   };
 
   const handleDeleteNozzle = async () => {
     if (!confirmDeleteNozzle) return;
     setDeletingNozzle(true);
     try {
-      const res = await nozzleService.remove(confirmDeleteNozzle.nozzleId);
-      if (res.successful) {
-        toast.success(`Manguera #${confirmDeleteNozzle.nozzleNumber} eliminada`);
-        setConfirmDeleteNozzle(null);
-        refreshNozzles();
-      } else toast.error(res.error || 'Error al eliminar');
-    } catch { toast.error('Error de conexión'); }
-    finally { setDeletingNozzle(false); }
+      await deleteNozzle(confirmDeleteNozzle.nozzleId).unwrap();
+      toast.success(`Manguera #${confirmDeleteNozzle.nozzleNumber} eliminada`);
+      setConfirmDeleteNozzle(null);
+      refreshNozzles();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Error al eliminar') ?? 'Error al eliminar');
+    } finally {
+      setDeletingNozzle(false);
+    }
   };
 
   // ─────────────────────────────── UI helpers ───────────────────────────────

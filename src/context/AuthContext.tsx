@@ -1,30 +1,13 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authService } from '../services/authService';
-import { ROLE_PERMISSIONS, hasPermission, hasAnyPermission, hasAllPermissions, Role } from '../config/permissions';
+import React, { useCallback, useEffect, ReactNode } from 'react';
+import { hasPermission as roleHasPermission, Permission, Role } from '../config/permissions';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { hydrateAuth, loginUser, logoutUser, AuthUser } from '../store/slices/authSlice';
 
-// Mapeo de roles de la API a roles del proyecto
-const ROLE_MAPPING: Record<string, Role> = {
-  'ADMIN': Role.ADMIN,
-  'MANAGER': Role.MANAGER,
-  'SUPERVISOR': Role.SUPERVISOR,
-  'AUDIT': Role.AUDIT
-};
-
-interface User {
-  id: string;
-  name: string;
-  username: string;
-  role: Role;
-  permissions: string[];
-  staftId?: string;
-  shift?: string;
-  terminal?: string;
-  site?: string;
-  staftGroup?: string;
-}
+// Re-export del tipo para mantener compatibilidad con imports existentes.
+export type User = AuthUser;
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
@@ -33,149 +16,59 @@ interface AuthContextType {
   isTokenExpired: () => boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+/**
+ * Host del dispatch de hidratación al arranque. No provee contexto —
+ * `useAuth` lee directamente del store. Se mantiene para no tener que cambiar
+ * App.tsx y para concentrar la hidratación en un único punto del árbol.
+ */
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
-    // Check if user is already logged in (from localStorage)
-    const savedUser = localStorage.getItem('adminUser');
-    const authToken = localStorage.getItem('authToken');
-    
-    if (savedUser && authToken) {
-      try {
-        const userData = JSON.parse(savedUser);
-        
-        // Verificar si el token no ha expirado
-        const expiresIn = localStorage.getItem('tokenExpiresIn');
-        const isExpired = !expiresIn || new Date() > new Date(expiresIn);
-        
-        if (!isExpired) {
-          setUser(userData);
-        } else {
-          // Token expirado, limpiar datos
-          localStorage.removeItem('adminUser');
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('tokenExpiresIn');
-          setUser(null);
-        }
-      } catch (error) {
-        console.error('Error parsing saved user data:', error);
-        // Limpiar datos corruptos
-        localStorage.removeItem('adminUser');
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('tokenExpiresIn');
-        setUser(null);
-      }
-    } else {
-      // No hay datos de usuario o token, limpiar todo
-      localStorage.removeItem('adminUser');
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('tokenExpiresIn');
-      setUser(null);
-    }
-    
-    setIsLoading(false);
-  }, []);
+    dispatch(hydrateAuth());
+  }, [dispatch]);
 
-  const login = async (username: string, password: string): Promise<boolean> => {
-    try {
-      const response = await authService.login({ username, password });
-      
-      if (response.successful && response.data) {
-        const apiRole = response.data.role as string;
-        const mappedRole = ROLE_MAPPING[apiRole] || Role.ACCOUNTANT;
-        const permissions = [...(ROLE_PERMISSIONS[mappedRole] || [])];
-        
-        // Crear objeto de usuario con los datos de la API
-        const userData: User = {
-          id: response.data.staftId,
-          name: response.data.user,
-          username: username,
-          role: mappedRole,
-          permissions: permissions,
-          staftId: response.data.staftId,
-          shift: response.data.shift,
-          terminal: response.data.terminal,
-          site: response.data.site,
-          staftGroup: response.data.staftGroup,
-        };
-        
-        setUser(userData);
-        
-        // Guardar accessToken en localStorage
-        if (response.data.accessToken) {
-          localStorage.setItem('authToken', response.data.accessToken);
-        }
+  return <>{children}</>;
+};
 
-        if (response.data.expiresIn) {
-          localStorage.setItem('tokenExpiresIn', response.data.expiresIn.toString());
-        }
-        
-        localStorage.setItem('adminUser', JSON.stringify(userData));
-        return true;
-      }
-      
-      return false;
-    } catch (error) {
-      console.error('Error en login:', error);
-      return false;
-    }
-  };
+export const useAuth = (): AuthContextType => {
+  const dispatch = useAppDispatch();
+  const user = useAppSelector((s) => s.auth.user);
+  const isLoading = useAppSelector((s) => s.auth.isLoading);
 
-  const logout = async () => {
-    try {
-      await authService.logout();
-    } catch (error) {
-      console.error('Error en logout:', error);
-    } finally {
-      setUser(null);
-      localStorage.removeItem('adminUser');
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('tokenExpiresIn');
-    }
-  };
+  const login = useCallback(
+    async (username: string, password: string): Promise<boolean> => {
+      const result = await dispatch(loginUser({ username, password })).unwrap();
+      return result !== null;
+    },
+    [dispatch]
+  );
 
-  const checkPermission = (permission: string): boolean => {
-    if (!user) return false;
-    return hasPermission(user.role as any, permission as any);
-  };
+  const logout = useCallback(async () => {
+    await dispatch(logoutUser()).unwrap();
+  }, [dispatch]);
 
-  const isTokenExpired = (): boolean => {
+  const checkPermission = useCallback(
+    (permission: string): boolean => {
+      if (!user) return false;
+      return roleHasPermission(user.role as Role, permission as Permission);
+    },
+    [user]
+  );
+
+  const isTokenExpired = useCallback((): boolean => {
     const expiresIn = localStorage.getItem('tokenExpiresIn');
     if (!expiresIn) return true;
-    
-    const expirationDate = new Date(expiresIn);
-    return new Date() > expirationDate;
-  };
+    return new Date() > new Date(expiresIn);
+  }, []);
 
-  const value = {
+  return {
     user,
     login,
     logout,
     isAuthenticated: !!user,
     isLoading,
     hasPermission: checkPermission,
-    isTokenExpired
+    isTokenExpired,
   };
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
 };

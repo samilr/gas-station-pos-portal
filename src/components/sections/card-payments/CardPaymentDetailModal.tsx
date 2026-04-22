@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { CreditCard, X, RefreshCw, Ban, RotateCcw, Link2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import cardPaymentService, { CardPayment } from '../../../services/cardPaymentService';
+import { CardPayment } from '../../../services/cardPaymentService';
+import {
+  useGetCardPaymentByIdQuery,
+  useVoidCardPaymentMutation,
+  useRefundCardPaymentMutation,
+  useLinkCardPaymentTransMutation,
+} from '../../../store/api/cardPaymentsApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { CompactButton } from '../../ui';
 
 interface Props {
@@ -19,33 +26,33 @@ const Field: React.FC<{ label: string; value: React.ReactNode; mono?: boolean }>
 );
 
 const CardPaymentDetailModal: React.FC<Props> = ({ isOpen, onClose, cardPaymentId, onChanged }) => {
-  const [cp, setCp] = useState<CardPayment | null>(null);
-  const [loading, setLoading] = useState(false);
   const [acting, setActing] = useState<null | 'void' | 'refund' | 'link'>(null);
-
   const [refundAmount, setRefundAmount] = useState<string>('');
   const [linkTransNumber, setLinkTransNumber] = useState<string>('');
   const [linkLine, setLinkLine] = useState<string>('1');
 
-  useEffect(() => {
-    if (!isOpen || !cardPaymentId) return;
-    setLoading(true);
-    cardPaymentService.getById(cardPaymentId).then((res) => {
-      if (res.successful) setCp(res.data);
-      else toast.error(res.error || 'Error al cargar el pago');
-      setLoading(false);
-    });
-  }, [isOpen, cardPaymentId]);
+  const { data: cp, isLoading: loading } = useGetCardPaymentByIdQuery(cardPaymentId ?? '', {
+    skip: !isOpen || !cardPaymentId,
+  });
+  const [voidPayment] = useVoidCardPaymentMutation();
+  const [refundPayment] = useRefundCardPaymentMutation();
+  const [linkPayment] = useLinkCardPaymentTransMutation();
 
   if (!isOpen) return null;
 
   const handleVoid = async () => {
     if (!cp) return;
     setActing('void');
-    const res = await cardPaymentService.voidPayment(cp.cardPaymentId);
-    if (res.successful) { toast.success('Pago anulado'); onChanged(); onClose(); }
-    else toast.error(res.error || 'Error al anular');
-    setActing(null);
+    try {
+      await voidPayment(cp.cardPaymentId).unwrap();
+      toast.success('Pago anulado');
+      onChanged();
+      onClose();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Error al anular') ?? 'Error al anular');
+    } finally {
+      setActing(null);
+    }
   };
 
   const handleRefund = async () => {
@@ -53,23 +60,35 @@ const CardPaymentDetailModal: React.FC<Props> = ({ isOpen, onClose, cardPaymentI
     const amountCents = Math.round(parseFloat(refundAmount || '0') * 100);
     if (!amountCents || amountCents <= 0) { toast.error('Monto inválido'); return; }
     setActing('refund');
-    const res = await cardPaymentService.refund(cp.cardPaymentId, { amountCents });
-    if (res.successful) { toast.success('Devolución procesada'); onChanged(); onClose(); }
-    else toast.error(res.error || 'Error en devolución');
-    setActing(null);
+    try {
+      await refundPayment({ id: cp.cardPaymentId, body: { amountCents } }).unwrap();
+      toast.success('Devolución procesada');
+      onChanged();
+      onClose();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Error en devolución') ?? 'Error en devolución');
+    } finally {
+      setActing(null);
+    }
   };
 
   const handleLinkTrans = async () => {
     if (!cp) return;
     if (!linkTransNumber) { toast.error('Ingresa el transNumber'); return; }
     setActing('link');
-    const res = await cardPaymentService.linkTrans(cp.cardPaymentId, {
-      transNumber: linkTransNumber,
-      transPaymLine: parseInt(linkLine, 10) || 1,
-    });
-    if (res.successful) { toast.success('Pago enlazado a transacción'); onChanged(); onClose(); }
-    else toast.error(res.error || 'Error al enlazar');
-    setActing(null);
+    try {
+      await linkPayment({
+        id: cp.cardPaymentId,
+        body: { transNumber: linkTransNumber, transPaymLine: parseInt(linkLine, 10) || 1 },
+      }).unwrap();
+      toast.success('Pago enlazado a transacción');
+      onChanged();
+      onClose();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Error al enlazar') ?? 'Error al enlazar');
+    } finally {
+      setActing(null);
+    }
   };
 
   const amountDop = (cents: number) => (cents / 100).toLocaleString('es-DO', { minimumFractionDigits: 2 });

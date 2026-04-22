@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Save, X, Edit, Plus, RefreshCw, Droplet, Container, Package } from 'lucide-react';
 import toast from 'react-hot-toast';
-import nozzleService, { Nozzle } from '../../../services/nozzleService';
-import { getProductsByCategory, IProductByCategory } from '../../../services/productService';
+import { Nozzle } from '../../../services/nozzleService';
+import { useCreateNozzleMutation, useUpdateNozzleMutation } from '../../../store/api/nozzlesApi';
+import { IProductByCategory } from '../../../services/productService';
+import { useListProductsByCategoryQuery } from '../../../store/api/productsApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { CompactButton } from '../../ui';
 
 interface Props {
@@ -41,8 +44,13 @@ const fromNozzle = (n: Nozzle): FormState => ({
 const NozzleFormModal: React.FC<Props> = ({ isOpen, onClose, dispenserId, nozzle, mode, onSuccess }) => {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [loading, setLoading] = useState(false);
-  const [products, setProducts] = useState<IProductByCategory[]>([]);
-  const [loadingProducts, setLoadingProducts] = useState(false);
+
+  const [createNozzle] = useCreateNozzleMutation();
+  const [updateNozzle] = useUpdateNozzleMutation();
+  const { data: productsData, isLoading: loadingProducts } = useListProductsByCategoryQuery('COMB', {
+    skip: !isOpen,
+  });
+  const products: IProductByCategory[] = productsData ?? [];
 
   const isEditing = mode === 'edit';
   const isCreating = mode === 'create';
@@ -52,17 +60,6 @@ const NozzleFormModal: React.FC<Props> = ({ isOpen, onClose, dispenserId, nozzle
     if (nozzle && isEditing) setForm(fromNozzle(nozzle));
     else setForm(EMPTY);
   }, [isOpen, nozzle, isEditing]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    let cancelled = false;
-    setLoadingProducts(true);
-    getProductsByCategory('COMB')
-      .then((list) => { if (!cancelled) setProducts(list); })
-      .catch(() => { if (!cancelled) setProducts([]); })
-      .finally(() => { if (!cancelled) setLoadingProducts(false); });
-    return () => { cancelled = true; };
-  }, [isOpen]);
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -99,13 +96,13 @@ const NozzleFormModal: React.FC<Props> = ({ isOpen, onClose, dispenserId, nozzle
           productId: form.productId,
           tankNumber: form.tankNumber === '' ? null : Number(form.tankNumber),
         };
-        const res = await nozzleService.create(payload);
-        if (res.successful) {
+        try {
+          await createNozzle(payload).unwrap();
           toast.success(`Manguera #${payload.nozzleNumber} creada`, { duration: 4000 });
           onSuccess();
           onClose();
-        } else {
-          toast.error(res.error || 'Error al crear manguera');
+        } catch (err) {
+          toast.error(getErrorMessage(err, 'Error al crear manguera') ?? 'Error al crear manguera');
         }
       } else if (isEditing && nozzle) {
         const payload = {
@@ -114,13 +111,13 @@ const NozzleFormModal: React.FC<Props> = ({ isOpen, onClose, dispenserId, nozzle
           unassignTank: form.unassignTank,
           active: form.active,
         };
-        const res = await nozzleService.update(nozzle.nozzleId, payload);
-        if (res.successful) {
+        try {
+          await updateNozzle({ id: nozzle.nozzleId, body: payload }).unwrap();
           toast.success('Manguera actualizada', { duration: 4000 });
           onSuccess();
           onClose();
-        } else {
-          toast.error(res.error || 'Error al actualizar');
+        } catch (err) {
+          toast.error(getErrorMessage(err, 'Error al actualizar') ?? 'Error al actualizar');
         }
       }
     } catch (err) {

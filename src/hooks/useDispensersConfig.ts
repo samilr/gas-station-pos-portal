@@ -1,34 +1,30 @@
-import { useCallback, useEffect, useState } from 'react';
-import dispensersConfigService, { Dispenser } from '../services/dispensersConfigService';
+import { useMemo, useState } from 'react';
+import { useListDispensersConfigQuery } from '../store/api/dispensersConfigApi';
+import { useSelectedSiteId } from './useSelectedSite';
+import { getErrorMessage } from '../store/api/baseApi';
 
 export function useDispensersConfig(initialFilters?: { siteId?: string; ptsId?: string }) {
-  const [dispensers, setDispensers] = useState<Dispenser[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const globalSiteId = useSelectedSiteId();
   const [filters, setFilters] = useState<{ siteId?: string; ptsId?: string }>(initialFilters || {});
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await dispensersConfigService.list(filters);
-      if (res.successful) {
-        setDispensers(res.data);
-      } else {
-        setError(res.error || 'Error al cargar dispensadoras');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error de conexión');
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
+  const effectiveFilters = useMemo(
+    () => ({
+      ...filters,
+      siteId: filters.siteId ?? globalSiteId ?? undefined,
+    }),
+    [filters, globalSiteId]
+  );
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
+  const { data, isLoading, error, refetch } = useListDispensersConfigQuery(effectiveFilters);
 
-  return { dispensers, loading, error, refresh, filters, setFilters };
+  return {
+    dispensers: data ?? [],
+    loading: isLoading,
+    error: getErrorMessage(error, 'Error al cargar dispensadoras'),
+    refresh: refetch,
+    filters: effectiveFilters,
+    setFilters,
+  };
 }
 
 export default useDispensersConfig;

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import fuelTransactionService, {
+import { useCallback, useMemo, useState } from 'react';
+import {
   FuelDashboardFilters,
   FuelSummary,
   FuelDailyTrendRow,
@@ -8,6 +8,16 @@ import fuelTransactionService, {
   FuelHourlyRow,
   FuelTopTransactionRow,
 } from '../services/fuelTransactionService';
+import {
+  useGetFuelSummaryQuery,
+  useGetFuelDailyTrendQuery,
+  useGetFuelByPumpQuery,
+  useGetFuelByGradeQuery,
+  useGetFuelHourlyQuery,
+  useGetFuelTopTransactionsQuery,
+} from '../store/api/fuelDashboardApi';
+import { useSelectedSiteId } from './useSelectedSite';
+import { getErrorMessage } from '../store/api/baseApi';
 
 export type FuelRangePeriod = 'today' | '7d' | '30d' | 'custom';
 
@@ -63,32 +73,39 @@ export function rangeFor(period: FuelRangePeriod): { startDate: string; endDate:
 export function useFuelDashboard(options: UseFuelDashboardOptions = {}) {
   const {
     initialPeriod = 'today',
-    siteId = null,
+    siteId: overrideSiteId,
     excludeOffline = true,
     topLimit = 10,
     enabled = ALL_ENABLED,
     autoLoad = true,
   } = options;
 
+  const globalSiteId = useSelectedSiteId();
+  const effectiveSiteId = overrideSiteId !== undefined ? overrideSiteId : globalSiteId;
+
   const [period, setPeriod] = useState<FuelRangePeriod>(initialPeriod);
-  const [filters, setFiltersState] = useState<FuelDashboardFilters>(() => ({
+  const [localFilters, setFiltersState] = useState<FuelDashboardFilters>(() => ({
     ...rangeFor(initialPeriod),
-    siteId,
+    siteId: null,
     excludeOffline,
   }));
 
-  const [summary, setSummary] = useState<FuelSummary | null>(null);
-  const [dailyTrend, setDailyTrend] = useState<FuelDailyTrendRow[]>([]);
-  const [byPump, setByPump] = useState<FuelByPumpRow[]>([]);
-  const [byFuelGrade, setByFuelGrade] = useState<FuelByFuelGradeRow[]>([]);
-  const [hourly, setHourly] = useState<FuelHourlyRow[]>([]);
-  const [top, setTop] = useState<FuelTopTransactionRow[]>([]);
+  const filters = useMemo<FuelDashboardFilters>(
+    () => ({ ...localFilters, siteId: effectiveSiteId ?? null }),
+    [localFilters, effectiveSiteId]
+  );
 
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const skip = !autoLoad;
 
-  const enabledRef = useRef(enabled);
-  enabledRef.current = enabled;
+  const summaryQuery = useGetFuelSummaryQuery(filters, { skip: skip || !enabled.summary });
+  const dailyTrendQuery = useGetFuelDailyTrendQuery(filters, { skip: skip || !enabled.dailyTrend });
+  const byPumpQuery = useGetFuelByPumpQuery(filters, { skip: skip || !enabled.byPump });
+  const byGradeQuery = useGetFuelByGradeQuery(filters, { skip: skip || !enabled.byFuelGrade });
+  const hourlyQuery = useGetFuelHourlyQuery(filters, { skip: skip || !enabled.hourly });
+  const topQuery = useGetFuelTopTransactionsQuery(
+    { filters, limit: topLimit },
+    { skip: skip || !enabled.top }
+  );
 
   const setRange = useCallback((p: FuelRangePeriod, customStart?: string, customEnd?: string) => {
     setPeriod(p);
@@ -105,39 +122,60 @@ export function useFuelDashboard(options: UseFuelDashboardOptions = {}) {
   }, []);
 
   const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const e = enabledRef.current;
-      const tasks: Array<Promise<void>> = [];
-      if (e.summary) tasks.push(fuelTransactionService.getDashboardSummary(filters).then(setSummary));
-      if (e.dailyTrend) tasks.push(fuelTransactionService.getDashboardDailyTrend(filters).then(setDailyTrend));
-      if (e.byPump) tasks.push(fuelTransactionService.getDashboardByPump(filters).then(setByPump));
-      if (e.byFuelGrade) tasks.push(fuelTransactionService.getDashboardByFuelGrade(filters).then(setByFuelGrade));
-      if (e.hourly) tasks.push(fuelTransactionService.getDashboardHourly(filters).then(setHourly));
-      if (e.top) tasks.push(fuelTransactionService.getDashboardTopTransactions(filters, topLimit).then(setTop));
-      await Promise.all(tasks);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error al cargar dashboard';
-      setError(msg);
-      console.error('[FuelDashboard]', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [filters, topLimit]);
+    const refetches: Promise<unknown>[] = [];
+    if (enabled.summary) refetches.push(summaryQuery.refetch());
+    if (enabled.dailyTrend) refetches.push(dailyTrendQuery.refetch());
+    if (enabled.byPump) refetches.push(byPumpQuery.refetch());
+    if (enabled.byFuelGrade) refetches.push(byGradeQuery.refetch());
+    if (enabled.hourly) refetches.push(hourlyQuery.refetch());
+    if (enabled.top) refetches.push(topQuery.refetch());
+    await Promise.all(refetches);
+  }, [
+    enabled.summary,
+    enabled.dailyTrend,
+    enabled.byPump,
+    enabled.byFuelGrade,
+    enabled.hourly,
+    enabled.top,
+    summaryQuery,
+    dailyTrendQuery,
+    byPumpQuery,
+    byGradeQuery,
+    hourlyQuery,
+    topQuery,
+  ]);
 
-  useEffect(() => {
-    if (autoLoad) refresh();
-  }, [autoLoad, refresh]);
+  const loading =
+    summaryQuery.isLoading ||
+    dailyTrendQuery.isLoading ||
+    byPumpQuery.isLoading ||
+    byGradeQuery.isLoading ||
+    hourlyQuery.isLoading ||
+    topQuery.isLoading;
 
-  return useMemo(
-    () => ({
-      period, filters, setRange, setFilters,
-      summary, dailyTrend, byPump, byFuelGrade, hourly, top,
-      loading, error, refresh,
-    }),
-    [period, filters, setRange, setFilters, summary, dailyTrend, byPump, byFuelGrade, hourly, top, loading, error, refresh],
-  );
+  const firstError =
+    summaryQuery.error ??
+    dailyTrendQuery.error ??
+    byPumpQuery.error ??
+    byGradeQuery.error ??
+    hourlyQuery.error ??
+    topQuery.error;
+
+  return {
+    period,
+    filters,
+    setRange,
+    setFilters,
+    summary: summaryQuery.data ?? (null as FuelSummary | null),
+    dailyTrend: dailyTrendQuery.data ?? ([] as FuelDailyTrendRow[]),
+    byPump: byPumpQuery.data ?? ([] as FuelByPumpRow[]),
+    byFuelGrade: byGradeQuery.data ?? ([] as FuelByFuelGradeRow[]),
+    hourly: hourlyQuery.data ?? ([] as FuelHourlyRow[]),
+    top: topQuery.data ?? ([] as FuelTopTransactionRow[]),
+    loading,
+    error: getErrorMessage(firstError, 'Error al cargar dashboard'),
+    refresh,
+  };
 }
 
 export default useFuelDashboard;

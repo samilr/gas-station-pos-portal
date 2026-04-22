@@ -5,7 +5,10 @@ import { useHeader } from '../../../context/HeaderContext';
 import { CompactButton, Pagination } from '../../ui';
 import Toolbar from '../../ui/Toolbar';
 import { useCardPayments, useOrphanedCardPayments } from '../../../hooks/useCardPayments';
-import cardPaymentService, { CardPayment } from '../../../services/cardPaymentService';
+import { useSelectedSiteId } from '../../../hooks/useSelectedSite';
+import { CardPayment } from '../../../services/cardPaymentService';
+import { useBatchCloseCardPaymentsMutation } from '../../../store/api/cardPaymentsApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import CardPaymentDetailModal from './CardPaymentDetailModal';
 
 type Tab = 'all' | 'orphaned';
@@ -24,9 +27,10 @@ const statusColor = (status: string): string => {
 
 const CardPaymentsSection: React.FC = () => {
   const { setSubtitle } = useHeader();
+  const globalSiteId = useSelectedSiteId();
   const [tab, setTab] = useState<Tab>('all');
 
-  const [siteId, setSiteId] = useState('');
+  const [siteId, setSiteId] = useState<string>(globalSiteId ?? '');
   const [terminalId, setTerminalId] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -41,6 +45,7 @@ const CardPaymentsSection: React.FC = () => {
   const [detailId, setDetailId] = useState<string | null>(null);
 
   const [closing, setClosing] = useState(false);
+  const [batchClose] = useBatchCloseCardPaymentsMutation();
 
   useEffect(() => {
     setSubtitle('Pagos con tarjeta CardNet');
@@ -75,14 +80,20 @@ const CardPaymentsSection: React.FC = () => {
     orphansHook.refresh();
   };
 
+  const effectiveSiteId = siteId || globalSiteId || '';
+
   const handleBatchClose = async () => {
-    if (!siteId || !terminalId) { toast.error('Selecciona site y terminal para cerrar lote'); return; }
+    if (!effectiveSiteId || !terminalId) { toast.error('Selecciona site y terminal para cerrar lote'); return; }
     setClosing(true);
-    const res = await cardPaymentService.batchClose({ siteId, terminalId: parseInt(terminalId, 10) });
-    if (res.successful) toast.success('Lote cerrado');
-    else toast.error(res.error || 'Error al cerrar lote');
-    setClosing(false);
-    refreshAll();
+    try {
+      await batchClose({ siteId: effectiveSiteId, terminalId: parseInt(terminalId, 10) }).unwrap();
+      toast.success('Lote cerrado');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Error al cerrar lote') ?? 'Error al cerrar lote');
+    } finally {
+      setClosing(false);
+      refreshAll();
+    }
   };
 
   const amountDop = (cents: number) => (cents / 100).toLocaleString('es-DO', { minimumFractionDigits: 2 });
@@ -125,7 +136,7 @@ const CardPaymentsSection: React.FC = () => {
         <CompactButton variant="ghost" onClick={refreshAll} disabled={loading}>
           <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} /> Actualizar
         </CompactButton>
-        <CompactButton variant="primary" onClick={handleBatchClose} disabled={closing || !siteId || !terminalId}>
+        <CompactButton variant="primary" onClick={handleBatchClose} disabled={closing || !effectiveSiteId || !terminalId}>
           {closing ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Lock className="w-3 h-3" />}
           Cerrar lote
         </CompactButton>

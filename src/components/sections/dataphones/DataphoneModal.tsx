@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Smartphone, Save, X, Edit, Plus, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
-import dataphoneService, { Dataphone } from '../../../services/dataphoneService';
+import { Dataphone } from '../../../services/dataphoneService';
+import { useCreateDataphoneMutation, useUpdateDataphoneMutation } from '../../../store/api/dataphonesApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { CompactButton } from '../../ui';
 import { SiteAutocomplete, DataphoneSupplierAutocomplete } from '../../ui/autocompletes';
 
@@ -35,6 +37,8 @@ const EMPTY: FormState = {
 const DataphoneModal: React.FC<Props> = ({ isOpen, onClose, dataphone, mode, onSuccess }) => {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [loading, setLoading] = useState(false);
+  const [createDataphone] = useCreateDataphoneMutation();
+  const [updateDataphone] = useUpdateDataphoneMutation();
 
   const isEditing = mode === 'edit';
   const isViewing = mode === 'view';
@@ -84,9 +88,13 @@ const DataphoneModal: React.FC<Props> = ({ isOpen, onClose, dataphone, mode, onS
           comment: form.comment || null,
           active: form.active,
         };
-        const res = await dataphoneService.create(payload);
-        if (res.successful) { toast.success(`Dataphone creado: ${payload.name}`); onSuccess(); onClose(); }
-        else toast.error(res.error || 'Error al crear');
+        try {
+          await createDataphone(payload).unwrap();
+          toast.success(`Dataphone creado: ${payload.name}`);
+          onSuccess(); onClose();
+        } catch (err) {
+          toast.error(getErrorMessage(err, 'Error al crear') ?? 'Error al crear');
+        }
       } else if (isEditing && dataphone) {
         const payload = {
           name: form.name,
@@ -99,9 +107,13 @@ const DataphoneModal: React.FC<Props> = ({ isOpen, onClose, dataphone, mode, onS
           comment: form.comment || null,
           active: form.active,
         };
-        const res = await dataphoneService.update(dataphone.dataphoneId, payload);
-        if (res.successful) { toast.success('Dataphone actualizado'); onSuccess(); onClose(); }
-        else toast.error(res.error || 'Error al actualizar');
+        try {
+          await updateDataphone({ id: dataphone.dataphoneId, body: payload }).unwrap();
+          toast.success('Dataphone actualizado');
+          onSuccess(); onClose();
+        } catch (err) {
+          toast.error(getErrorMessage(err, 'Error al actualizar') ?? 'Error al actualizar');
+        }
       }
     } catch (err) {
       console.error(err);

@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { CreditCard, Save, X, Edit, Plus, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
-import dataphoneSupplierService, { DataphoneSupplier } from '../../../services/dataphoneSupplierService';
+import { DataphoneSupplier } from '../../../services/dataphoneSupplierService';
+import {
+  useCreateDataphoneSupplierMutation,
+  useUpdateDataphoneSupplierMutation,
+} from '../../../store/api/dataphoneSuppliersApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { CompactButton } from '../../ui';
 
 interface Props {
@@ -30,6 +35,8 @@ const EMPTY: FormState = {
 const DataphoneSupplierModal: React.FC<Props> = ({ isOpen, onClose, supplier, mode, onSuccess }) => {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [loading, setLoading] = useState(false);
+  const [createSupplier] = useCreateDataphoneSupplierMutation();
+  const [updateSupplier] = useUpdateDataphoneSupplierMutation();
 
   const isEditing = mode === 'edit';
   const isViewing = mode === 'view';
@@ -73,11 +80,13 @@ const DataphoneSupplierModal: React.FC<Props> = ({ isOpen, onClose, supplier, mo
           transTimeout: Number(form.transTimeout),
           active: form.active,
         };
-        const res = await dataphoneSupplierService.create(payload);
-        if (res.successful) {
+        try {
+          await createSupplier(payload).unwrap();
           toast.success(`Proveedor creado: ${payload.name}`);
           onSuccess(); onClose();
-        } else toast.error(res.error || 'Error al crear');
+        } catch (err) {
+          toast.error(getErrorMessage(err, 'Error al crear') ?? 'Error al crear');
+        }
       } else if (isEditing && supplier) {
         const payload = {
           name: form.name,
@@ -87,11 +96,13 @@ const DataphoneSupplierModal: React.FC<Props> = ({ isOpen, onClose, supplier, mo
           transTimeout: form.transTimeout === '' ? undefined : Number(form.transTimeout),
           active: form.active,
         };
-        const res = await dataphoneSupplierService.update(supplier.dataphoneSupplierId, payload);
-        if (res.successful) {
+        try {
+          await updateSupplier({ id: supplier.dataphoneSupplierId, body: payload }).unwrap();
           toast.success('Proveedor actualizado');
           onSuccess(); onClose();
-        } else toast.error(res.error || 'Error al actualizar');
+        } catch (err) {
+          toast.error(getErrorMessage(err, 'Error al actualizar') ?? 'Error al actualizar');
+        }
       }
     } catch (err) {
       console.error(err);

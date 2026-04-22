@@ -1,8 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { X, Plus, RefreshCw, Droplet, Edit, Trash2, AlertCircle, Container } from 'lucide-react';
 import toast from 'react-hot-toast';
-import nozzleService, { Nozzle } from '../../../services/nozzleService';
+import { Nozzle } from '../../../services/nozzleService';
 import { Dispenser } from '../../../services/dispensersConfigService';
+import { store } from '../../../store';
+import {
+  nozzlesApi,
+  useUpdateNozzleMutation,
+  useDeleteNozzleMutation,
+} from '../../../store/api/nozzlesApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { CompactButton } from '../../ui';
 import StatusDot from '../../ui/StatusDot';
 import NozzleFormModal from './NozzleFormModal';
@@ -28,16 +35,25 @@ const NozzlesModal: React.FC<Props> = ({ isOpen, onClose, dispenser }) => {
   const [confirmDelete, setConfirmDelete] = useState<Nozzle | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  const [updateNozzle] = useUpdateNozzleMutation();
+  const [deleteNozzle] = useDeleteNozzleMutation();
+
   const refresh = async () => {
     if (!dispenser) return;
     setLoading(true);
     setError(null);
     try {
-      const res = await nozzleService.list({ dispenserId: dispenser.dispenserId });
-      if (res.successful) setNozzles(res.data);
-      else setError(res.error || 'Error al cargar mangueras');
+      const fresh = await store
+        .dispatch(
+          nozzlesApi.endpoints.listNozzles.initiate(
+            { dispenserId: dispenser.dispenserId },
+            { forceRefetch: true }
+          )
+        )
+        .unwrap();
+      setNozzles(fresh ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error de conexión');
+      setError(getErrorMessage(err, 'Error al cargar mangueras'));
     } finally {
       setLoading(false);
     }
@@ -53,16 +69,11 @@ const NozzlesModal: React.FC<Props> = ({ isOpen, onClose, dispenser }) => {
 
   const toggleActive = async (n: Nozzle) => {
     try {
-      const res = await nozzleService.update(n.nozzleId, { active: !n.active });
-      if (res.successful) {
-        toast.success(`Manguera ${n.active ? 'desactivada' : 'activada'}`, { duration: 3000 });
-        refresh();
-      } else {
-        toast.error(res.error || 'Error al cambiar estado');
-      }
+      await updateNozzle({ id: n.nozzleId, body: { active: !n.active } }).unwrap();
+      toast.success(`Manguera ${n.active ? 'desactivada' : 'activada'}`, { duration: 3000 });
+      refresh();
     } catch (err) {
-      console.error(err);
-      toast.error('Error de conexión');
+      toast.error(getErrorMessage(err, 'Error al cambiar estado') ?? 'Error al cambiar estado');
     }
   };
 
@@ -70,17 +81,12 @@ const NozzlesModal: React.FC<Props> = ({ isOpen, onClose, dispenser }) => {
     if (!confirmDelete) return;
     setDeleting(true);
     try {
-      const res = await nozzleService.remove(confirmDelete.nozzleId);
-      if (res.successful) {
-        toast.success(`Manguera #${confirmDelete.nozzleNumber} eliminada`, { duration: 3000 });
-        setConfirmDelete(null);
-        refresh();
-      } else {
-        toast.error(res.error || 'Error al eliminar');
-      }
+      await deleteNozzle(confirmDelete.nozzleId).unwrap();
+      toast.success(`Manguera #${confirmDelete.nozzleNumber} eliminada`, { duration: 3000 });
+      setConfirmDelete(null);
+      refresh();
     } catch (err) {
-      console.error(err);
-      toast.error('Error de conexión');
+      toast.error(getErrorMessage(err, 'Error al eliminar') ?? 'Error al eliminar');
     } finally {
       setDeleting(false);
     }

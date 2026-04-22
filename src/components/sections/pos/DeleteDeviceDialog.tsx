@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { hostService, IHost } from '../../../services/deviceService';
+import { IHost } from '../../../services/deviceService';
+import { useDeleteDeviceMutation } from '../../../store/api/devicesApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { CompactButton } from '../../ui';
 
 interface DeleteDeviceDialogProps {
@@ -13,22 +15,21 @@ interface DeleteDeviceDialogProps {
 
 const DeleteDeviceDialog: React.FC<DeleteDeviceDialogProps> = ({ isOpen, onClose, device, onSuccess }) => {
   const [deleting, setDeleting] = useState(false);
+  const [deleteDevice] = useDeleteDeviceMutation();
 
   const handleDelete = async () => {
     if (!device) return;
     setDeleting(true);
     try {
-      const response = await hostService.deleteHost(device.hostId);
-      if (response.successful) {
-        toast.success(`Dispositivo eliminado exitosamente \n ${device.name}`, { duration: 5000 });
-        onSuccess();
-        onClose();
-      } else {
-        toast.error('Error al eliminar dispositivo.', { duration: 5000 });
-      }
-    } catch (error) {
-      console.error('Error al eliminar dispositivo:', error);
-      toast.error('Error de conexión.', { duration: 5000 });
+      await deleteDevice(device.hostId).unwrap();
+      toast.success(`Dispositivo eliminado exitosamente \n ${device.name}`, { duration: 5000 });
+      onSuccess();
+      onClose();
+    } catch (err) {
+      toast.error(
+        getErrorMessage(err, 'Error al eliminar dispositivo.') ?? 'Error al eliminar dispositivo.',
+        { duration: 5000 }
+      );
     } finally {
       setDeleting(false);
     }

@@ -1,6 +1,8 @@
 import React from 'react';
 import EntityAutocomplete from '../EntityAutocomplete';
-import categoryService, { Category } from '../../../services/categoryService';
+import { Category } from '../../../services/categoryService';
+import { store } from '../../../store';
+import { categoriesApi } from '../../../store/api/categoriesApi';
 
 interface CategoryAutocompleteProps {
   value: string | null | undefined;
@@ -16,8 +18,8 @@ interface CategoryAutocompleteProps {
 }
 
 const fetchCategories = async (): Promise<Category[]> => {
-  const res = await categoryService.list();
-  return res.successful ? res.data : [];
+  const result = await store.dispatch(categoriesApi.endpoints.listCategories.initiate());
+  return result.data ?? [];
 };
 
 const CategoryAutocomplete: React.FC<CategoryAutocompleteProps> = ({ excludeId, ...props }) => (

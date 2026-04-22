@@ -1,6 +1,8 @@
 import React from 'react';
 import EntityAutocomplete from '../EntityAutocomplete';
-import { hostTypeService, IHostType } from '../../../services/hostTypeService';
+import { IHostType } from '../../../services/hostTypeService';
+import { store } from '../../../store';
+import { hostTypesApi } from '../../../store/api/hostTypesApi';
 
 interface HostTypeAutocompleteProps {
   value: number | null | undefined;
@@ -15,8 +17,8 @@ interface HostTypeAutocompleteProps {
 }
 
 const fetchHostTypes = async (): Promise<IHostType[]> => {
-  const res = await hostTypeService.getHostTypes();
-  return res.successful ? (res.data ?? []) : [];
+  const result = await store.dispatch(hostTypesApi.endpoints.listHostTypes.initiate());
+  return result.data ?? [];
 };
 
 const HostTypeAutocomplete: React.FC<HostTypeAutocompleteProps> = (props) => (

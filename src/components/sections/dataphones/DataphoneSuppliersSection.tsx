@@ -6,13 +6,16 @@ import { CompactButton, Pagination } from '../../ui';
 import StatusDot from '../../ui/StatusDot';
 import Toolbar from '../../ui/Toolbar';
 import useDataphoneSuppliers from '../../../hooks/useDataphoneSuppliers';
-import dataphoneSupplierService, { DataphoneSupplier } from '../../../services/dataphoneSupplierService';
+import { DataphoneSupplier } from '../../../services/dataphoneSupplierService';
+import { useUpdateDataphoneSupplierMutation } from '../../../store/api/dataphoneSuppliersApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import DataphoneSupplierModal from './DataphoneSupplierModal';
 import DeleteDataphoneSupplierDialog from './DeleteDataphoneSupplierDialog';
 
 const DataphoneSuppliersSection: React.FC = () => {
   const { setSubtitle } = useHeader();
   const { suppliers, loading, error, refresh } = useDataphoneSuppliers();
+  const [updateSupplier] = useUpdateDataphoneSupplierMutation();
 
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -55,9 +58,12 @@ const DataphoneSuppliersSection: React.FC = () => {
   const openDelete = (s: DataphoneSupplier) => { setToDelete(s); setDeleteOpen(true); };
 
   const toggleActive = async (s: DataphoneSupplier) => {
-    const res = await dataphoneSupplierService.update(s.dataphoneSupplierId, { active: !s.active });
-    if (res.successful) { toast.success(`Proveedor ${s.active ? 'desactivado' : 'activado'}`); refresh(); }
-    else toast.error(res.error || 'Error al cambiar estado');
+    try {
+      await updateSupplier({ id: s.dataphoneSupplierId, body: { active: !s.active } }).unwrap();
+      toast.success(`Proveedor ${s.active ? 'desactivado' : 'activado'}`);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Error al cambiar estado') ?? 'Error al cambiar estado');
+    }
   };
 
   return (

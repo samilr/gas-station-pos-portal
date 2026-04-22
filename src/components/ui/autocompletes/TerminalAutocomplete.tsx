@@ -1,6 +1,8 @@
 import React from 'react';
 import EntityAutocomplete from '../EntityAutocomplete';
-import { terminalService, ITerminal } from '../../../services/terminalService';
+import { ITerminal } from '../../../services/terminalService';
+import { store } from '../../../store';
+import { terminalsApi } from '../../../store/api/terminalsApi';
 
 interface TerminalAutocompleteProps {
   value: number | null | undefined;
@@ -18,8 +20,8 @@ interface TerminalAutocompleteProps {
 const TerminalAutocomplete: React.FC<TerminalAutocompleteProps> = ({ siteId, ...props }) => {
   const fetchTerminals = async (): Promise<ITerminal[]> => {
     // Pedimos un límite alto porque el endpoint pagina con default 50 y el autocomplete necesita todo.
-    const res = await terminalService.getTerminals({ limit: 1000 });
-    const items = res.successful ? (res.data ?? []) : [];
+    const result = await store.dispatch(terminalsApi.endpoints.listTerminals.initiate({ limit: 1000 }));
+    const items = result.data ?? [];
     return siteId ? items.filter((t) => t.siteId === siteId) : items;
   };
 

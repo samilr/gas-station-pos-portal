@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
-import dataphoneTerminalService, { DataphoneTerminal } from '../../../services/dataphoneTerminalService';
+import { DataphoneTerminal } from '../../../services/dataphoneTerminalService';
+import { useDeleteDataphoneTerminalMutation } from '../../../store/api/dataphoneTerminalsApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { CompactButton } from '../../ui';
 
 interface Props {
@@ -13,23 +15,21 @@ interface Props {
 
 const DeleteDataphoneTerminalDialog: React.FC<Props> = ({ isOpen, onClose, terminal, onSuccess }) => {
   const [deleting, setDeleting] = useState(false);
+  const [deleteMapping] = useDeleteDataphoneTerminalMutation();
 
   const handleDelete = async () => {
     if (!terminal) return;
     setDeleting(true);
     try {
-      const res = await dataphoneTerminalService.remove({
+      await deleteMapping({
         dataphoneId: terminal.dataphoneId,
         siteId: terminal.siteId,
         terminalId: terminal.terminalId,
-      });
-      if (res.successful) {
-        toast.success('Mapeo eliminado');
-        onSuccess(); onClose();
-      } else toast.error(res.error || 'Error al eliminar');
+      }).unwrap();
+      toast.success('Mapeo eliminado');
+      onSuccess(); onClose();
     } catch (err) {
-      console.error(err);
-      toast.error('Error de conexión');
+      toast.error(getErrorMessage(err, 'Error al eliminar') ?? 'Error al eliminar');
     } finally {
       setDeleting(false);
     }

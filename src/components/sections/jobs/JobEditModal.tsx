@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Edit, Save, X, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { jobsService, ScheduledJob, UpdateJobRequest } from '../../../services/jobsService';
+import { ScheduledJob, UpdateJobRequest } from '../../../services/jobsService';
+import { useUpdateJobMutation } from '../../../store/api/jobsApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { CompactButton } from '../../ui';
 
 interface JobEditModalProps {
@@ -49,6 +51,7 @@ const CRON_PRESETS: { label: string; value: string }[] = [
 
 const JobEditModal: React.FC<JobEditModalProps> = ({ isOpen, onClose, job, onSuccess }) => {
   const [loading, setLoading] = useState(false);
+  const [updateJob] = useUpdateJobMutation();
   const [formData, setFormData] = useState<FormData>({
     displayName: '',
     description: '',
@@ -98,17 +101,12 @@ const JobEditModal: React.FC<JobEditModalProps> = ({ isOpen, onClose, job, onSuc
 
     setLoading(true);
     try {
-      const res = await jobsService.updateJob(job.name, payload);
-      if (res.successful) {
-        toast.success(`Job actualizado: ${formData.displayName}`, { duration: 4000 });
-        onSuccess();
-        onClose();
-      } else {
-        toast.error(res.error || 'Error al actualizar job', { duration: 5000 });
-      }
+      await updateJob({ name: job.name, body: payload }).unwrap();
+      toast.success(`Job actualizado: ${formData.displayName}`, { duration: 4000 });
+      onSuccess();
+      onClose();
     } catch (err) {
-      console.error('Error updating job:', err);
-      toast.error('Error de conexión', { duration: 5000 });
+      toast.error(getErrorMessage(err, 'Error al actualizar job') ?? 'Error al actualizar job', { duration: 5000 });
     } finally {
       setLoading(false);
     }

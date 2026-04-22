@@ -1,11 +1,16 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Filter, RefreshCw, X, FuelIcon, UserCheck, UserX } from 'lucide-react';
 import toast from 'react-hot-toast';
-import fuelTransactionService, { FuelTransaction, FuelTransactionsPagination, FuelStats } from '../../../services/fuelTransactionService';
+import { FuelTransaction, FuelTransactionsPagination, FuelStats } from '../../../services/fuelTransactionService';
+import { store } from '../../../store';
+import { fuelTransactionsApi, ListFuelTransactionsParams } from '../../../store/api/fuelTransactionsApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { useHeader } from '../../../context/HeaderContext';
+import { useSelectedSiteId } from '../../../hooks/useSelectedSite';
 import { mapFuelProductName } from '../../../utils/fuelProductMapping';
-import { CompactButton, Pagination, Toolbar, StatusDot } from '../../ui';
+import { CompactButton, Pagination, Toolbar } from '../../ui';
 import AssignStaftModal from './AssignStaftModal';
+import FuelTransactionDetailModal from './FuelTransactionDetailModal';
 
 const FuelTransactionsSection: React.FC = () => {
   const [transactions, setTransactions] = useState<FuelTransaction[]>([]);
@@ -17,6 +22,7 @@ const FuelTransactionsSection: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const { setSubtitle } = useHeader();
+  const globalSiteId = useSelectedSiteId();
 
   // Filtros
   const [pumpFilter, setPumpFilter] = useState<number | ''>('');
@@ -31,6 +37,7 @@ const FuelTransactionsSection: React.FC = () => {
   const [availableGrades, setAvailableGrades] = useState<{ id: number; name: string }[]>([]);
 
   const [assignModalId, setAssignModalId] = useState<number | null>(null);
+  const [detailTransaction, setDetailTransaction] = useState<FuelTransaction | null>(null);
 
   useEffect(() => {
     setSubtitle('Transacciones de dispensadoras de combustible');
@@ -47,68 +54,61 @@ const FuelTransactionsSection: React.FC = () => {
       const pageToUse = typeof overridePage === 'number' ? overridePage : currentPage;
       const limitToUse = typeof overrideLimit === 'number' ? overrideLimit : itemsPerPage;
 
-      const params: any = {
+      const params: ListFuelTransactionsParams = {
         page: pageToUse,
         limit: limitToUse,
         sortBy: 'transaction_date',
-        sortOrder: 'desc'
+        sortOrder: 'desc',
       };
 
+      if (globalSiteId) params.siteId = globalSiteId;
       if (pumpFilter !== '') params.pump = pumpFilter;
       if (nozzleFilter !== '') params.nozzle = nozzleFilter;
       if (fuelGradeFilter !== '') params.fuelGradeId = fuelGradeFilter;
       if (startDateFilter) params.startDate = startDateFilter;
       if (endDateFilter) params.endDate = endDateFilter;
 
-      const response = await fuelTransactionService.getFuelTransactions(params);
+      const result = await store
+        .dispatch(fuelTransactionsApi.endpoints.listFuelTransactions.initiate(params, { forceRefetch: true }))
+        .unwrap();
 
-      if (response.successful) {
-        setTransactions(response.data);
-        setServerStats(response.statistics || null);
-        
-        // Actualizar opciones disponibles solo si no hay filtros aplicados o si es la primera vez
-        // para que el usuario no pierda opciones al filtrar, o seguir el requerimiento estricto:
-        // "solo coloca las opciones que tiene la tabla, osea las que devuelve la api"
-        const pumps = Array.from(new Set(response.data.map(t => t.pump))).sort((a, b) => a - b);
-        const nozzles = Array.from(new Set(response.data.map(t => t.nozzle))).sort((a, b) => a - b);
-        const grades = Array.from(new Set(response.data.map(t => t.fuelGradeId))).map(id => ({
-          id,
-          name: response.data.find(t => t.fuelGradeId === id)?.fuelGradeName || `Grado ${id}`
-        })).sort((a, b) => a.id - b.id);
+      const items: FuelTransaction[] = result.data ?? [];
+      setTransactions(items);
+      setServerStats(result.statistics || null);
 
-        // Si no estamos filtrando, actualizamos las listas completas disponibles
-        // Si estamos filtrando, mantenemos las que ya teniamos para permitir cambiar a otras,
-        // PERO el usuario pidió que sean las de la tabla.
-        setAvailablePumps(pumps);
-        setAvailableNozzles(nozzles);
-        setAvailableGrades(grades);
+      const pumps = Array.from(new Set(items.map((t) => t.pump))).sort((a, b) => a - b);
+      const nozzles = Array.from(new Set(items.map((t) => t.nozzle))).sort((a, b) => a - b);
+      const grades = Array.from(new Set(items.map((t) => t.fuelGradeId))).map((id) => ({
+        id,
+        name: items.find((t) => t.fuelGradeId === id)?.fuelGradeName || `Grado ${id}`,
+      })).sort((a, b) => a.id - b.id);
 
-        if (response.pagination) {
-          setPagination(response.pagination);
-        } else {
-          const total = response.data.length;
-          const totalPages = Math.ceil(total / limitToUse);
-          setPagination({
-            page: pageToUse,
-            limit: limitToUse,
-            total: total,
-            totalPages: totalPages,
-            hasNext: pageToUse < totalPages,
-            hasPrev: pageToUse > 1
-          });
-        }
+      setAvailablePumps(pumps);
+      setAvailableNozzles(nozzles);
+      setAvailableGrades(grades);
+
+      if (result.pagination) {
+        setPagination(result.pagination);
       } else {
-        setError(response.error || 'Error al obtener transacciones');
-        toast.error('Error al obtener transacciones', { duration: 3000 });
+        const total = items.length;
+        const totalPages = Math.ceil(total / limitToUse);
+        setPagination({
+          page: pageToUse,
+          limit: limitToUse,
+          total,
+          totalPages,
+          hasNext: pageToUse < totalPages,
+          hasPrev: pageToUse > 1,
+        });
       }
     } catch (err) {
-      console.error('Error al obtener transacciones:', err);
-      setError(err instanceof Error ? err.message : 'Error desconocido');
-      toast.error('Error al obtener transacciones', { duration: 3000 });
+      const msg = getErrorMessage(err, 'Error al obtener transacciones');
+      setError(msg);
+      toast.error(msg ?? 'Error al obtener transacciones', { duration: 3000 });
     } finally {
       setLoading(false);
     }
-  }, [pumpFilter, nozzleFilter, fuelGradeFilter, startDateFilter, endDateFilter, currentPage, itemsPerPage]);
+  }, [pumpFilter, nozzleFilter, fuelGradeFilter, startDateFilter, endDateFilter, currentPage, itemsPerPage, globalSiteId]);
 
   useEffect(() => {
     fetchTransactions();
@@ -342,7 +342,6 @@ const FuelTransactionsSection: React.FC = () => {
             <table className="w-full">
               <thead>
                 <tr className="h-8 text-xs uppercase tracking-wide bg-table-header border-b border-table-border">
-                  <th className="text-left px-2 font-semibold text-gray-600">ID</th>
                   <th className="text-left px-2 font-semibold text-gray-600">Fecha/Hora</th>
                   <th className="text-left px-2 font-semibold text-gray-600">Dispensadora</th>
                   <th className="text-left px-2 font-semibold text-gray-600">Manguera</th>
@@ -351,18 +350,16 @@ const FuelTransactionsSection: React.FC = () => {
                   <th className="text-right px-2 font-semibold text-gray-600">Precio</th>
                   <th className="text-right px-2 font-semibold text-gray-600">Monto</th>
                   <th className="text-center px-2 font-semibold text-gray-600 w-24">Cajero</th>
-                  <th className="text-center px-2 font-semibold text-gray-600 w-20">Estado</th>
                 </tr>
               </thead>
               <tbody>
                 {transactions.map((transaction) => (
                   <tr
                     key={transaction.transactionId}
-                    className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover transition-colors"
+                    onClick={() => setDetailTransaction(transaction)}
+                    className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover transition-colors cursor-pointer"
+                    title="Ver detalle"
                   >
-                    <td className="px-2 text-sm text-gray-900 font-medium whitespace-nowrap">
-                      #{transaction.transactionId}
-                    </td>
                     <td className="px-2 text-[13px] whitespace-nowrap">
                       <span className="text-gray-900 font-medium">{formatDate(transaction.transactionDate)}</span>
                       <span className="text-gray-500 ml-1.5 text-xs">{formatTime(transaction.transactionDate)}</span>
@@ -393,7 +390,10 @@ const FuelTransactionsSection: React.FC = () => {
                     <td className="px-2 text-center whitespace-nowrap">
                       <button
                         type="button"
-                        onClick={() => setAssignModalId(transaction.transactionId)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setAssignModalId(transaction.transactionId);
+                        }}
                         className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-xs transition-colors ${
                           transaction.staftId != null
                             ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
@@ -407,15 +407,6 @@ const FuelTransactionsSection: React.FC = () => {
                           <><UserX className="w-3 h-3" /><span>Asignar</span></>
                         )}
                       </button>
-                    </td>
-                    <td className="px-2 text-center whitespace-nowrap">
-                      <div className="flex justify-center">
-                        {transaction.isOffline ? (
-                          <StatusDot color="red" label="Offline" />
-                        ) : (
-                          <StatusDot color="green" label="Online" />
-                        )}
-                      </div>
                     </td>
                   </tr>
                 ))}
@@ -459,6 +450,12 @@ const FuelTransactionsSection: React.FC = () => {
           onSaved={() => { setAssignModalId(null); fetchTransactions(); }}
         />
       )}
+
+      <FuelTransactionDetailModal
+        isOpen={detailTransaction !== null}
+        onClose={() => setDetailTransaction(null)}
+        transaction={detailTransaction}
+      />
     </div>
   );
 };

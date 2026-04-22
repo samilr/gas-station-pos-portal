@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { X, UserCheck, RefreshCw, AlertTriangle, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
-import fuelTransactionService from '../../../services/fuelTransactionService';
-import { IShiftCandidatesResponse } from '../../../types/periodStaft';
+import {
+  useGetFuelTransactionShiftCandidatesQuery,
+  useAssignStaftToFuelTransactionMutation,
+} from '../../../store/api/fuelTransactionsApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { CompactButton } from '../../ui';
 
 interface Props {
@@ -27,38 +30,30 @@ const formatDate = (d: string | null | undefined): string => {
 };
 
 const AssignStaftModal: React.FC<Props> = ({ transactionId, onClose, onSaved }) => {
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [data, setData] = useState<IShiftCandidatesResponse | null>(null);
   const [selectedStaftId, setSelectedStaftId] = useState<number | null>(null);
 
+  const { data, isLoading: loading, error } = useGetFuelTransactionShiftCandidatesQuery(transactionId);
+  const [assignStaft] = useAssignStaftToFuelTransactionMutation();
+
   useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      setLoading(true);
-      const res = await fuelTransactionService.getShiftCandidates(transactionId);
-      if (cancelled) return;
-      if (res.successful && res.data) {
-        setData(res.data);
-        setSelectedStaftId(res.data.currentStaftId ?? null);
-      } else {
-        toast.error(res.error || 'Error al cargar candidatos');
-      }
-      setLoading(false);
-    };
-    load();
-    return () => { cancelled = true; };
-  }, [transactionId]);
+    if (data) setSelectedStaftId(data.currentStaftId ?? null);
+  }, [data]);
+
+  useEffect(() => {
+    if (error) toast.error(getErrorMessage(error, 'Error al cargar candidatos') ?? 'Error al cargar candidatos');
+  }, [error]);
 
   const handleSave = async () => {
     setSaving(true);
-    const res = await fuelTransactionService.assignStaft(transactionId, selectedStaftId);
-    setSaving(false);
-    if (res.successful) {
+    try {
+      await assignStaft({ id: transactionId, staftId: selectedStaftId }).unwrap();
       toast.success(selectedStaftId == null ? 'Atribución limpiada' : 'Cajero asignado');
       onSaved();
-    } else {
-      toast.error(res.error || 'Error al asignar');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Error al asignar') ?? 'Error al asignar');
+    } finally {
+      setSaving(false);
     }
   };
 

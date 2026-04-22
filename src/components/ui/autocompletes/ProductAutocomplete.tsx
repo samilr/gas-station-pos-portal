@@ -1,7 +1,8 @@
 import React from 'react';
 import EntityAutocomplete from '../EntityAutocomplete';
-import { getAllProducts } from '../../../services/productService';
 import { IProduct } from '../../../types/product';
+import { store } from '../../../store';
+import { productsApi } from '../../../store/api/productsApi';
 
 interface ProductAutocompleteProps {
   value: string | null | undefined;
@@ -16,11 +17,8 @@ interface ProductAutocompleteProps {
 }
 
 const fetchProducts = async (): Promise<IProduct[]> => {
-  try {
-    return await getAllProducts();
-  } catch {
-    return [];
-  }
+  const result = await store.dispatch(productsApi.endpoints.listProducts.initiate());
+  return result.data ?? [];
 };
 
 const ProductAutocomplete: React.FC<ProductAutocompleteProps> = (props) => (

@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Package, Save, X, Edit, Plus, RefreshCw, Image as ImageIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
-import categoryService, { Category } from '../../../services/categoryService';
+import { Category } from '../../../services/categoryService';
+import { useCreateCategoryMutation, useUpdateCategoryMutation } from '../../../store/api/categoriesApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { CompactButton } from '../../ui';
 import { CategoryAutocomplete } from '../../ui/autocompletes';
 
@@ -44,6 +46,8 @@ const COSTING_METHODS = [
 const CategoryModal: React.FC<Props> = ({ isOpen, onClose, category, mode, onSuccess }) => {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [loading, setLoading] = useState(false);
+  const [createCategory] = useCreateCategoryMutation();
+  const [updateCategory] = useUpdateCategoryMutation();
 
   const isEditing = mode === 'edit';
   const isViewing = mode === 'view';
@@ -95,9 +99,14 @@ const CategoryModal: React.FC<Props> = ({ isOpen, onClose, category, mode, onSuc
           active: form.active,
           image: form.image || null,
         };
-        const res = await categoryService.create(payload);
-        if (res.successful) { toast.success(`Categoría creada: ${payload.name}`); onSuccess(); onClose(); }
-        else toast.error(res.error || 'Error al crear');
+        try {
+          await createCategory(payload).unwrap();
+          toast.success(`Categoría creada: ${payload.name}`);
+          onSuccess();
+          onClose();
+        } catch (err) {
+          toast.error(getErrorMessage(err, 'Error al crear') ?? 'Error al crear');
+        }
       } else if (isEditing && category) {
         const payload = {
           name: form.name,
@@ -111,9 +120,14 @@ const CategoryModal: React.FC<Props> = ({ isOpen, onClose, category, mode, onSuc
           active: form.active,
           image: form.image || null,
         };
-        const res = await categoryService.update(category.categoryId, payload);
-        if (res.successful) { toast.success('Categoría actualizada'); onSuccess(); onClose(); }
-        else toast.error(res.error || 'Error al actualizar');
+        try {
+          await updateCategory({ categoryId: category.categoryId, body: payload }).unwrap();
+          toast.success('Categoría actualizada');
+          onSuccess();
+          onClose();
+        } catch (err) {
+          toast.error(getErrorMessage(err, 'Error al actualizar') ?? 'Error al actualizar');
+        }
       }
     } catch (err) {
       console.error(err);

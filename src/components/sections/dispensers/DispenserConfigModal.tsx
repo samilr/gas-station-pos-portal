@@ -1,9 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Fuel, Save, X, Edit, Plus, RefreshCw, Network, Cable } from 'lucide-react';
 import toast from 'react-hot-toast';
-import dispensersConfigService, {
+import {
   ConnectionType, Dispenser, Parity, StopBits,
 } from '../../../services/dispensersConfigService';
+import {
+  useCreateDispenserConfigMutation,
+  useUpdateDispenserConfigMutation,
+} from '../../../store/api/dispensersConfigApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { CompactButton } from '../../ui';
 import { SiteAutocomplete } from '../../ui/autocompletes';
 
@@ -78,6 +83,8 @@ const toNullable = <T,>(v: T | ''): T | null => (v === '' ? null : (v as T));
 const DispenserConfigModal: React.FC<Props> = ({ isOpen, onClose, dispenser, mode, onSuccess }) => {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [loading, setLoading] = useState(false);
+  const [createDispenser] = useCreateDispenserConfigMutation();
+  const [updateDispenser] = useUpdateDispenserConfigMutation();
 
   const isEditing = mode === 'edit';
   const isViewing = mode === 'view';
@@ -127,13 +134,13 @@ const DispenserConfigModal: React.FC<Props> = ({ isOpen, onClose, dispenser, mod
           busAddress: toNullable(form.busAddress) as number | null,
           timeoutMs: Number(form.timeoutMs),
         };
-        const res = await dispensersConfigService.create(payload);
-        if (res.successful) {
+        try {
+          await createDispenser(payload).unwrap();
           toast.success(`Dispensadora creada: #${payload.pumpNumber}`, { duration: 4000 });
           onSuccess();
           onClose();
-        } else {
-          toast.error(res.error || 'Error al crear dispensadora');
+        } catch (err) {
+          toast.error(getErrorMessage(err, 'Error al crear dispensadora') ?? 'Error al crear dispensadora');
         }
       } else if (isEditing && dispenser) {
         const payload = {
@@ -157,13 +164,13 @@ const DispenserConfigModal: React.FC<Props> = ({ isOpen, onClose, dispenser, mod
           busAddress: toNullable(form.busAddress) as number | null,
           timeoutMs: form.timeoutMs === '' ? null : Number(form.timeoutMs),
         };
-        const res = await dispensersConfigService.update(dispenser.dispenserId, payload);
-        if (res.successful) {
+        try {
+          await updateDispenser({ id: dispenser.dispenserId, body: payload }).unwrap();
           toast.success('Dispensadora actualizada', { duration: 4000 });
           onSuccess();
           onClose();
-        } else {
-          toast.error(res.error || 'Error al actualizar');
+        } catch (err) {
+          toast.error(getErrorMessage(err, 'Error al actualizar') ?? 'Error al actualizar');
         }
       }
     } catch (err) {

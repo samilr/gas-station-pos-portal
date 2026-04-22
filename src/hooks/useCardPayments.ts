@@ -1,49 +1,44 @@
-import { useCallback, useEffect, useState } from 'react';
-import cardPaymentService, { CardPayment, ListFilters } from '../services/cardPaymentService';
+import { useMemo, useState } from 'react';
+import { ListFilters } from '../services/cardPaymentService';
+import {
+  useListCardPaymentsQuery,
+  useListOrphanedCardPaymentsQuery,
+} from '../store/api/cardPaymentsApi';
+import { useSelectedSiteId } from './useSelectedSite';
+import { getErrorMessage } from '../store/api/baseApi';
 
 export function useCardPayments(initialFilters: ListFilters = { page: 1, limit: 20 }) {
-  const [payments, setPayments] = useState<CardPayment[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const globalSiteId = useSelectedSiteId();
   const [filters, setFilters] = useState<ListFilters>(initialFilters);
-  const [pagination, setPagination] = useState<{ page: number; limit: number; total: number; totalPages?: number } | null>(null);
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await cardPaymentService.list(filters);
-      if (res.successful) {
-        setPayments(res.data);
-        setPagination(res.pagination || null);
-      } else setError(res.error || 'Error al cargar pagos con tarjeta');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error de conexión');
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
+  const effectiveFilters = useMemo<ListFilters>(
+    () => ({ ...filters, siteId: filters.siteId ?? globalSiteId ?? undefined }),
+    [filters, globalSiteId]
+  );
 
-  useEffect(() => { refresh(); }, [refresh]);
+  const { data, isLoading, error, refetch } = useListCardPaymentsQuery(effectiveFilters);
 
-  return { payments, loading, error, refresh, filters, setFilters, pagination };
+  return {
+    payments: data?.data ?? [],
+    loading: isLoading,
+    error: getErrorMessage(error, 'Error al cargar pagos con tarjeta'),
+    refresh: refetch,
+    filters: effectiveFilters,
+    setFilters,
+    pagination: data?.pagination ?? null,
+  };
 }
 
 export function useOrphanedCardPayments(siteId?: string) {
-  const [orphans, setOrphans] = useState<CardPayment[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const globalSiteId = useSelectedSiteId();
+  const effectiveSiteId = siteId !== undefined ? siteId : (globalSiteId ?? undefined);
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    const res = await cardPaymentService.getOrphaned(siteId);
-    if (res.successful) setOrphans(res.data);
-    else setError(res.error || 'Error al cargar huérfanos');
-    setLoading(false);
-  }, [siteId]);
+  const { data, isLoading, error, refetch } = useListOrphanedCardPaymentsQuery(effectiveSiteId);
 
-  useEffect(() => { refresh(); }, [refresh]);
-
-  return { orphans, loading, error, refresh };
+  return {
+    orphans: data ?? [],
+    loading: isLoading,
+    error: getErrorMessage(error, 'Error al cargar huérfanos'),
+    refresh: refetch,
+  };
 }

@@ -6,7 +6,9 @@ import { CompactButton, Pagination } from '../../ui';
 import StatusDot from '../../ui/StatusDot';
 import Toolbar from '../../ui/Toolbar';
 import useDispensersConfig from '../../../hooks/useDispensersConfig';
-import dispensersConfigService, { Dispenser } from '../../../services/dispensersConfigService';
+import { Dispenser } from '../../../services/dispensersConfigService';
+import { useUpdateDispenserConfigMutation } from '../../../store/api/dispensersConfigApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import DispenserConfigModal from './DispenserConfigModal';
 import DeleteDispenserConfigDialog from './DeleteDispenserConfigDialog';
 import NozzlesModal from './NozzlesModal';
@@ -14,9 +16,9 @@ import NozzlesModal from './NozzlesModal';
 const DispensersConfigSection: React.FC = () => {
   const { setSubtitle } = useHeader();
   const { dispensers, loading, error, refresh } = useDispensersConfig();
+  const [updateDispenser] = useUpdateDispenserConfigMutation();
 
   const [search, setSearch] = useState('');
-  const [siteFilter, setSiteFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<'' | 'active' | 'inactive'>('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -36,11 +38,6 @@ const DispensersConfigSection: React.FC = () => {
     return () => setSubtitle('');
   }, [setSubtitle]);
 
-  const uniqueSites = useMemo(
-    () => Array.from(new Set(dispensers.map((d) => d.siteId).filter(Boolean))),
-    [dispensers],
-  );
-
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return dispensers.filter((d) => {
@@ -52,13 +49,12 @@ const DispensersConfigSection: React.FC = () => {
         (d.model?.toLowerCase().includes(q) ?? false) ||
         (d.ipAddress?.toLowerCase().includes(q) ?? false) ||
         (d.ptsId?.toLowerCase().includes(q) ?? false);
-      const matchesSite = !siteFilter || d.siteId === siteFilter;
       const matchesStatus = !statusFilter
         || (statusFilter === 'active' && d.active)
         || (statusFilter === 'inactive' && !d.active);
-      return matchesSearch && matchesSite && matchesStatus;
+      return matchesSearch && matchesStatus;
     });
-  }, [dispensers, search, siteFilter, statusFilter]);
+  }, [dispensers, search, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -78,16 +74,10 @@ const DispensersConfigSection: React.FC = () => {
 
   const toggleActive = async (d: Dispenser) => {
     try {
-      const res = await dispensersConfigService.update(d.dispenserId, { active: !d.active });
-      if (res.successful) {
-        toast.success(`Dispensadora ${d.active ? 'desactivada' : 'activada'}`, { duration: 3000 });
-        refresh();
-      } else {
-        toast.error(res.error || 'Error al cambiar estado');
-      }
+      await updateDispenser({ id: d.dispenserId, body: { active: !d.active } }).unwrap();
+      toast.success(`Dispensadora ${d.active ? 'desactivada' : 'activada'}`, { duration: 3000 });
     } catch (err) {
-      console.error(err);
-      toast.error('Error de conexión');
+      toast.error(getErrorMessage(err, 'Error al cambiar estado') ?? 'Error al cambiar estado');
     }
   };
 
@@ -108,14 +98,6 @@ const DispensersConfigSection: React.FC = () => {
           { label: 'Inactivas', value: totals.inactive, color: 'red' },
         ]}
       >
-        <select
-          value={siteFilter}
-          onChange={(e) => { setSiteFilter(e.target.value); setPage(1); }}
-          className="h-7 px-2 text-xs border border-gray-300 rounded-sm"
-        >
-          <option value="">Todos los sitios</option>
-          {uniqueSites.map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value as any); setPage(1); }}
@@ -165,7 +147,7 @@ const DispensersConfigSection: React.FC = () => {
               {!loading && pageItems.length === 0 && (
                 <tr><td colSpan={9} className="px-2 py-6 text-center text-text-muted text-xs">
                   <Fuel className="w-5 h-5 mx-auto mb-1 text-text-muted" />
-                  No hay dispensadoras {search || siteFilter || statusFilter ? 'con esos filtros' : 'registradas'}
+                  No hay dispensadoras {search || statusFilter ? 'con esos filtros' : 'registradas'}
                 </td></tr>
               )}
               {!loading && pageItems.map((d) => (

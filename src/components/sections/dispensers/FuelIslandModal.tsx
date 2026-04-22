@@ -1,8 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Layers, Save, X, Edit, Plus, RefreshCw, Monitor, Fuel, Building2, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
-import fuelIslandService, { FuelIsland } from '../../../services/fuelIslandService';
+import { FuelIsland } from '../../../services/fuelIslandService';
 import { Dispenser } from '../../../services/dispensersConfigService';
+import {
+  useCreateFuelIslandMutation,
+  useUpdateFuelIslandMutation,
+  useGetUnassignedDispensersQuery,
+} from '../../../store/api/fuelIslandsApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { useSites } from '../../../hooks/useSites';
 import { CompactButton } from '../../ui';
 
@@ -38,8 +44,9 @@ const fromIsland = (isl: FuelIsland): FormState => ({
 const FuelIslandModal: React.FC<Props> = ({ isOpen, onClose, fuelIsland, mode, onSuccess }) => {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [loading, setLoading] = useState(false);
-  const [unassigned, setUnassigned] = useState<Dispenser[]>([]);
-  const [loadingUnassigned, setLoadingUnassigned] = useState(false);
+
+  const [createIsland] = useCreateFuelIslandMutation();
+  const [updateIsland] = useUpdateFuelIslandMutation();
 
   const { sites } = useSites();
 
@@ -47,32 +54,18 @@ const FuelIslandModal: React.FC<Props> = ({ isOpen, onClose, fuelIsland, mode, o
   const isViewing = mode === 'view';
   const isCreating = mode === 'create';
 
+  const shouldLoadUnassigned = isOpen && isCreating && !!form.siteId;
+  const { data: unassignedData, isFetching: loadingUnassigned } = useGetUnassignedDispensersQuery(
+    form.siteId || undefined,
+    { skip: !shouldLoadUnassigned }
+  );
+  const unassigned: Dispenser[] = shouldLoadUnassigned ? (unassignedData ?? []) : [];
+
   useEffect(() => {
     if (!isOpen) return;
     if (fuelIsland && (isEditing || isViewing)) setForm(fromIsland(fuelIsland));
     else setForm(EMPTY);
   }, [isOpen, fuelIsland, isEditing, isViewing]);
-
-  // Dispensers sin asignar — solo en create, filtrados por el sitio seleccionado
-  useEffect(() => {
-    if (!isOpen || !isCreating) return;
-    if (!form.siteId) {
-      setUnassigned([]);
-      return;
-    }
-    const loadUnassigned = async () => {
-      setLoadingUnassigned(true);
-      try {
-        const res = await fuelIslandService.getUnassignedDispensers(form.siteId);
-        setUnassigned(res.successful ? res.data : []);
-      } catch {
-        setUnassigned([]);
-      } finally {
-        setLoadingUnassigned(false);
-      }
-    };
-    loadUnassigned();
-  }, [isOpen, isCreating, form.siteId]);
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -108,26 +101,26 @@ const FuelIslandModal: React.FC<Props> = ({ isOpen, onClose, fuelIsland, mode, o
           name: form.name.trim(),
           dispenserIds: form.dispenserIds,
         };
-        const res = await fuelIslandService.create(payload);
-        if (res.successful) {
+        try {
+          await createIsland(payload).unwrap();
           toast.success(`Fuel island creada: ${payload.name}`, { duration: 4000 });
           onSuccess();
           onClose();
-        } else {
-          toast.error(res.error || 'Error al crear fuel island');
+        } catch (err) {
+          toast.error(getErrorMessage(err, 'Error al crear fuel island') ?? 'Error al crear fuel island');
         }
       } else if (isEditing && fuelIsland) {
         const payload = {
           name: form.name.trim(),
           active: form.active,
         };
-        const res = await fuelIslandService.update(fuelIsland.fuelIslandId, payload);
-        if (res.successful) {
+        try {
+          await updateIsland({ id: fuelIsland.fuelIslandId, body: payload }).unwrap();
           toast.success('Fuel island actualizada', { duration: 4000 });
           onSuccess();
           onClose();
-        } else {
-          toast.error(res.error || 'Error al actualizar');
+        } catch (err) {
+          toast.error(getErrorMessage(err, 'Error al actualizar') ?? 'Error al actualizar');
         }
       }
     } catch (err) {

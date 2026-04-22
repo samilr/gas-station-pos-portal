@@ -1,8 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link2, Save, X, RefreshCw, Fuel, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import fuelIslandService, { FuelIsland } from '../../../services/fuelIslandService';
+import { FuelIsland } from '../../../services/fuelIslandService';
 import { Dispenser } from '../../../services/dispensersConfigService';
+import {
+  useGetUnassignedDispensersQuery,
+  useAssignDispensersToIslandMutation,
+} from '../../../store/api/fuelIslandsApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { CompactButton } from '../../ui';
 
 interface Props {
@@ -20,25 +25,18 @@ interface DispenserOption {
 
 const AssignDispensersModal: React.FC<Props> = ({ isOpen, onClose, fuelIsland, allIslands, onSuccess }) => {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [unassigned, setUnassigned] = useState<Dispenser[]>([]);
-  const [loadingList, setLoadingList] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const [assignDispensers] = useAssignDispensersToIslandMutation();
+  const { data: unassignedData, isFetching: loadingList } = useGetUnassignedDispensersQuery(
+    fuelIsland?.siteId,
+    { skip: !isOpen || !fuelIsland }
+  );
+  const unassigned: Dispenser[] = unassignedData ?? [];
 
   useEffect(() => {
     if (!isOpen || !fuelIsland) return;
     setSelectedIds([]);
-    const load = async () => {
-      setLoadingList(true);
-      try {
-        const res = await fuelIslandService.getUnassignedDispensers(fuelIsland.siteId);
-        setUnassigned(res.successful ? res.data : []);
-      } catch {
-        setUnassigned([]);
-      } finally {
-        setLoadingList(false);
-      }
-    };
-    load();
   }, [isOpen, fuelIsland]);
 
   // Dispensers de otras isletas del mismo sitio (para poder moverlos)
@@ -76,17 +74,12 @@ const AssignDispensersModal: React.FC<Props> = ({ isOpen, onClose, fuelIsland, a
     }
     setSaving(true);
     try {
-      const res = await fuelIslandService.assignDispensers(fuelIsland.fuelIslandId, selectedIds);
-      if (res.successful) {
-        toast.success(`${selectedIds.length} dispenser(s) asignado(s) a ${fuelIsland.name}`, { duration: 4000 });
-        onSuccess();
-        onClose();
-      } else {
-        toast.error(res.error || 'Error al asignar dispensers');
-      }
+      await assignDispensers({ id: fuelIsland.fuelIslandId, dispenserIds: selectedIds }).unwrap();
+      toast.success(`${selectedIds.length} dispenser(s) asignado(s) a ${fuelIsland.name}`, { duration: 4000 });
+      onSuccess();
+      onClose();
     } catch (err) {
-      console.error(err);
-      toast.error('Error de conexión');
+      toast.error(getErrorMessage(err, 'Error al asignar dispensers') ?? 'Error al asignar dispensers');
     } finally {
       setSaving(false);
     }

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { ITerminal, terminalService } from '../../../services/terminalService';
+import { ITerminal } from '../../../services/terminalService';
+import { useDeleteTerminalMutation } from '../../../store/api/terminalsApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { CompactButton } from '../../ui';
 
 interface DeleteTerminalDialogProps {
@@ -13,22 +15,21 @@ interface DeleteTerminalDialogProps {
 
 const DeleteTerminalDialog: React.FC<DeleteTerminalDialogProps> = ({ isOpen, onClose, terminal, onSuccess }) => {
   const [deleting, setDeleting] = useState(false);
+  const [deleteTerminal] = useDeleteTerminalMutation();
 
   const handleDelete = async () => {
     if (!terminal) return;
     setDeleting(true);
     try {
-      const response = await terminalService.deleteTerminal(terminal.siteId, terminal.terminalId);
-      if (response.successful) {
-        toast.success(`Terminal eliminada exitosamente \n ${terminal.name}`, { duration: 5000 });
-        onSuccess();
-        onClose();
-      } else {
-        toast.error('Error al eliminar terminal.', { duration: 5000 });
-      }
-    } catch (error) {
-      console.error('Error al eliminar terminal:', error);
-      toast.error('Error de conexión.', { duration: 5000 });
+      await deleteTerminal({ siteId: terminal.siteId, terminalId: terminal.terminalId }).unwrap();
+      toast.success(`Terminal eliminada exitosamente \n ${terminal.name}`, { duration: 5000 });
+      onSuccess();
+      onClose();
+    } catch (err) {
+      toast.error(
+        getErrorMessage(err, 'Error al eliminar terminal.') ?? 'Error al eliminar terminal.',
+        { duration: 5000 }
+      );
     } finally {
       setDeleting(false);
     }

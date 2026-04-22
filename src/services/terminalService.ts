@@ -1,43 +1,7 @@
-import { buildApiUrl } from "../config/api";
-import { apiGet, apiPost, apiPut, apiDelete, ApiResponse } from "./apiInterceptor";
-
-interface TerminalResponse {
-  successful: boolean;
-  data: ITerminal[];
-}
-
-interface CreateTerminalRequest {
-  siteId: string;
-  terminalId: number;
-  name: string;
-  sectorId?: number;
-  active?: boolean;
-  fuelIslandId?: number | null;
-  fuelIslandEnabled?: boolean;
-  terminalType?: number;
-  productList?: number;
-  useCustomerDisplay?: boolean;
-  openCashDrawer?: boolean;
-  printDevice?: number;
-  cashFund?: number;
-  productListType?: number;
-}
-
-interface UpdateTerminalRequest {
-  name?: string;
-  sectorId?: number;
-  active?: boolean;
-  fuelIslandId?: number | null;
-  unassignFuelIsland?: boolean;
-  fuelIslandEnabled?: boolean;
-  terminalType?: number;
-  productList?: number;
-  useCustomerDisplay?: boolean;
-  openCashDrawer?: boolean;
-  printDevice?: number;
-  cashFund?: number;
-  productListType?: number;
-}
+/**
+ * Tipos para el dominio de terminals.
+ * Los métodos CRUD viven ahora en `src/store/api/terminalsApi.ts` (RTK Query).
+ */
 
 export interface ITerminalDevice {
   hostId: number;
@@ -76,38 +40,3 @@ export interface ITerminal {
   fuelIslandEnabled: boolean;
   device?: ITerminalDevice | null;
 }
-
-export const terminalService = {
-  async getTerminals(params?: { search?: string; page?: number; limit?: number }): Promise<TerminalResponse> {
-    const query = params ? '?' + new URLSearchParams(
-      Object.fromEntries(Object.entries(params).filter(([, v]) => v != null).map(([k, v]) => [k, String(v)]))
-    ).toString() : '';
-    const response = await apiGet<any>(buildApiUrl('terminals') + query);
-    // El endpoint es paginado: el body llega como { data: [...], pagination: {...} }.
-    const raw = response.data;
-    const items: ITerminal[] = Array.isArray(raw)
-      ? raw
-      : Array.isArray(raw?.data) ? raw.data : [];
-    return {
-      successful: response.successful,
-      data: items
-    };
-  },
-
-  async getTerminal(siteId: string, terminalId: number): Promise<ApiResponse<ITerminal>> {
-    return await apiGet<ITerminal>(buildApiUrl(`terminals/${siteId}/${terminalId}`));
-  },
-
-  async createTerminal(terminalData: CreateTerminalRequest): Promise<ApiResponse<ITerminal[]>> {
-    return await apiPost<ITerminal[]>(buildApiUrl('terminals'), terminalData);
-  },
-
-  async updateTerminal(siteId: string, terminalId: number, terminalData: UpdateTerminalRequest): Promise<ApiResponse<ITerminal[]>> {
-    return await apiPut<ITerminal[]>(buildApiUrl(`terminals/${siteId}/${terminalId}`), terminalData);
-  },
-
-  async deleteTerminal(siteId: string, terminalId: number): Promise<ApiResponse<ITerminal[]>> {
-    return await apiDelete<ITerminal[]>(buildApiUrl(`terminals/${siteId}/${terminalId}`));
-  }
-};
-

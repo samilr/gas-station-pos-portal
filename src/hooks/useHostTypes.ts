@@ -1,41 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
-import { hostTypeService, IHostType } from '../services/hostTypeService';
+import { useListHostTypesQuery } from '../store/api/hostTypesApi';
+import { getErrorMessage } from '../store/api/baseApi';
 
 export const useHostTypes = () => {
-  const [hostTypes, setHostTypes] = useState<IHostType[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadHostTypes = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await hostTypeService.getHostTypes();
-      if (response.successful) {
-        setHostTypes(response.data || []);
-      } else {
-        setError('Error al cargar tipos de dispositivo');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al cargar tipos de dispositivo');
-      console.warn('Error cargando tipos de dispositivo:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const refreshHostTypes = useCallback(async () => {
-    await loadHostTypes();
-  }, [loadHostTypes]);
-
-  useEffect(() => {
-    loadHostTypes();
-  }, [loadHostTypes]);
+  const { data, isLoading, error, refetch } = useListHostTypesQuery();
 
   return {
-    hostTypes,
-    loading,
-    error,
-    refreshHostTypes,
+    hostTypes: data ?? [],
+    loading: isLoading,
+    error: getErrorMessage(error, 'Error al cargar tipos de dispositivo'),
+    refreshHostTypes: refetch,
   };
 };

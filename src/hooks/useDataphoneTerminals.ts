@@ -1,29 +1,27 @@
-import { useCallback, useEffect, useState } from 'react';
-import dataphoneTerminalService, { DataphoneTerminal } from '../services/dataphoneTerminalService';
+import { useMemo, useState } from 'react';
+import { useListDataphoneTerminalsQuery } from '../store/api/dataphoneTerminalsApi';
+import { useSelectedSiteId } from './useSelectedSite';
+import { getErrorMessage } from '../store/api/baseApi';
 
 export function useDataphoneTerminals(initialFilters?: { siteId?: string }) {
-  const [terminals, setTerminals] = useState<DataphoneTerminal[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const globalSiteId = useSelectedSiteId();
   const [filters, setFilters] = useState<{ siteId?: string }>(initialFilters || {});
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await dataphoneTerminalService.list(filters);
-      if (res.successful) setTerminals(res.data);
-      else setError(res.error || 'Error al cargar mapeo dataphone-terminal');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error de conexión');
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
+  const effectiveFilters = useMemo(
+    () => ({ siteId: filters.siteId ?? globalSiteId ?? undefined }),
+    [filters, globalSiteId]
+  );
 
-  useEffect(() => { refresh(); }, [refresh]);
+  const { data, isLoading, error, refetch } = useListDataphoneTerminalsQuery(effectiveFilters);
 
-  return { terminals, loading, error, refresh, filters, setFilters };
+  return {
+    terminals: data ?? [],
+    loading: isLoading,
+    error: getErrorMessage(error, 'Error al cargar mapeo dataphone-terminal'),
+    refresh: refetch,
+    filters: effectiveFilters,
+    setFilters,
+  };
 }
 
 export default useDataphoneTerminals;

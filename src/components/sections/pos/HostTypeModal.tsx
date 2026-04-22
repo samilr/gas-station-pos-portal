@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Layers, Save, X, Edit, Plus, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { hostTypeService, IHostType } from '../../../services/hostTypeService';
+import { IHostType } from '../../../services/hostTypeService';
+import { useCreateHostTypeMutation, useUpdateHostTypeMutation } from '../../../store/api/hostTypesApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { HostTypeCode, HOST_TYPE_LABELS } from '../../../types/host_type.enum';
 import { CompactButton } from '../../ui';
 
@@ -32,6 +34,8 @@ const EMPTY_FORM: HostTypeFormData = {
 const HostTypeModal: React.FC<HostTypeModalProps> = ({ isOpen, onClose, hostType, mode, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<HostTypeFormData>(EMPTY_FORM);
+  const [createHostType] = useCreateHostTypeMutation();
+  const [updateHostType] = useUpdateHostTypeMutation();
 
   const isEditing = mode === 'edit';
   const isViewing = mode === 'view';
@@ -73,22 +77,22 @@ const HostTypeModal: React.FC<HostTypeModalProps> = ({ isOpen, onClose, hostType
       };
 
       if (isEditing && hostType) {
-        const response = await hostTypeService.updateHostType(hostType.hostTypeId, payload);
-        if (response.successful) {
+        try {
+          await updateHostType({ id: hostType.hostTypeId, body: payload }).unwrap();
           toast.success(`Tipo actualizado exitosamente \n ${formData.name}`, { duration: 5000 });
           onSuccess();
           onClose();
-        } else {
-          toast.error('Error al actualizar tipo.', { duration: 5000 });
+        } catch (err) {
+          toast.error(getErrorMessage(err, 'Error al actualizar tipo.') ?? 'Error al actualizar tipo.', { duration: 5000 });
         }
       } else {
-        const response = await hostTypeService.createHostType(payload);
-        if (response.successful) {
+        try {
+          await createHostType(payload).unwrap();
           toast.success(`Tipo creado exitosamente \n ${formData.name}`, { duration: 5000 });
           onSuccess();
           onClose();
-        } else {
-          toast.error('Error al crear tipo.', { duration: 5000 });
+        } catch (err) {
+          toast.error(getErrorMessage(err, 'Error al crear tipo.') ?? 'Error al crear tipo.', { duration: 5000 });
         }
       }
     } catch (error) {

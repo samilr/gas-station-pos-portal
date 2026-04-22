@@ -1,7 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
-import { logService, PaginationMeta } from '../services/logService';
-import { IActionLog, IErrorLog } from '../types/logs';
+import { useCallback, useState } from 'react';
+import {
+  useGetActionLogsQuery,
+  useGetErrorLogsQuery,
+  useResolveErrorMutation,
+} from '../store/api/logsApi';
+import { getErrorMessage } from '../store/api/baseApi';
 import { getCurrentSantoDomingoDate } from '../utils/transactionUtils';
+import { PaginationMeta } from '../services/logService';
 
 const DEFAULT_LIMIT = 20;
 
@@ -16,78 +21,42 @@ const defaultPagination: PaginationMeta = {
 
 export const useActionLogs = () => {
   const today = getCurrentSantoDomingoDate();
-  const [actionLogs, setActionLogs] = useState<IActionLog[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [startDateFilter, setStartDateFilter] = useState<string>(today);
   const [endDateFilter, setEndDateFilter] = useState<string>(today);
-  const [pagination, setPagination] = useState<PaginationMeta>(defaultPagination);
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(DEFAULT_LIMIT);
 
-  const loadActionLogs = useCallback(async (
-    fromDate: string,
-    toDate: string,
-    page: number,
-    pageLimit: number = limit,
-  ) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await logService.getActionLogs({ fromDate, toDate, page, limit: pageLimit });
-      if (response.successful) {
-        setActionLogs(response.data || []);
-        setPagination(response.pagination ?? defaultPagination);
-      } else {
-        setError('Error al cargar logs de acciones');
-      }
-    } catch (err) {
-      console.warn('Error cargando logs de acciones:', err);
-      setError('Error de conexión al servidor');
-      setActionLogs([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [limit]);
+  const { data, isLoading, error, refetch } = useGetActionLogsQuery({
+    fromDate: startDateFilter,
+    toDate: endDateFilter,
+    page: currentPage,
+    limit,
+  });
 
-  const refreshActionLogs = useCallback(async () => {
-    await loadActionLogs(startDateFilter, endDateFilter, currentPage, limit);
-  }, [loadActionLogs, startDateFilter, endDateFilter, currentPage, limit]);
-
-  const loadActionLogsWithDates = useCallback(async (startDate: string, endDate: string) => {
+  const loadActionLogsWithDates = useCallback((startDate: string, endDate: string) => {
     setStartDateFilter(startDate);
     setEndDateFilter(endDate);
     setCurrentPage(1);
-    await loadActionLogs(startDate, endDate, 1, limit);
-  }, [loadActionLogs, limit]);
+  }, []);
 
-  const goToPage = useCallback(async (page: number) => {
-    setCurrentPage(page);
-    await loadActionLogs(startDateFilter, endDateFilter, page, limit);
-  }, [loadActionLogs, startDateFilter, endDateFilter, limit]);
+  const goToPage = useCallback((page: number) => setCurrentPage(page), []);
 
-  const changeLimit = useCallback(async (newLimit: number) => {
+  const changeLimit = useCallback((newLimit: number) => {
     setLimit(newLimit);
     setCurrentPage(1);
-    await loadActionLogs(startDateFilter, endDateFilter, 1, newLimit);
-  }, [loadActionLogs, startDateFilter, endDateFilter]);
-
-  useEffect(() => {
-    loadActionLogs(today, today, 1, DEFAULT_LIMIT);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {
-    actionLogs,
-    loading,
-    error,
+    actionLogs: data?.data ?? [],
+    loading: isLoading,
+    error: getErrorMessage(error, 'Error al cargar logs de acciones'),
     startDateFilter,
     endDateFilter,
     setStartDateFilter,
     setEndDateFilter,
-    refreshActionLogs,
+    refreshActionLogs: refetch,
     loadActionLogsWithDates,
-    pagination,
+    pagination: data?.pagination ?? defaultPagination,
     currentPage,
     goToPage,
     limit,
@@ -97,99 +66,56 @@ export const useActionLogs = () => {
 
 export const useErrorLogs = () => {
   const today = getCurrentSantoDomingoDate();
-  const [errorLogs, setErrorLogs] = useState<IErrorLog[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [startDateFilter, setStartDateFilter] = useState<string>(today);
   const [endDateFilter, setEndDateFilter] = useState<string>(today);
-  const [pagination, setPagination] = useState<PaginationMeta>(defaultPagination);
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(DEFAULT_LIMIT);
 
-  const loadErrorLogs = useCallback(async (
-    fromDate: string,
-    toDate: string,
-    page: number,
-    pageLimit: number = limit,
-  ) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await logService.getErrorLogs({ fromDate, toDate, page, limit: pageLimit });
-      if (response.successful) {
-        setErrorLogs(response.data || []);
-        setPagination(response.pagination ?? defaultPagination);
-      } else {
-        setError('Error al cargar logs de errores');
-      }
-    } catch (err) {
-      console.warn('Error cargando logs de errores:', err);
-      setError('Error de conexión al servidor');
-      setErrorLogs([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [limit]);
+  const { data, isLoading, error, refetch } = useGetErrorLogsQuery({
+    fromDate: startDateFilter,
+    toDate: endDateFilter,
+    page: currentPage,
+    limit,
+  });
+  const [resolveMut] = useResolveErrorMutation();
 
-  const refreshErrorLogs = useCallback(async () => {
-    await loadErrorLogs(startDateFilter, endDateFilter, currentPage, limit);
-  }, [loadErrorLogs, startDateFilter, endDateFilter, currentPage, limit]);
-
-  const loadErrorLogsWithDates = useCallback(async (startDate: string, endDate: string) => {
+  const loadErrorLogsWithDates = useCallback((startDate: string, endDate: string) => {
     setStartDateFilter(startDate);
     setEndDateFilter(endDate);
     setCurrentPage(1);
-    await loadErrorLogs(startDate, endDate, 1, limit);
-  }, [loadErrorLogs, limit]);
+  }, []);
 
-  const goToPage = useCallback(async (page: number) => {
-    setCurrentPage(page);
-    await loadErrorLogs(startDateFilter, endDateFilter, page, limit);
-  }, [loadErrorLogs, startDateFilter, endDateFilter, limit]);
+  const goToPage = useCallback((page: number) => setCurrentPage(page), []);
 
-  const changeLimit = useCallback(async (newLimit: number) => {
+  const changeLimit = useCallback((newLimit: number) => {
     setLimit(newLimit);
     setCurrentPage(1);
-    await loadErrorLogs(startDateFilter, endDateFilter, 1, newLimit);
-  }, [loadErrorLogs, startDateFilter, endDateFilter]);
+  }, []);
 
-  const resolveError = useCallback(async (errorId: string, resolvedBy: string) => {
-    try {
-      const response = await logService.resolveError(errorId, resolvedBy);
-      if (response.successful) {
-        setErrorLogs(prev => prev.map(log =>
-          log.errorId.toString() === errorId
-            ? { ...log, resolved: true, resolvedBy: resolvedBy, resolvedAt: new Date() }
-            : log
-        ));
+  const resolveError = useCallback(
+    async (errorId: string, resolvedBy: string) => {
+      try {
+        await resolveMut({ errorId, resolvedBy }).unwrap();
         return true;
-      } else {
-        setError('Error al marcar como resuelto');
+      } catch {
         return false;
       }
-    } catch (err) {
-      setError('Error al marcar como resuelto');
-      return false;
-    }
-  }, []);
-
-  useEffect(() => {
-    loadErrorLogs(today, today, 1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    },
+    [resolveMut]
+  );
 
   return {
-    errorLogs,
-    loading,
-    error,
+    errorLogs: data?.data ?? [],
+    loading: isLoading,
+    error: getErrorMessage(error, 'Error al cargar logs de errores'),
     startDateFilter,
     endDateFilter,
     setStartDateFilter,
     setEndDateFilter,
-    refreshErrorLogs,
+    refreshErrorLogs: refetch,
     loadErrorLogsWithDates,
     resolveError,
-    pagination,
+    pagination: data?.pagination ?? defaultPagination,
     currentPage,
     goToPage,
     limit,

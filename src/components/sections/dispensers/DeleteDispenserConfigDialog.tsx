@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
-import dispensersConfigService, { Dispenser } from '../../../services/dispensersConfigService';
+import { Dispenser } from '../../../services/dispensersConfigService';
+import { useDeleteDispenserConfigMutation } from '../../../store/api/dispensersConfigApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { CompactButton } from '../../ui';
 
 interface Props {
@@ -13,22 +15,18 @@ interface Props {
 
 const DeleteDispenserConfigDialog: React.FC<Props> = ({ isOpen, onClose, dispenser, onSuccess }) => {
   const [deleting, setDeleting] = useState(false);
+  const [deleteDispenser] = useDeleteDispenserConfigMutation();
 
   const handleDelete = async () => {
     if (!dispenser) return;
     setDeleting(true);
     try {
-      const res = await dispensersConfigService.remove(dispenser.dispenserId);
-      if (res.successful) {
-        toast.success(`Dispensadora #${dispenser.pumpNumber} eliminada`, { duration: 4000 });
-        onSuccess();
-        onClose();
-      } else {
-        toast.error(res.error || 'Error al eliminar');
-      }
+      await deleteDispenser(dispenser.dispenserId).unwrap();
+      toast.success(`Dispensadora #${dispenser.pumpNumber} eliminada`, { duration: 4000 });
+      onSuccess();
+      onClose();
     } catch (err) {
-      console.error(err);
-      toast.error('Error de conexión');
+      toast.error(getErrorMessage(err, 'Error al eliminar') ?? 'Error al eliminar');
     } finally {
       setDeleting(false);
     }

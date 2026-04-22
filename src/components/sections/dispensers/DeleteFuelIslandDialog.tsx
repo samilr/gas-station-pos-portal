@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
-import fuelIslandService, { FuelIsland } from '../../../services/fuelIslandService';
+import { FuelIsland } from '../../../services/fuelIslandService';
+import { useDeleteFuelIslandMutation } from '../../../store/api/fuelIslandsApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { CompactButton } from '../../ui';
 
 interface Props {
@@ -13,22 +15,18 @@ interface Props {
 
 const DeleteFuelIslandDialog: React.FC<Props> = ({ isOpen, onClose, fuelIsland, onSuccess }) => {
   const [deleting, setDeleting] = useState(false);
+  const [deleteIsland] = useDeleteFuelIslandMutation();
 
   const handleDelete = async () => {
     if (!fuelIsland) return;
     setDeleting(true);
     try {
-      const res = await fuelIslandService.remove(fuelIsland.fuelIslandId);
-      if (res.successful) {
-        toast.success(`Fuel island ${fuelIsland.name} eliminada`, { duration: 4000 });
-        onSuccess();
-        onClose();
-      } else {
-        toast.error(res.error || 'Error al eliminar');
-      }
+      await deleteIsland(fuelIsland.fuelIslandId).unwrap();
+      toast.success(`Fuel island ${fuelIsland.name} eliminada`, { duration: 4000 });
+      onSuccess();
+      onClose();
     } catch (err) {
-      console.error(err);
-      toast.error('Error de conexión');
+      toast.error(getErrorMessage(err, 'Error al eliminar') ?? 'Error al eliminar');
     } finally {
       setDeleting(false);
     }

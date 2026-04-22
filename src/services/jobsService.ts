@@ -1,5 +1,7 @@
-import { buildApiUrl } from '../config/api';
-import { apiGet, apiPost, apiPatch, ApiResponse } from './apiInterceptor';
+/**
+ * Tipos y enums para el dominio de scheduled jobs.
+ * Los métodos CRUD viven ahora en `src/store/api/jobsApi.ts` (RTK Query).
+ */
 
 export enum JobRunStatus {
   Idle = 0,
@@ -57,34 +59,6 @@ export interface UpdateJobRequest {
   timeoutSeconds?: number | null;
 }
 
-export const jobsService = {
-  async getJobs(): Promise<ApiResponse<ScheduledJob[]>> {
-    return await apiGet<ScheduledJob[]>(buildApiUrl('jobs'));
-  },
-
-  async getJob(name: string): Promise<ApiResponse<ScheduledJob>> {
-    return await apiGet<ScheduledJob>(buildApiUrl(`jobs/${encodeURIComponent(name)}`));
-  },
-
-  async getExecutions(name: string, take: number = 50): Promise<ApiResponse<JobExecution[]>> {
-    return await apiGet<JobExecution[]>(
-      buildApiUrl(`jobs/${encodeURIComponent(name)}/executions?take=${take}`)
-    );
-  },
-
-  async getExecution(executionId: number): Promise<ApiResponse<JobExecution>> {
-    return await apiGet<JobExecution>(buildApiUrl(`jobs/executions/${executionId}`));
-  },
-
-  async updateJob(name: string, data: UpdateJobRequest): Promise<ApiResponse<ScheduledJob>> {
-    return await apiPatch<ScheduledJob>(buildApiUrl(`jobs/${encodeURIComponent(name)}`), data);
-  },
-
-  async runJob(name: string): Promise<ApiResponse<JobExecution>> {
-    return await apiPost<JobExecution>(buildApiUrl(`jobs/${encodeURIComponent(name)}/run`), {});
-  },
-};
-
 export const jobRunStatusLabels: Record<JobRunStatus, string> = {
   [JobRunStatus.Idle]: 'Nunca ejecutado',
   [JobRunStatus.Running]: 'En ejecución',
@@ -98,5 +72,3 @@ export const jobTriggerLabels: Record<JobTriggerType, string> = {
   [JobTriggerType.Scheduled]: 'Automático',
   [JobTriggerType.Manual]: 'Manual',
 };
-
-export default jobsService;

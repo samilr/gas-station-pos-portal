@@ -1,5 +1,7 @@
-import { buildApiUrl } from '../config/api';
-import { apiGet, apiPost, apiPut, apiDelete } from './apiInterceptor';
+/**
+ * Tipos para el dominio de dataphones.
+ * Los métodos CRUD viven ahora en `src/store/api/dataphonesApi.ts` (RTK Query).
+ */
 
 export interface Dataphone {
   dataphoneId: number;
@@ -28,52 +30,3 @@ export interface CreateDataphoneRequest {
 }
 
 export type UpdateDataphoneRequest = Partial<Omit<CreateDataphoneRequest, 'dataphoneId'>>;
-
-export interface ListResponse {
-  successful: boolean;
-  data: Dataphone[];
-  error?: string;
-}
-export interface ItemResponse {
-  successful: boolean;
-  data: Dataphone | null;
-  error?: string;
-}
-
-class DataphoneService {
-  async list(filters?: { siteId?: string }): Promise<ListResponse> {
-    const qs = new URLSearchParams();
-    if (filters?.siteId) qs.append('siteId', filters.siteId);
-    const query = qs.toString();
-    const url = buildApiUrl(`dataphones${query ? `?${query}` : ''}`);
-    const res = await apiGet<any>(url);
-    const raw = res.data;
-    const items: Dataphone[] = Array.isArray(raw)
-      ? raw
-      : Array.isArray(raw?.data) ? raw.data : [];
-    return { successful: res.successful, data: items, error: res.error };
-  }
-
-  async getById(id: number): Promise<ItemResponse> {
-    const res = await apiGet<Dataphone>(buildApiUrl(`dataphones/${id}`));
-    return { successful: res.successful, data: res.data || null, error: res.error };
-  }
-
-  async create(payload: CreateDataphoneRequest): Promise<ItemResponse> {
-    const res = await apiPost<Dataphone>(buildApiUrl('dataphones'), payload);
-    return { successful: res.successful, data: res.data || null, error: res.error };
-  }
-
-  async update(id: number, payload: UpdateDataphoneRequest): Promise<ItemResponse> {
-    const res = await apiPut<Dataphone>(buildApiUrl(`dataphones/${id}`), payload);
-    return { successful: res.successful, data: res.data || null, error: res.error };
-  }
-
-  async remove(id: number): Promise<{ successful: boolean; error?: string }> {
-    const res = await apiDelete(buildApiUrl(`dataphones/${id}`));
-    return { successful: res.successful, error: res.error };
-  }
-}
-
-const dataphoneService = new DataphoneService();
-export default dataphoneService;
