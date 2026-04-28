@@ -30,7 +30,6 @@ const TerminalsSection: React.FC = () => {
   usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [siteFilter, setSiteFilter] = useState('');
   const [connectionFilter, setConnectionFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -54,13 +53,11 @@ const TerminalsSection: React.FC = () => {
       (statusFilter === 'active' && terminal.active) ||
       (statusFilter === 'inactive' && !terminal.active);
 
-    const matchesSite = siteFilter === '' || terminal.siteId === siteFilter;
-
     const matchesConnection = connectionFilter === '' ||
       (connectionFilter === 'connected' && terminal.connected) ||
       (connectionFilter === 'disconnected' && !terminal.connected);
 
-    return matchesSearch && matchesStatus && matchesSite && matchesConnection;
+    return matchesSearch && matchesStatus && matchesConnection;
   });
 
   // Calcular estadísticas
@@ -114,12 +111,8 @@ const TerminalsSection: React.FC = () => {
   const handleClearFilters = () => {
     setSearchTerm('');
     setStatusFilter('');
-    setSiteFilter('');
     setConnectionFilter('');
   };
-
-  // Obtener valores únicos para los filtros
-  const uniqueSites = Array.from(new Set(terminalList.map(terminal => terminal.siteId).filter(Boolean)));
 
   // Calcular paginación
   const totalPages = Math.ceil(filteredTerminals.length / itemsPerPage);
@@ -201,7 +194,7 @@ const TerminalsSection: React.FC = () => {
       {/* Filtros expandibles */}
       {showFilters && (
         <div className="p-2 bg-gray-50 border border-gray-200 rounded-sm">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-0.5">Estado</label>
               <select
@@ -212,19 +205,6 @@ const TerminalsSection: React.FC = () => {
                 <option value="">Todos</option>
                 <option value="active">Activas</option>
                 <option value="inactive">Inactivas</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-0.5">Sitio</label>
-              <select
-                value={siteFilter}
-                onChange={(e) => setSiteFilter(e.target.value)}
-                className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Todos</option>
-                {uniqueSites.map(site => (
-                  <option key={site} value={site}>{site}</option>
-                ))}
               </select>
             </div>
             <div>

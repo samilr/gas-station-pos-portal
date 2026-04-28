@@ -2,7 +2,9 @@ import React, { useState, useEffect } from "react";
 import { User, Save, X, Eye, EyeOff, Edit, UserPlus, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 import { usePermissions } from "../../../hooks/usePermissions";
-import { IUser, userService } from "../../../services/userService";
+import { IUser } from "../../../services/userService";
+import { useCreateUserMutation, useUpdateUserMutation } from "../../../store/api/usersApi";
+import { getErrorMessage } from "../../../store/api/baseApi";
 import { PermissionGate } from "../../common";
 import { Role } from "../../../config/permissions";
 import { CompactButton } from "../../ui";
@@ -66,6 +68,8 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
   const { canEditUsers } = usePermissions();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [createUser] = useCreateUserMutation();
+  const [updateUser] = useUpdateUserMutation();
   const [formData, setFormData] = useState<UserFormData>({
     username: "", name: "", email: "", password: "", role: "5", staft_group: "",
     staft_id: "", site_id: "", terminal_id: 1, shift: 1, active: 1, connected: 0, portal_access: 0,
@@ -190,20 +194,20 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
     setLoading(true);
     try {
       if (isEditing) {
-        const response = await userService.updateUser(user!.user_id, mapToUpdateUserDto(formData));
-        if (response.successful) {
+        try {
+          await updateUser({ userId: user!.user_id, body: mapToUpdateUserDto(formData) }).unwrap();
           toast.success(`Usuario actualizado exitosamente \n ${formData.name}`, { duration: 5000 });
           onSuccess(); onClose();
-        } else {
-          toast.error("Error al actualizar usuario.", { duration: 5000 });
+        } catch (err) {
+          toast.error(getErrorMessage(err, "Error al actualizar usuario.") ?? "Error al actualizar usuario.", { duration: 5000 });
         }
       } else {
-        const response = await userService.createUser(mapToCreateUserDto(formData));
-        if (response.successful) {
+        try {
+          await createUser(mapToCreateUserDto(formData)).unwrap();
           toast.success(`Usuario creado exitosamente \n ${formData.name}`, { duration: 5000 });
           onSuccess(); onClose();
-        } else {
-          toast.error("Error al crear usuario.", { duration: 5000 });
+        } catch (err) {
+          toast.error(getErrorMessage(err, "Error al crear usuario.") ?? "Error al crear usuario.", { duration: 5000 });
         }
       }
     } catch (error) {

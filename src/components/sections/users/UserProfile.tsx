@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { User, Lock, Mail, Shield, Calendar, Save, Eye, EyeOff, Briefcase, MapPin, Phone, Clock } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
-import { IUser, userService } from '../../../services/userService';
+import { IUser } from '../../../services/userService';
+import { store } from '../../../store';
+import { usersApi } from '../../../store/api/usersApi';
 import { CompactButton } from '../../ui';
 import Toolbar from '../../ui/Toolbar';
 
@@ -37,15 +39,15 @@ const UserProfile: React.FC = () => {
 
     try {
       setIsLoadingData(true);
-      const response = await userService.getUserByStaftId(user.staftId);
+      const result = await store.dispatch(usersApi.endpoints.getUserByStaftId.initiate(user.staftId));
 
-      if (response.successful && response.data) {
-        setUserData(response.data);
+      if (result.data) {
+        setUserData(result.data);
         setFormData({
-          name: response.data.name || '',
-          email: response.data.email || '',
-          position: response.data.staft_group || '',
-          department: response.data.staft_group || '',
+          name: result.data.name || '',
+          email: result.data.email || '',
+          position: result.data.staft_group || '',
+          department: result.data.staft_group || '',
           phone: '',
           address: '',
           currentPassword: '',

@@ -1,28 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
-import dataphoneSupplierService, { DataphoneSupplier } from '../services/dataphoneSupplierService';
+import { useListDataphoneSuppliersQuery } from '../store/api/dataphoneSuppliersApi';
+import { getErrorMessage } from '../store/api/baseApi';
 
 export function useDataphoneSuppliers() {
-  const [suppliers, setSuppliers] = useState<DataphoneSupplier[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isLoading, error, refetch } = useListDataphoneSuppliersQuery();
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await dataphoneSupplierService.list();
-      if (res.successful) setSuppliers(res.data);
-      else setError(res.error || 'Error al cargar proveedores');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error de conexión');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { refresh(); }, [refresh]);
-
-  return { suppliers, loading, error, refresh };
+  return {
+    suppliers: data ?? [],
+    loading: isLoading,
+    error: getErrorMessage(error, 'Error al cargar proveedores'),
+    refresh: refetch,
+  };
 }
 
 export default useDataphoneSuppliers;

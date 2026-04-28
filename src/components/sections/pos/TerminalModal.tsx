@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Monitor, Save, X, Edit, Plus, User, Smartphone, RefreshCw, Layers, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { ITerminal, terminalService } from '../../../services/terminalService';
-import fuelIslandService, { FuelIsland } from '../../../services/fuelIslandService';
+import { ITerminal } from '../../../services/terminalService';
+import { useCreateTerminalMutation, useUpdateTerminalMutation } from '../../../store/api/terminalsApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
+import { FuelIsland } from '../../../services/fuelIslandService';
+import { store } from '../../../store';
+import { fuelIslandsApi } from '../../../store/api/fuelIslandsApi';
 import { CompactButton } from '../../ui';
 import { SiteAutocomplete } from '../../ui/autocompletes';
 import { getHostTypeLabel } from '../../../types/host_type.enum';
@@ -64,6 +68,8 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
   const [fuelIslands, setFuelIslands] = useState<FuelIsland[]>([]);
   const [loadingIslands, setLoadingIslands] = useState(false);
   const [formData, setFormData] = useState<TerminalFormData>(EMPTY_FORM);
+  const [createTerminal] = useCreateTerminalMutation();
+  const [updateTerminal] = useUpdateTerminalMutation();
 
   const isEditing = mode === 'edit';
   const isViewing = mode === 'view';
@@ -103,8 +109,10 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
     const loadIslands = async () => {
       setLoadingIslands(true);
       try {
-        const res = await fuelIslandService.list({ siteId: formData.siteId });
-        setFuelIslands(res.successful ? res.data : []);
+        const result = await store.dispatch(
+          fuelIslandsApi.endpoints.listFuelIslands.initiate({ siteId: formData.siteId })
+        );
+        setFuelIslands(result.data ?? []);
       } catch {
         setFuelIslands([]);
       } finally {
@@ -169,22 +177,22 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
     try {
       const payload = buildPayload();
       if (isEditing && terminal) {
-        const response = await terminalService.updateTerminal(terminal.siteId, terminal.terminalId, payload);
-        if (response.successful) {
+        try {
+          await updateTerminal({ siteId: terminal.siteId, terminalId: terminal.terminalId, body: payload }).unwrap();
           toast.success(`Terminal actualizada exitosamente\n${formData.name}`, { duration: 5000 });
           onSuccess();
           onClose();
-        } else {
-          toast.error(response.error || 'Error al actualizar terminal.', { duration: 6000 });
+        } catch (err) {
+          toast.error(getErrorMessage(err, 'Error al actualizar terminal.') ?? 'Error al actualizar terminal.', { duration: 6000 });
         }
       } else {
-        const response = await terminalService.createTerminal(payload as any);
-        if (response.successful) {
+        try {
+          await createTerminal(payload as any).unwrap();
           toast.success(`Terminal creada exitosamente\n${formData.name}`, { duration: 5000 });
           onSuccess();
           onClose();
-        } else {
-          toast.error(response.error || 'Error al crear terminal.', { duration: 6000 });
+        } catch (err) {
+          toast.error(getErrorMessage(err, 'Error al crear terminal.') ?? 'Error al crear terminal.', { duration: 6000 });
         }
       }
     } catch (error) {

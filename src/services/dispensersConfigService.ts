@@ -1,5 +1,7 @@
-import { buildApiUrl } from '../config/api';
-import { apiGet, apiPost, apiPut, apiDelete } from './apiInterceptor';
+/**
+ * Tipos para el dominio de dispenser config.
+ * Los métodos CRUD viven ahora en `src/store/api/dispensersConfigApi.ts` (RTK Query).
+ */
 
 export type ConnectionType = 'TCP' | 'SERIAL' | 'RS485' | 'RS422';
 export type Parity = 'None' | 'Even' | 'Odd';
@@ -29,8 +31,10 @@ export interface Dispenser {
 
   protocol: string | null;
   protocolVersion: string | null;
+  ptsPort: number | null;
   busAddress: number | null;
   timeoutMs: number;
+  requiresAuthorization: boolean;
 
   createdAt: string;
   updatedAt: string | null;
@@ -55,61 +59,12 @@ export interface CreateDispenserRequest {
   stopBits?: StopBits | null;
   protocol?: string | null;
   protocolVersion?: string | null;
+  ptsPort?: number | null;
   busAddress?: number | null;
   timeoutMs: number;
+  requiresAuthorization?: boolean;
 }
 
 export type UpdateDispenserRequest = Partial<Omit<CreateDispenserRequest, 'siteId' | 'pumpNumber'>> & {
   active?: boolean | null;
 };
-
-export interface DispenserListResponse {
-  successful: boolean;
-  data: Dispenser[];
-  error?: string;
-}
-
-export interface DispenserItemResponse {
-  successful: boolean;
-  data: Dispenser | null;
-  error?: string;
-}
-
-class DispensersConfigService {
-  async list(filters?: { siteId?: string; ptsId?: string }): Promise<DispenserListResponse> {
-    const qs = new URLSearchParams();
-    if (filters?.siteId) qs.append('siteId', filters.siteId);
-    if (filters?.ptsId) qs.append('ptsId', filters.ptsId);
-    const query = qs.toString();
-    const url = buildApiUrl(`dispensers-config${query ? `?${query}` : ''}`);
-    const res = await apiGet<any>(url);
-    return {
-      successful: res.successful,
-      data: Array.isArray(res.data) ? res.data : [],
-      error: res.error,
-    };
-  }
-
-  async getById(id: number): Promise<DispenserItemResponse> {
-    const res = await apiGet<Dispenser>(buildApiUrl(`dispensers-config/${id}`));
-    return { successful: res.successful, data: res.data || null, error: res.error };
-  }
-
-  async create(payload: CreateDispenserRequest): Promise<DispenserItemResponse> {
-    const res = await apiPost<Dispenser>(buildApiUrl('dispensers-config'), payload);
-    return { successful: res.successful, data: res.data || null, error: res.error };
-  }
-
-  async update(id: number, payload: UpdateDispenserRequest): Promise<DispenserItemResponse> {
-    const res = await apiPut<Dispenser>(buildApiUrl(`dispensers-config/${id}`), payload);
-    return { successful: res.successful, data: res.data || null, error: res.error };
-  }
-
-  async remove(id: number): Promise<{ successful: boolean; error?: string }> {
-    const res = await apiDelete(buildApiUrl(`dispensers-config/${id}`));
-    return { successful: res.successful, error: res.error };
-  }
-}
-
-const dispensersConfigService = new DispensersConfigService();
-export default dispensersConfigService;

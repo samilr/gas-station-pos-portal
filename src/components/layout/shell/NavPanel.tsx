@@ -19,12 +19,18 @@ const NavPanel: React.FC<NavPanelProps> = ({ activeSection }) => {
   // Find which module contains the active section as a sub-item
   const findParentModule = () => {
     const topLevel = activeSection.split('.')[0];
-    // First try direct match by top-level id
+    // Prefer exact sub-item match (handles cases where a section lives in a module
+    // whose id differs from the section's top-level prefix, e.g. transactions.revenue → fiscal)
+    const subItemMatch = menuItems.find(item =>
+      item.subItems?.some(sub => sub.id === activeSection)
+    );
+    if (subItemMatch) return subItemMatch;
+    // Fall back to top-level id match
     const directMatch = menuItems.find(item => item.id === topLevel);
     if (directMatch) return directMatch;
-    // Otherwise find the module that contains this section as a sub-item
+    // Finally, fuzzy match by top-level prefix inside sub-items
     return menuItems.find(item =>
-      item.subItems?.some(sub => sub.id === activeSection || sub.id.split('.')[0] === topLevel)
+      item.subItems?.some(sub => sub.id.split('.')[0] === topLevel)
     ) || null;
   };
 

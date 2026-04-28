@@ -1,29 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
-import { taxService } from '../services/taxService';
-import { ITaxType } from '../types/tax';
+import { useListTaxTypesQuery } from '../store/api/taxesApi';
+import { getErrorMessage } from '../store/api/baseApi';
 
 export function useTaxTypes() {
-  const [taxTypes, setTaxTypes] = useState<ITaxType[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isLoading, error, refetch } = useListTaxTypesQuery();
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await taxService.getTaxTypes();
-      if (res.successful) setTaxTypes(Array.isArray(res.data) ? res.data : []);
-      else setError(res.error || 'Error al cargar tax types');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error de conexión');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { refresh(); }, [refresh]);
-
-  return { taxTypes, loading, error, refresh };
+  return {
+    taxTypes: data ?? [],
+    loading: isLoading,
+    error: getErrorMessage(error, 'Error al cargar tax types'),
+    refresh: refetch,
+  };
 }
 
 export default useTaxTypes;

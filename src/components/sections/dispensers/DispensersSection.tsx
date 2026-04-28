@@ -5,7 +5,6 @@ import {
 import toast from 'react-hot-toast';
 import DispenserCard from './DispenserCard';
 import DispenserMonitorCard from './DispenserMonitorCard';
-import TanksSidebar from './TanksSidebar';
 import AuthorizeModal from './AuthorizeModal';
 import ConfirmActionModal from './ConfirmActionModal';
 import {
@@ -31,6 +30,7 @@ import type {
   PumpVisualState,
   NozzlePrice,
 } from '../../../types/dispenser';
+import type { PumpStatusMeta } from '../../../types/ptsConfig';
 import { useHeader } from '../../../context/HeaderContext';
 import { mapFuelProductName } from '../../../utils/fuelProductMapping';
 import { CompactButton } from '../../ui';
@@ -47,7 +47,10 @@ const NOZZLE_FUEL_GRADE_MAP: Record<number, { id: number; code: string }> = {
   6: { id: 6, code: '' },
 };
 
-const POLLING_INTERVAL = 2000;
+// Alineado con `PumpStatusPollerHostedService` del backend (5s).
+// El proxy PTS sirve `/dispensers/status` desde un cache que se refresca
+// cada 5s — polear más rápido desperdicia llamadas sin traer data nueva.
+const POLLING_INTERVAL = 5000;
 
 const STATE_TEXT: Record<PumpVisualState, string> = {
   available: 'Disponible',
@@ -68,6 +71,7 @@ const STATE_DOT_COLOR: Record<PumpVisualState, string> = {
 const DispensersSection: React.FC = () => {
   const [viewMode, setViewMode] = useState<'table' | 'cards' | 'visual'>('visual');
   const [pumpStatuses, setPumpStatuses] = useState<Map<number, PumpStatusPacket | null>>(new Map());
+  const [statusMeta, setStatusMeta] = useState<PumpStatusMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterState, setFilterState] = useState<string>('all');
@@ -96,15 +100,16 @@ const DispensersSection: React.FC = () => {
     if (fetchingRef.current) return;
     fetchingRef.current = true;
     try {
-      const packets = await getAllPumpStatuses();
+      const { packets, meta } = await getAllPumpStatuses();
 
       const newStatuses = new Map<number, PumpStatusPacket>();
       packets.forEach((packet) => {
-        const num = getPumpNumber(packet as PumpStatusPacket);
-        newStatuses.set(num, packet as PumpStatusPacket);
+        const num = getPumpNumber(packet);
+        newStatuses.set(num, packet);
       });
 
       setPumpStatuses(newStatuses);
+      setStatusMeta(meta);
       setError(null);
       setLoading(false);
     } catch (err) {
@@ -543,6 +548,21 @@ const DispensersSection: React.FC = () => {
         </div>
       )}
 
+      {/* Cache stale warning — el snapshot del proxy PTS está caducado o el último poll falló */}
+      {statusMeta?.stale && !error && (
+        <div className="bg-amber-50 border border-amber-200 rounded-sm p-2 flex items-center space-x-2">
+          <AlertCircle className="w-4 h-4 text-amber-500" />
+          <div className="flex-1">
+            <p className="text-amber-800 text-sm font-medium">Datos desactualizados</p>
+            <p className="text-amber-700 text-xs">
+              {statusMeta.error
+                ? `El PTS no responde: ${statusMeta.error}`
+                : `Snapshot con ${statusMeta.ageSeconds.toFixed(0)}s de antigüedad. Verifica el proxy PTS.`}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Contenido */}
       {viewMode === 'table' ? (
         <div className="bg-white rounded-sm border border-table-border overflow-hidden">
@@ -612,36 +632,35 @@ const DispensersSection: React.FC = () => {
           ))}
         </div>
       ) : (
-        <div className="flex gap-2 items-start">
-          {/* 70% izquierda: dispensadoras */}
-          <div className="flex-1 min-w-0" style={{ flexBasis: '70%' }}>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-              {filteredPumps.map(([number, packet]) => (
-                <DispenserMonitorCard
-                  key={number}
-                  pumpNumber={number}
-                  packet={packet}
-                  isLoading={loading && packet === null}
-                  error={error && packet === null ? error : undefined}
-                  onStatusChange={fetchPumpStatuses}
-                  selected={selectedPumps.has(number)}
-                  onToggleSelect={() => togglePumpSelection(number)}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* 30% derecha: monitoreo de tanques (fijo, ocupa todo el alto) */}
-          <div className="flex-shrink-0" style={{ flexBasis: '30%', maxWidth: '30%' }}>
-            <TanksSidebar />
-          </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+          {filteredPumps.map(([number, packet]) => (
+            <DispenserMonitorCard
+              key={number}
+              pumpNumber={number}
+              packet={packet}
+              isLoading={loading && packet === null}
+              error={error && packet === null ? error : undefined}
+              onStatusChange={fetchPumpStatuses}
+              selected={selectedPumps.has(number)}
+              onToggleSelect={() => togglePumpSelection(number)}
+            />
+          ))}
         </div>
       )}
 
 
-      {/* Footer: indicador de auto-refresh */}
-      <div className="flex items-center justify-end px-2 py-1 text-2xs text-text-muted opacity-75">
-        Actualizacion cada 2s
+      {/* Footer: indicador de freshness del snapshot del proxy PTS */}
+      <div className="flex items-center justify-end gap-2 px-2 py-1 text-2xs text-text-muted opacity-75">
+        {statusMeta && (
+          <>
+            <span className={statusMeta.stale ? 'text-amber-600 font-medium' : ''}>
+              Última actualización del PTS: hace {statusMeta.ageSeconds.toFixed(1)}s
+              {statusMeta.fromCache ? '' : ' (live)'}
+            </span>
+            <span className="text-gray-300">·</span>
+          </>
+        )}
+        <span>Refresh cada {POLLING_INTERVAL / 1000}s</span>
       </div>
 
       {/* Modales */}

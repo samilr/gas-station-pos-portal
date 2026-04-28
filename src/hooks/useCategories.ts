@@ -1,28 +1,29 @@
-import { useCallback, useEffect, useState } from 'react';
-import categoryService, { Category } from '../services/categoryService';
+import { Category } from '../services/categoryService';
+import { useListCategoriesQuery } from '../store/api/categoriesApi';
 
+/**
+ * Facade sobre RTK Query que mantiene el API original: `{ categories, loading, error, refresh }`.
+ * La lista se cachea automáticamente y se revalida al mutar via RTK Query
+ * (`useCreateCategoryMutation`, `useUpdateCategoryMutation`, `useDeleteCategoryMutation`).
+ */
 export function useCategories() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isLoading, error, refetch } = useListCategoriesQuery();
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await categoryService.list();
-      if (res.successful) setCategories(res.data);
-      else setError(res.error || 'Error al cargar categorías');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error de conexión');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const categories: Category[] = data ?? [];
+  const errorMessage: string | null = error
+    ? ('error' in error && typeof error.error === 'string'
+        ? error.error
+        : 'data' in error && (error.data as { error?: string })?.error
+          ? ((error.data as { error?: string }).error as string)
+          : 'Error al cargar categorías')
+    : null;
 
-  useEffect(() => { refresh(); }, [refresh]);
-
-  return { categories, loading, error, refresh };
+  return {
+    categories,
+    loading: isLoading,
+    error: errorMessage,
+    refresh: refetch,
+  };
 }
 
 export default useCategories;

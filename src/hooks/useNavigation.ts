@@ -59,6 +59,7 @@ export const useNavigation = () => {
     'analytics.realtime': '/dashboard/analytics/realtime',
     'transactions': '/dashboard/transactions',
     'transactions.list': '/dashboard/transactions/list',
+    'transactions.fuel': '/dashboard/transactions/fuel',
     'transactions.tienda': '/dashboard/transactions/tienda',
     'transactions.revenue': '/dashboard/transactions/revenue',
     'transactions.refunds': '/dashboard/transactions/refunds',
@@ -78,6 +79,7 @@ export const useNavigation = () => {
     'dispensers': '/dashboard/dispensers',
     'dispensers.dashboard': '/dashboard/dispensers/dashboard',
     'dispensers.config': '/dashboard/dispensers/config',
+    'dispensers.pts-config': '/dashboard/dispensers/pts-config',
     'dispensers.monitor': '/dashboard/dispensers/monitor',
     'dispensers.prices': '/dashboard/dispensers/prices',
     'dispensers.tanks': '/dashboard/dispensers/tanks',
@@ -85,7 +87,6 @@ export const useNavigation = () => {
     'dispensers.hardware': '/dashboard/dispensers/hardware',
     'dispensers.tags': '/dashboard/dispensers/tags',
     'dispensers.reports': '/dashboard/dispensers/reports',
-    'dispensers.transactions': '/dashboard/dispensers/transactions',
     'dispensers.islands': '/dashboard/dispensers/islands',
     'dispensers.workbench': '/dashboard/dispensers/workbench',
     'logs': '/dashboard/logs',
@@ -138,6 +139,7 @@ export const useNavigation = () => {
     // Users extras
     'users.roles': '/dashboard/users/roles',
     'users.staft-groups': '/dashboard/users/staft-groups',
+    'users.period-staft': '/dashboard/users/period-staft',
   };
 
   return {

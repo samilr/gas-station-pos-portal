@@ -1,6 +1,8 @@
 import React from 'react';
 import EntityAutocomplete from '../EntityAutocomplete';
-import dataphoneSupplierService, { DataphoneSupplier } from '../../../services/dataphoneSupplierService';
+import { DataphoneSupplier } from '../../../services/dataphoneSupplierService';
+import { store } from '../../../store';
+import { dataphoneSuppliersApi } from '../../../store/api/dataphoneSuppliersApi';
 
 interface DataphoneSupplierAutocompleteProps {
   value: number | null | undefined;
@@ -15,8 +17,8 @@ interface DataphoneSupplierAutocompleteProps {
 }
 
 const fetchSuppliers = async (): Promise<DataphoneSupplier[]> => {
-  const res = await dataphoneSupplierService.list();
-  return res.successful ? res.data : [];
+  const result = await store.dispatch(dataphoneSuppliersApi.endpoints.listDataphoneSuppliers.initiate());
+  return result.data ?? [];
 };
 
 const DataphoneSupplierAutocomplete: React.FC<DataphoneSupplierAutocompleteProps> = (props) => (

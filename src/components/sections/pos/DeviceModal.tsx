@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Smartphone, Save, X, Edit, Plus, Clock, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { hostService, IHost } from '../../../services/deviceService';
+import { IHost } from '../../../services/deviceService';
+import { useCreateDeviceMutation, useUpdateDeviceMutation } from '../../../store/api/devicesApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { getHostTypeLabel } from '../../../types/host_type.enum';
 import { CompactButton } from '../../ui';
 import { SiteAutocomplete, HostTypeAutocomplete } from '../../ui/autocompletes';
@@ -42,6 +44,8 @@ const formatDate = (dateString: string | Date | null | undefined): string => {
 
 const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode, onSuccess }) => {
   const [loading, setLoading] = useState(false);
+  const [createDevice] = useCreateDeviceMutation();
+  const [updateDevice] = useUpdateDeviceMutation();
   const [formData, setFormData] = useState<HostFormData>({
     hostId: 0,
     name: '',
@@ -118,22 +122,30 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, device, mode
     setLoading(true);
     try {
       if (isEditing) {
-        const response = await hostService.updateHost(device!.hostId, formData);
-        if (response.successful) {
+        try {
+          await updateDevice({ hostId: device!.hostId, body: formData }).unwrap();
           toast.success(`Dispositivo actualizado exitosamente \n ${formData.name}`, { duration: 5000 });
           onSuccess();
           onClose();
-        } else {
-          toast.error('Error al actualizar dispositivo. Por favor, inténtalo de nuevo.', { duration: 5000 });
+        } catch (err) {
+          toast.error(
+            getErrorMessage(err, 'Error al actualizar dispositivo. Por favor, inténtalo de nuevo.') ??
+              'Error al actualizar dispositivo.',
+            { duration: 5000 }
+          );
         }
       } else {
-        const response = await hostService.createHost(formData);
-        if (response.successful) {
+        try {
+          await createDevice(formData).unwrap();
           toast.success(`Dispositivo creado exitosamente \n ${formData.name}`, { duration: 5000 });
           onSuccess();
           onClose();
-        } else {
-          toast.error('Error al crear dispositivo. Por favor, inténtalo de nuevo.', { duration: 5000 });
+        } catch (err) {
+          toast.error(
+            getErrorMessage(err, 'Error al crear dispositivo. Por favor, inténtalo de nuevo.') ??
+              'Error al crear dispositivo.',
+            { duration: 5000 }
+          );
         }
       }
     } catch (error) {

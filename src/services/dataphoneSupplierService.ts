@@ -1,5 +1,7 @@
-import { buildApiUrl } from '../config/api';
-import { apiGet, apiPost, apiPut, apiDelete } from './apiInterceptor';
+/**
+ * Tipos para el dominio de dataphone suppliers.
+ * Los métodos CRUD viven ahora en `src/store/api/dataphoneSuppliersApi.ts` (RTK Query).
+ */
 
 export interface DataphoneSupplier {
   dataphoneSupplierId: number;
@@ -22,49 +24,3 @@ export interface CreateDataphoneSupplierRequest {
 }
 
 export type UpdateDataphoneSupplierRequest = Partial<Omit<CreateDataphoneSupplierRequest, 'dataphoneSupplierId'>>;
-
-export interface ListResponse {
-  successful: boolean;
-  data: DataphoneSupplier[];
-  error?: string;
-}
-
-export interface ItemResponse {
-  successful: boolean;
-  data: DataphoneSupplier | null;
-  error?: string;
-}
-
-class DataphoneSupplierService {
-  async list(): Promise<ListResponse> {
-    const res = await apiGet<any>(buildApiUrl('dataphone-suppliers'));
-    const raw = res.data;
-    const items: DataphoneSupplier[] = Array.isArray(raw)
-      ? raw
-      : Array.isArray(raw?.data) ? raw.data : [];
-    return { successful: res.successful, data: items, error: res.error };
-  }
-
-  async getById(id: number): Promise<ItemResponse> {
-    const res = await apiGet<DataphoneSupplier>(buildApiUrl(`dataphone-suppliers/${id}`));
-    return { successful: res.successful, data: res.data || null, error: res.error };
-  }
-
-  async create(payload: CreateDataphoneSupplierRequest): Promise<ItemResponse> {
-    const res = await apiPost<DataphoneSupplier>(buildApiUrl('dataphone-suppliers'), payload);
-    return { successful: res.successful, data: res.data || null, error: res.error };
-  }
-
-  async update(id: number, payload: UpdateDataphoneSupplierRequest): Promise<ItemResponse> {
-    const res = await apiPut<DataphoneSupplier>(buildApiUrl(`dataphone-suppliers/${id}`), payload);
-    return { successful: res.successful, data: res.data || null, error: res.error };
-  }
-
-  async remove(id: number): Promise<{ successful: boolean; error?: string }> {
-    const res = await apiDelete(buildApiUrl(`dataphone-suppliers/${id}`));
-    return { successful: res.successful, error: res.error };
-  }
-}
-
-const dataphoneSupplierService = new DataphoneSupplierService();
-export default dataphoneSupplierService;

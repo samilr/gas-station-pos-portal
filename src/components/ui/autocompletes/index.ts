@@ -6,4 +6,5 @@ export { default as HostTypeAutocomplete } from './HostTypeAutocomplete';
 export { default as TerminalAutocomplete } from './TerminalAutocomplete';
 export { default as DataphoneSupplierAutocomplete } from './DataphoneSupplierAutocomplete';
 export { default as StaftGroupAutocomplete } from './StaftGroupAutocomplete';
+export { default as StaftAutocomplete } from './StaftAutocomplete';
 export { default as RoleAutocomplete } from './RoleAutocomplete';

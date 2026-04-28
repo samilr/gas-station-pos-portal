@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import {
   Users,
   CreditCard,
@@ -31,19 +31,29 @@ const DashboardHome: React.FC = () => {
 
   const { user } = useAuth();
   const {
-    totalTransactions, totalSales, totalReturns, totalFuelSales, totalStoreSales,
+    totalTransactions, totalSales, totalReturns, totalStoreSales,
     salesByVendor, dailySales, chartLoading, chartError, chartFilters,
     siteSales, siteLoading, siteError, siteChartFilters,
     cfTypeData, recentTransactions, allTransactions, topProducts,
-    loading, error, refresh, loadChartData,
+    loading, error, refresh,
     updateChartFilters, refreshChartData, getChartStats,
-    loadSiteSalesData, refreshSiteData, updateSiteChartFilters, getSiteStats,
+    refreshSiteData, updateSiteChartFilters, getSiteStats,
   } = useDashboard();
 
+  // Summary de combustible del día (real, desde fuel_transactions).
+  const fuelToday = useFuelDashboard({
+    initialPeriod: 'today',
+    enabled: { summary: true },
+  });
+
+  // Charts de combustible (últimos 7 días).
   const fuelDash = useFuelDashboard({
     initialPeriod: '7d',
     enabled: { dailyTrend: true, byFuelGrade: true },
   });
+
+  const totalFuelSales = fuelToday.summary?.totalAmount ?? 0;
+  const fuelTxCount = fuelToday.summary?.txCount ?? 0;
 
   const getCurrentSantoDomingoDateTime = () => {
     const now = new Date();
@@ -54,16 +64,6 @@ const DashboardHome: React.FC = () => {
     });
     return formatter.format(now);
   };
-
-  useEffect(() => {
-    if (!loading && !error) {
-      const timer = setTimeout(() => {
-        loadChartData();
-        setTimeout(() => { loadSiteSalesData(); }, 500);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [loading, error, loadChartData]);
 
   if (loading) {
     return (
@@ -120,7 +120,7 @@ const DashboardHome: React.FC = () => {
         {[
           { title: "Ventas Totales", value: formatCurrency(totalSales), sub: `${formatNumber(totalTransactions)} trans.`, color: "text-green-600", onClick: () => navigate("/dashboard/transactions") },
           { title: "Retornos", value: formatCurrency(totalReturns), sub: "devoluciones", color: "text-red-600", onClick: () => navigate("/dashboard/transactions") },
-          { title: "Combustible", value: formatCurrency(totalFuelSales), sub: "NCF", color: "text-orange-600", onClick: () => navigate("/dashboard/transactions/revenue") },
+          { title: "Combustible", value: formatCurrency(totalFuelSales), sub: `${formatNumber(fuelTxCount)} trans.`, color: "text-orange-600", onClick: () => navigate("/dashboard/transactions/fuel") },
           { title: "Tienda", value: formatCurrency(totalStoreSales), sub: "conveniencia", color: "text-purple-600", onClick: () => navigate("/dashboard/transactions/tienda") },
         ].map((stat) => (
           <div key={stat.title} onClick={stat.onClick}

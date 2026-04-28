@@ -1,34 +1,27 @@
-import { useCallback, useEffect, useState } from 'react';
-import fuelIslandService, { FuelIsland } from '../services/fuelIslandService';
+import { useMemo, useState } from 'react';
+import { useListFuelIslandsQuery } from '../store/api/fuelIslandsApi';
+import { useSelectedSiteId } from './useSelectedSite';
+import { getErrorMessage } from '../store/api/baseApi';
 
 export function useFuelIslands(initialFilters?: { siteId?: string }) {
-  const [fuelIslands, setFuelIslands] = useState<FuelIsland[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const globalSiteId = useSelectedSiteId();
   const [filters, setFilters] = useState<{ siteId?: string }>(initialFilters || {});
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fuelIslandService.list(filters);
-      if (res.successful) {
-        setFuelIslands(res.data);
-      } else {
-        setError(res.error || 'Error al cargar fuel islands');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error de conexión');
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
+  const effectiveFilters = useMemo(
+    () => ({ siteId: filters.siteId ?? globalSiteId ?? undefined }),
+    [filters, globalSiteId]
+  );
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
+  const { data, isLoading, error, refetch } = useListFuelIslandsQuery(effectiveFilters);
 
-  return { fuelIslands, loading, error, refresh, filters, setFilters };
+  return {
+    fuelIslands: data ?? [],
+    loading: isLoading,
+    error: getErrorMessage(error, 'Error al cargar fuel islands'),
+    refresh: refetch,
+    filters: effectiveFilters,
+    setFilters,
+  };
 }
 
 export default useFuelIslands;

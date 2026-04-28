@@ -6,16 +6,18 @@ import { CompactButton, Pagination } from '../../ui';
 import StatusDot from '../../ui/StatusDot';
 import Toolbar from '../../ui/Toolbar';
 import useDataphoneTerminals from '../../../hooks/useDataphoneTerminals';
-import dataphoneTerminalService, { DataphoneTerminal } from '../../../services/dataphoneTerminalService';
+import { DataphoneTerminal } from '../../../services/dataphoneTerminalService';
+import { useUpdateDataphoneTerminalMutation } from '../../../store/api/dataphoneTerminalsApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import DataphoneTerminalModal from './DataphoneTerminalModal';
 import DeleteDataphoneTerminalDialog from './DeleteDataphoneTerminalDialog';
 
 const DataphoneTerminalsSection: React.FC = () => {
   const { setSubtitle } = useHeader();
   const { terminals, loading, error, refresh } = useDataphoneTerminals();
+  const [updateMapping] = useUpdateDataphoneTerminalMutation();
 
   const [search, setSearch] = useState('');
-  const [siteFilter, setSiteFilter] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -30,8 +32,6 @@ const DataphoneTerminalsSection: React.FC = () => {
     return () => setSubtitle('');
   }, [setSubtitle]);
 
-  const uniqueSites = useMemo(() => Array.from(new Set(terminals.map((t) => t.siteId))), [terminals]);
-
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return terminals.filter((t) => {
@@ -41,10 +41,9 @@ const DataphoneTerminalsSection: React.FC = () => {
         String(t.terminalId).includes(q) ||
         t.dataphoneIp.toLowerCase().includes(q) ||
         t.terminalIp.toLowerCase().includes(q);
-      const matchesSite = !siteFilter || t.siteId === siteFilter;
-      return matchesSearch && matchesSite;
+      return matchesSearch;
     });
-  }, [terminals, search, siteFilter]);
+  }, [terminals, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -53,12 +52,15 @@ const DataphoneTerminalsSection: React.FC = () => {
   const totals = { total: terminals.length, active: terminals.filter((t) => t.active).length };
 
   const toggleActive = async (t: DataphoneTerminal) => {
-    const res = await dataphoneTerminalService.update(
-      { dataphoneId: t.dataphoneId, siteId: t.siteId, terminalId: t.terminalId },
-      { active: !t.active },
-    );
-    if (res.successful) { toast.success(`Mapeo ${t.active ? 'desactivado' : 'activado'}`); refresh(); }
-    else toast.error(res.error || 'Error al cambiar estado');
+    try {
+      await updateMapping({
+        key: { dataphoneId: t.dataphoneId, siteId: t.siteId, terminalId: t.terminalId },
+        body: { active: !t.active },
+      }).unwrap();
+      toast.success(`Mapeo ${t.active ? 'desactivado' : 'activado'}`);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Error al cambiar estado') ?? 'Error al cambiar estado');
+    }
   };
 
   return (
@@ -72,11 +74,6 @@ const DataphoneTerminalsSection: React.FC = () => {
           { label: 'Activos', value: totals.active, color: 'green' },
         ]}
       >
-        <select value={siteFilter} onChange={(e) => { setSiteFilter(e.target.value); setPage(1); }}
-          className="h-7 px-2 text-xs border border-gray-300 rounded-sm">
-          <option value="">Todos los sitios</option>
-          {uniqueSites.map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
         <CompactButton variant="ghost" onClick={refresh} disabled={loading}>
           <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} /> Actualizar
         </CompactButton>
@@ -108,7 +105,7 @@ const DataphoneTerminalsSection: React.FC = () => {
               {!loading && pageItems.length === 0 && (
                 <tr><td colSpan={8} className="px-2 py-6 text-center text-text-muted text-xs">
                   <Monitor className="w-5 h-5 mx-auto mb-1 text-text-muted" />
-                  No hay mapeos {search || siteFilter ? 'con esos filtros' : 'registrados'}
+                  No hay mapeos {search ? 'con esos filtros' : 'registrados'}
                 </td></tr>
               )}
               {!loading && pageItems.map((t) => (

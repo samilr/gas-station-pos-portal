@@ -2,8 +2,21 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit2, Trash2, RefreshCw, X, Save, ChevronDown, ChevronRight, Percent, Calendar } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { taxService } from '../../../services/taxService';
 import { ITax, ITaxType, ITaxLine } from '../../../types/tax';
+import { store } from '../../../store';
+import {
+  taxesApi,
+  useCreateTaxMutation,
+  useUpdateTaxMutation,
+  useDeleteTaxMutation,
+  useCreateTaxTypeMutation,
+  useUpdateTaxTypeMutation,
+  useDeleteTaxTypeMutation,
+  useCreateTaxLineMutation,
+  useUpdateTaxLineMutation,
+  useDeleteTaxLineMutation,
+} from '../../../store/api/taxesApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { CompactButton } from '../../ui';
 import StatusDot from '../../ui/StatusDot';
 import Toolbar from '../../ui/Toolbar';
@@ -12,14 +25,23 @@ import Toolbar from '../../ui/Toolbar';
 const TaxModal: React.FC<{ tax: ITax | null; taxTypes: ITaxType[]; onClose: () => void; onSaved: () => void }> = ({ tax, taxTypes, onClose, onSaved }) => {
   const [form, setForm] = useState({ taxId: tax?.taxId || '', name: tax?.name || '', taxTypeId: tax?.taxTypeId ?? 1, active: tax?.active ?? true });
   const [saving, setSaving] = useState(false);
+  const [createTax] = useCreateTaxMutation();
+  const [updateTax] = useUpdateTaxMutation();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true);
-    const res = tax
-      ? await taxService.updateTax(form.taxId, { name: form.name, taxTypeId: form.taxTypeId, active: form.active })
-      : await taxService.createTax(form);
-    setSaving(false);
-    if (res.successful) { toast.success(tax ? 'Impuesto actualizado' : 'Impuesto creado'); onSaved(); }
-    else toast.error(res.error || 'Error al guardar');
+    try {
+      if (tax) {
+        await updateTax({ taxId: form.taxId, body: { name: form.name, taxTypeId: form.taxTypeId, active: form.active } }).unwrap();
+      } else {
+        await createTax(form).unwrap();
+      }
+      toast.success(tax ? 'Impuesto actualizado' : 'Impuesto creado');
+      onSaved();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Error al guardar') ?? 'Error al guardar');
+    } finally {
+      setSaving(false);
+    }
   };
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -56,14 +78,23 @@ const TaxModal: React.FC<{ tax: ITax | null; taxTypes: ITaxType[]; onClose: () =
 const TaxTypeModal: React.FC<{ taxType: ITaxType | null; onClose: () => void; onSaved: () => void }> = ({ taxType, onClose, onSaved }) => {
   const [form, setForm] = useState({ taxTypeId: taxType?.taxTypeId ?? 0, name: taxType?.name || '', active: taxType?.active ?? true });
   const [saving, setSaving] = useState(false);
+  const [createTaxType] = useCreateTaxTypeMutation();
+  const [updateTaxType] = useUpdateTaxTypeMutation();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true);
-    const res = taxType
-      ? await taxService.updateTaxType(form.taxTypeId, { name: form.name, active: form.active })
-      : await taxService.createTaxType(form);
-    setSaving(false);
-    if (res.successful) { toast.success(taxType ? 'Tipo actualizado' : 'Tipo creado'); onSaved(); }
-    else toast.error(res.error || 'Error al guardar');
+    try {
+      if (taxType) {
+        await updateTaxType({ taxTypeId: form.taxTypeId, body: { name: form.name, active: form.active } }).unwrap();
+      } else {
+        await createTaxType(form).unwrap();
+      }
+      toast.success(taxType ? 'Tipo actualizado' : 'Tipo creado');
+      onSaved();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Error al guardar') ?? 'Error al guardar');
+    } finally {
+      setSaving(false);
+    }
   };
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -108,6 +139,8 @@ const TaxLineModal: React.FC<{
     status: line?.status ?? true,
   });
   const [saving, setSaving] = useState(false);
+  const [createTaxLine] = useCreateTaxLineMutation();
+  const [updateTaxLine] = useUpdateTaxLineMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true);
@@ -117,12 +150,19 @@ const TaxLineModal: React.FC<{
       rate: form.rate,
       status: form.status,
     };
-    const res = line
-      ? await taxService.updateTaxLine(taxId, line.line, payload)
-      : await taxService.createTaxLine({ taxId, line: form.line, rate: form.rate, startTime: form.startTime, endTime: form.endTime || null, status: form.status });
-    setSaving(false);
-    if (res.successful) { toast.success(line ? 'Linea actualizada' : 'Linea creada'); onSaved(); }
-    else toast.error(res.error || 'Error al guardar');
+    try {
+      if (line) {
+        await updateTaxLine({ taxId, line: line.line, body: payload }).unwrap();
+      } else {
+        await createTaxLine({ taxId, line: form.line, rate: form.rate, startTime: form.startTime, endTime: form.endTime || null, status: form.status }).unwrap();
+      }
+      toast.success(line ? 'Linea actualizada' : 'Linea creada');
+      onSaved();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Error al guardar') ?? 'Error al guardar');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -174,21 +214,33 @@ const TaxLinesRow: React.FC<{ taxId: string; onAddLine: () => void }> = ({ taxId
   const [lines, setLines] = useState<ITaxLine[]>([]);
   const [loading, setLoading] = useState(true);
   const [lineModal, setLineModal] = useState<{ show: boolean; line: ITaxLine | null }>({ show: false, line: null });
+  const [deleteTaxLine] = useDeleteTaxLineMutation();
 
   const loadLines = useCallback(async () => {
     setLoading(true);
-    const res = await taxService.getTaxLines(taxId);
-    setLines(Array.isArray(res.data) ? res.data : []);
-    setLoading(false);
+    try {
+      const data = await store
+        .dispatch(taxesApi.endpoints.listTaxLines.initiate(taxId, { forceRefetch: true }))
+        .unwrap();
+      setLines(data ?? []);
+    } catch {
+      setLines([]);
+    } finally {
+      setLoading(false);
+    }
   }, [taxId]);
 
   useEffect(() => { loadLines(); }, [loadLines]);
 
   const handleDelete = async (line: number) => {
     if (!confirm(`¿Eliminar linea ${line} del impuesto ${taxId}?`)) return;
-    const r = await taxService.deleteTaxLine(taxId, line);
-    if (r.successful) { toast.success('Linea eliminada'); loadLines(); }
-    else toast.error(r.error || 'Error');
+    try {
+      await deleteTaxLine({ taxId, line }).unwrap();
+      toast.success('Linea eliminada');
+      loadLines();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Error') ?? 'Error');
+    }
   };
 
   const formatDate = (d?: string | null) => {
@@ -283,25 +335,47 @@ const TaxesSection: React.FC = () => {
   const [taxModal, setTaxModal] = useState<{ show: boolean; tax: ITax | null }>({ show: false, tax: null });
   const [typeModal, setTypeModal] = useState<{ show: boolean; type: ITaxType | null }>({ show: false, type: null });
 
+  const [deleteTax] = useDeleteTaxMutation();
+  const [deleteTaxType] = useDeleteTaxTypeMutation();
+
   const load = useCallback(async () => {
     setLoading(true);
-    const [tr, tyr] = await Promise.all([taxService.getTaxes(), taxService.getTaxTypes()]);
-    setTaxes(Array.isArray(tr.data) ? tr.data : []);
-    setTaxTypes(Array.isArray(tyr.data) ? tyr.data : []);
-    setLoading(false);
+    try {
+      const [tr, tyr] = await Promise.all([
+        store.dispatch(taxesApi.endpoints.listTaxes.initiate(undefined, { forceRefetch: true })).unwrap(),
+        store.dispatch(taxesApi.endpoints.listTaxTypes.initiate(undefined, { forceRefetch: true })).unwrap(),
+      ]);
+      setTaxes(tr ?? []);
+      setTaxTypes(tyr ?? []);
+    } catch {
+      setTaxes([]);
+      setTaxTypes([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
   const deleteT = async (id: string) => {
     if (!confirm(`¿Eliminar impuesto ${id}?`)) return;
-    const r = await taxService.deleteTax(id);
-    if (r.successful) { toast.success('Eliminado'); load(); } else toast.error(r.error || 'Error');
+    try {
+      await deleteTax(id).unwrap();
+      toast.success('Eliminado');
+      load();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Error') ?? 'Error');
+    }
   };
   const deleteTT = async (id: number) => {
     if (!confirm(`¿Eliminar tipo ${id}?`)) return;
-    const r = await taxService.deleteTaxType(id);
-    if (r.successful) { toast.success('Eliminado'); load(); } else toast.error(r.error || 'Error');
+    try {
+      await deleteTaxType(id).unwrap();
+      toast.success('Eliminado');
+      load();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Error') ?? 'Error');
+    }
   };
 
   const toggleExpand = (taxId: string) => setExpandedTaxId(prev => prev === taxId ? null : taxId);

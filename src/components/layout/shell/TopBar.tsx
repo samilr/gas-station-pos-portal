@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Bell, LogOut, User, Shield, HelpCircle, AlertCircle, Info, CheckCircle, Loader2, RefreshCw, Clock, ChevronRight, Wifi, WifiOff } from 'lucide-react';
+import { Bell, LogOut, User, Shield, HelpCircle, AlertCircle, Info, CheckCircle, Loader2, RefreshCw, Clock, ChevronRight } from 'lucide-react';
 import { sectionTitles, menuItems } from './menuConfig';
+import SiteSelector from './SiteSelector';
 
 interface TopBarProps {
   activeSection: string;
@@ -16,7 +17,6 @@ const TopBar: React.FC<TopBarProps> = ({ activeSection }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -26,18 +26,6 @@ const TopBar: React.FC<TopBarProps> = ({ activeSection }) => {
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(interval);
-  }, []);
-
-  // Online/offline status
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
   }, []);
 
   // Click outside
@@ -125,23 +113,8 @@ const TopBar: React.FC<TopBarProps> = ({ activeSection }) => {
 
       {/* Right: functional widgets */}
       <div className="flex items-center gap-2 flex-shrink-0">
-        {/* Connection status */}
-        <div
-          className="flex items-center gap-1 text-xs text-text-secondary px-2 h-7 rounded-sm border border-gray-200"
-          title={isOnline ? 'Conectado' : 'Sin conexión'}
-        >
-          {isOnline ? (
-            <>
-              <Wifi className="w-3 h-3 text-green-500" />
-              <span className="hidden md:inline">Online</span>
-            </>
-          ) : (
-            <>
-              <WifiOff className="w-3 h-3 text-red-500" />
-              <span className="hidden md:inline">Offline</span>
-            </>
-          )}
-        </div>
+        {/* Site selector (global) */}
+        <SiteSelector />
 
         {/* Live clock */}
         <div className="flex items-center gap-1.5 text-xs text-text-secondary px-2 h-7 rounded-sm border border-gray-200 font-mono" title="Hora local (Santo Domingo)">

@@ -30,10 +30,12 @@ import ReportsSection from '../components/sections/dispensers/ReportsSection';
 import FuelTransactionsSection from '../components/sections/dispensers/FuelTransactionsSection';
 import FuelDashboardSection from '../components/sections/dispensers/FuelDashboardSection';
 import DispensersConfigSection from '../components/sections/dispensers/DispensersConfigSection';
+import PtsConfigSection from '../components/sections/dispensers/PtsConfigSection';
 import FuelIslandsSection from '../components/sections/dispensers/FuelIslandsSection';
 import DispensersWorkbenchSection from '../components/sections/dispensers/DispensersWorkbenchSection';
 import RolesSection from '../components/sections/users/RolesSection';
 import StaftGroupsSection from '../components/sections/users/StaftGroupsSection';
+import PeriodStaftSection from '../components/sections/users/PeriodStaftSection';
 import TaxpayersSection from '../components/sections/gov/TaxpayersSection';
 import TaxesSection from '../components/sections/gov/TaxesSection';
 import CfConfigSection from '../components/sections/gov/CfConfigSection';
@@ -206,6 +208,10 @@ export const router = createBrowserRouter([
             element: <PermissionRoute permission="users.view"><StaftGroupsSection /></PermissionRoute>
           },
           {
+            path: 'period-staft',
+            element: <PermissionRoute permission="users.view"><PeriodStaftSection /></PermissionRoute>
+          },
+          {
             path: 'profile',
             element: <UserProfile />
           },
@@ -292,6 +298,10 @@ export const router = createBrowserRouter([
                 <TransactionsSection isTiendaView={true} />
               </PermissionRoute>
             )
+          },
+          {
+            path: 'fuel',
+            element: <PermissionRoute permission="transactions.view"><FuelTransactionsSection /></PermissionRoute>
           },
           {
             path: 'revenue',
@@ -412,6 +422,10 @@ export const router = createBrowserRouter([
             element: <PermissionRoute permission="dispensers.view"><DispensersConfigSection /></PermissionRoute>
           },
           {
+            path: 'pts-config',
+            element: <PermissionRoute permission="dispensers.view"><PtsConfigSection /></PermissionRoute>
+          },
+          {
             path: 'islands',
             element: <PermissionRoute permission="dispensers.view"><FuelIslandsSection /></PermissionRoute>
           },
@@ -446,10 +460,6 @@ export const router = createBrowserRouter([
           {
             path: 'reports',
             element: <PermissionRoute permission="dispensers.view"><ReportsSection /></PermissionRoute>
-          },
-          {
-            path: 'transactions',
-            element: <PermissionRoute permission="dispensers.view"><FuelTransactionsSection /></PermissionRoute>
           }
         ]
       },

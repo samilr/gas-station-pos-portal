@@ -1,34 +1,24 @@
-import { useCallback, useEffect, useState } from 'react';
-import nozzleService, { Nozzle } from '../services/nozzleService';
+import { useState } from 'react';
+import { useListNozzlesQuery } from '../store/api/nozzlesApi';
+import { getErrorMessage } from '../store/api/baseApi';
 
-export function useNozzles(initialFilters?: { dispenserId?: number; productId?: string }, autoLoad: boolean = true) {
-  const [nozzles, setNozzles] = useState<Nozzle[]>([]);
-  const [loading, setLoading] = useState<boolean>(autoLoad);
-  const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<{ dispenserId?: number; productId?: string }>(initialFilters || {});
+type NozzleFilters = { dispenserId?: number; productId?: string };
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await nozzleService.list(filters);
-      if (res.successful) {
-        setNozzles(res.data);
-      } else {
-        setError(res.error || 'Error al cargar nozzles');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error de conexión');
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
+export function useNozzles(initialFilters?: NozzleFilters, autoLoad: boolean = true) {
+  const [filters, setFilters] = useState<NozzleFilters>(initialFilters || {});
 
-  useEffect(() => {
-    if (autoLoad) refresh();
-  }, [refresh, autoLoad]);
+  const { data, isLoading, error, refetch } = useListNozzlesQuery(filters, {
+    skip: !autoLoad,
+  });
 
-  return { nozzles, loading, error, refresh, filters, setFilters };
+  return {
+    nozzles: data ?? [],
+    loading: isLoading,
+    error: getErrorMessage(error, 'Error al cargar nozzles'),
+    refresh: refetch,
+    filters,
+    setFilters,
+  };
 }
 
 export default useNozzles;

@@ -1,7 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ClipboardList, X, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react';
 import {
-  jobsService,
   JobExecution,
   JobRunStatus,
   JobTriggerType,
@@ -9,6 +8,8 @@ import {
   jobTriggerLabels,
   ScheduledJob,
 } from '../../../services/jobsService';
+import { useGetJobExecutionsQuery } from '../../../store/api/jobsApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { CompactButton } from '../../ui';
 
 interface JobExecutionsModalProps {
@@ -54,35 +55,19 @@ const formatDate = (iso?: string | null): string => {
 };
 
 const JobExecutionsModal: React.FC<JobExecutionsModalProps> = ({ isOpen, onClose, job }) => {
-  const [executions, setExecutions] = useState<JobExecution[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
-  const load = useCallback(async () => {
-    if (!job) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await jobsService.getExecutions(job.name, 100);
-      if (res.successful) {
-        setExecutions(res.data || []);
-      } else {
-        setError(res.error || 'Error al cargar ejecuciones');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al cargar ejecuciones');
-    } finally {
-      setLoading(false);
-    }
-  }, [job]);
+  const { data, isLoading: loading, error: queryError, refetch } = useGetJobExecutionsQuery(
+    job ? { name: job.name, take: 100 } : { name: '', take: 100 },
+    { skip: !isOpen || !job }
+  );
+  const executions: JobExecution[] = data ?? [];
+  const error = getErrorMessage(queryError, 'Error al cargar ejecuciones');
+  const load = refetch;
 
   useEffect(() => {
-    if (isOpen && job) {
-      setExpandedId(null);
-      load();
-    }
-  }, [isOpen, job, load]);
+    if (isOpen && job) setExpandedId(null);
+  }, [isOpen, job]);
 
   if (!isOpen || !job) return null;
 

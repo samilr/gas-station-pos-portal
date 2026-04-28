@@ -5,14 +5,15 @@ import { CompactButton } from '../../ui';
 import StatusDot from '../../ui/StatusDot';
 import Toolbar from '../../ui/Toolbar';
 import useTaxLines from '../../../hooks/useTaxLines';
-import { taxService } from '../../../services/taxService';
+import { useListTaxesQuery } from '../../../store/api/taxesApi';
 import { ITax } from '../../../types/tax';
 
 const TaxLinesSection: React.FC = () => {
   const { setSubtitle } = useHeader();
-  const [taxes, setTaxes] = useState<ITax[]>([]);
-  const [taxesLoading, setTaxesLoading] = useState(true);
   const [selectedTaxId, setSelectedTaxId] = useState<string>('');
+
+  const { data: taxesData, isLoading: taxesLoading } = useListTaxesQuery();
+  const taxes: ITax[] = taxesData ?? [];
 
   const { taxLines, loading, error, refresh } = useTaxLines(selectedTaxId || undefined);
 
@@ -22,18 +23,8 @@ const TaxLinesSection: React.FC = () => {
   }, [setSubtitle]);
 
   useEffect(() => {
-    (async () => {
-      setTaxesLoading(true);
-      const res = await taxService.getTaxes();
-      if (res.successful) {
-        const list = Array.isArray(res.data) ? res.data : [];
-        setTaxes(list);
-        if (!selectedTaxId && list.length > 0) setSelectedTaxId(list[0].taxId);
-      }
-      setTaxesLoading(false);
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!selectedTaxId && taxes.length > 0) setSelectedTaxId(taxes[0].taxId);
+  }, [taxes, selectedTaxId]);
 
   const formatDate = (iso: string | null) => {
     if (!iso) return '—';

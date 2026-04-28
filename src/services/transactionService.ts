@@ -302,11 +302,12 @@ class TransactionService {
   /**
    * Obtiene un resumen de ventas y retornos desde una fecha específica
    */
-  async getSalesAndReturnsSummary(startDate: string): Promise<ISalesAndReturnsSummary> {
+  async getSalesAndReturnsSummary(startDate: string, siteId?: string): Promise<ISalesAndReturnsSummary> {
     try {
       const queryParams = new URLSearchParams();
       queryParams.append('startDate', toSantoDomingoStartOfDay(startDate));
-      
+      if (siteId) queryParams.append('siteId', siteId);
+
       const url = buildApiUrl(`trans/dashboard/sales-returns-summary?${queryParams.toString()}`);
       const response = await apiGet<ISalesAndReturnsSummary>(url);
 
@@ -324,11 +325,12 @@ class TransactionService {
   /**
    * Obtiene las ventas diarias agrupadas por día desde una fecha específica
    */
-  async getDailySales(startDate: string): Promise<IDailySales[]> {
+  async getDailySales(startDate: string, siteId?: string): Promise<IDailySales[]> {
     try {
       const queryParams = new URLSearchParams();
       queryParams.append('startDate', toSantoDomingoStartOfDay(startDate));
-      
+      if (siteId) queryParams.append('siteId', siteId);
+
       const url = buildApiUrl(`trans/dashboard/daily-sales?${queryParams.toString()}`);
       const response = await apiGet<IDailySales[]>(url);
 
@@ -346,12 +348,13 @@ class TransactionService {
   /**
    * Obtiene las transacciones más recientes ordenadas por fecha y número de transacción
    */
-  async getTopTransactions(startDate: string, limit: number = 4): Promise<ITopTransaction[]> {
+  async getTopTransactions(startDate: string, limit: number = 4, siteId?: string): Promise<ITopTransaction[]> {
     try {
       const queryParams = new URLSearchParams();
       queryParams.append('startDate', toSantoDomingoStartOfDay(startDate));
       queryParams.append('limit', limit.toString());
-      
+      if (siteId) queryParams.append('siteId', siteId);
+
       const url = buildApiUrl(`trans/dashboard/top-transactions?${queryParams.toString()}`);
       const response = await apiGet<ITopTransaction[]>(url);
 
@@ -369,16 +372,17 @@ class TransactionService {
   /**
    * Obtiene los productos más vendidos ordenados por monto total vendido
    */
-  async getTopProducts(startDate: string, categoryId?: string, limit: number = 5): Promise<ITopProduct[]> {
+  async getTopProducts(startDate: string, categoryId?: string, limit: number = 5, siteId?: string): Promise<ITopProduct[]> {
     try {
       const queryParams = new URLSearchParams();
       queryParams.append('startDate', toSantoDomingoStartOfDay(startDate));
       queryParams.append('limit', limit.toString());
-      
+
       if (categoryId) {
         queryParams.append('categoryId', categoryId);
       }
-      
+      if (siteId) queryParams.append('siteId', siteId);
+
       const url = buildApiUrl(`trans/dashboard/top-products?${queryParams.toString()}`);
       const response = await apiGet<ITopProduct[]>(url);
 
@@ -396,11 +400,12 @@ class TransactionService {
   /**
    * Obtiene las ventas agrupadas por sucursal ordenadas por monto total descendente
    */
-  async getSalesBySite(startDate: string): Promise<ISalesBySite[]> {
+  async getSalesBySite(startDate: string, siteId?: string): Promise<ISalesBySite[]> {
     try {
       const queryParams = new URLSearchParams();
       queryParams.append('startDate', toSantoDomingoStartOfDay(startDate));
-      
+      if (siteId) queryParams.append('siteId', siteId);
+
       const url = buildApiUrl(`trans/dashboard/sales-by-site?${queryParams.toString()}`);
       const response = await apiGet<ISalesBySite[]>(url);
 

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
-import dataphoneSupplierService, { DataphoneSupplier } from '../../../services/dataphoneSupplierService';
+import { DataphoneSupplier } from '../../../services/dataphoneSupplierService';
+import { useDeleteDataphoneSupplierMutation } from '../../../store/api/dataphoneSuppliersApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { CompactButton } from '../../ui';
 
 interface Props {
@@ -13,19 +15,17 @@ interface Props {
 
 const DeleteDataphoneSupplierDialog: React.FC<Props> = ({ isOpen, onClose, supplier, onSuccess }) => {
   const [deleting, setDeleting] = useState(false);
+  const [deleteSupplier] = useDeleteDataphoneSupplierMutation();
 
   const handleDelete = async () => {
     if (!supplier) return;
     setDeleting(true);
     try {
-      const res = await dataphoneSupplierService.remove(supplier.dataphoneSupplierId);
-      if (res.successful) {
-        toast.success(`Proveedor ${supplier.name} eliminado`);
-        onSuccess(); onClose();
-      } else toast.error(res.error || 'Error al eliminar');
+      await deleteSupplier(supplier.dataphoneSupplierId).unwrap();
+      toast.success(`Proveedor ${supplier.name} eliminado`);
+      onSuccess(); onClose();
     } catch (err) {
-      console.error(err);
-      toast.error('Error de conexión');
+      toast.error(getErrorMessage(err, 'Error al eliminar') ?? 'Error al eliminar');
     } finally {
       setDeleting(false);
     }

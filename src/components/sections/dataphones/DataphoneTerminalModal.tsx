@@ -1,8 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Monitor, Save, X, Edit, Plus, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
-import dataphoneTerminalService, { DataphoneTerminal } from '../../../services/dataphoneTerminalService';
-import dataphoneService, { Dataphone } from '../../../services/dataphoneService';
+import { DataphoneTerminal } from '../../../services/dataphoneTerminalService';
+import { Dataphone } from '../../../services/dataphoneService';
+import {
+  useCreateDataphoneTerminalMutation,
+  useUpdateDataphoneTerminalMutation,
+} from '../../../store/api/dataphoneTerminalsApi';
+import { useListDataphonesQuery } from '../../../store/api/dataphonesApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { CompactButton } from '../../ui';
 
 interface Props {
@@ -31,7 +37,11 @@ const EMPTY: FormState = {
 const DataphoneTerminalModal: React.FC<Props> = ({ isOpen, onClose, terminal, mode, onSuccess }) => {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [loading, setLoading] = useState(false);
-  const [dataphones, setDataphones] = useState<Dataphone[]>([]);
+
+  const [createMapping] = useCreateDataphoneTerminalMutation();
+  const [updateMapping] = useUpdateDataphoneTerminalMutation();
+  const { data: dataphonesData } = useListDataphonesQuery(undefined, { skip: !isOpen });
+  const dataphones: Dataphone[] = dataphonesData ?? [];
 
   const isEditing = mode === 'edit';
   const isViewing = mode === 'view';
@@ -40,7 +50,6 @@ const DataphoneTerminalModal: React.FC<Props> = ({ isOpen, onClose, terminal, mo
 
   useEffect(() => {
     if (!isOpen) return;
-    dataphoneService.list().then((r) => setDataphones(r.data));
     if (terminal && (isEditing || isViewing)) {
       setForm({
         dataphoneId: terminal.dataphoneId,
@@ -77,9 +86,14 @@ const DataphoneTerminalModal: React.FC<Props> = ({ isOpen, onClose, terminal, mo
           closingManually: form.closingManually,
           active: form.active,
         };
-        const res = await dataphoneTerminalService.create(payload);
-        if (res.successful) { toast.success('Mapeo creado'); onSuccess(); onClose(); }
-        else toast.error(res.error || 'Error al crear');
+        try {
+          await createMapping(payload).unwrap();
+          toast.success('Mapeo creado');
+          onSuccess();
+          onClose();
+        } catch (err) {
+          toast.error(getErrorMessage(err, 'Error al crear') ?? 'Error al crear');
+        }
       } else if (isEditing && terminal) {
         const payload = {
           dataphoneIp: form.dataphoneIp,
@@ -87,12 +101,17 @@ const DataphoneTerminalModal: React.FC<Props> = ({ isOpen, onClose, terminal, mo
           closingManually: form.closingManually,
           active: form.active,
         };
-        const res = await dataphoneTerminalService.update(
-          { dataphoneId: terminal.dataphoneId, siteId: terminal.siteId, terminalId: terminal.terminalId },
-          payload,
-        );
-        if (res.successful) { toast.success('Mapeo actualizado'); onSuccess(); onClose(); }
-        else toast.error(res.error || 'Error al actualizar');
+        try {
+          await updateMapping({
+            key: { dataphoneId: terminal.dataphoneId, siteId: terminal.siteId, terminalId: terminal.terminalId },
+            body: payload,
+          }).unwrap();
+          toast.success('Mapeo actualizado');
+          onSuccess();
+          onClose();
+        } catch (err) {
+          toast.error(getErrorMessage(err, 'Error al actualizar') ?? 'Error al actualizar');
+        }
       }
     } catch (err) {
       console.error(err);

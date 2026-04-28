@@ -1,9 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { Fuel, Save, X, Edit, Plus, RefreshCw, Network, Cable } from 'lucide-react';
+import { Fuel, Save, X, Edit, Plus, RefreshCw, Network, Cable, CreditCard } from 'lucide-react';
 import toast from 'react-hot-toast';
-import dispensersConfigService, {
+import {
   ConnectionType, Dispenser, Parity, StopBits,
 } from '../../../services/dispensersConfigService';
+import {
+  useCreateDispenserConfigMutation,
+  useUpdateDispenserConfigMutation,
+} from '../../../store/api/dispensersConfigApi';
+import { setDispenserRequiresAuthorization } from '../../../services/ptsConfigService';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { CompactButton } from '../../ui';
 import { SiteAutocomplete } from '../../ui/autocompletes';
 
@@ -35,8 +41,10 @@ interface FormState {
   stopBits: StopBits | '';
   protocol: string;
   protocolVersion: string;
+  ptsPort: number | '';
   busAddress: number | '';
   timeoutMs: number | '';
+  requiresAuthorization: boolean;
 }
 
 const EMPTY: FormState = {
@@ -44,7 +52,8 @@ const EMPTY: FormState = {
   brand: '', model: '', serialNumber: '',
   connectionType: 'TCP', ipAddress: '', tcpPort: '',
   serialPort: '', baudRate: 9600, dataBits: 8, parity: 'None', stopBits: '1',
-  protocol: '', protocolVersion: '', busAddress: '', timeoutMs: 5000,
+  protocol: '', protocolVersion: '', ptsPort: '', busAddress: '', timeoutMs: 5000,
+  requiresAuthorization: false,
 };
 
 const BAUD_RATES = [1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200];
@@ -69,8 +78,10 @@ const fromDispenser = (d: Dispenser): FormState => ({
   stopBits: (d.stopBits ?? '') as StopBits | '',
   protocol: d.protocol ?? '',
   protocolVersion: d.protocolVersion ?? '',
+  ptsPort: d.ptsPort ?? '',
   busAddress: d.busAddress ?? '',
   timeoutMs: d.timeoutMs,
+  requiresAuthorization: d.requiresAuthorization,
 });
 
 const toNullable = <T,>(v: T | ''): T | null => (v === '' ? null : (v as T));
@@ -78,6 +89,9 @@ const toNullable = <T,>(v: T | ''): T | null => (v === '' ? null : (v as T));
 const DispenserConfigModal: React.FC<Props> = ({ isOpen, onClose, dispenser, mode, onSuccess }) => {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [loading, setLoading] = useState(false);
+  const [requireAuthBusy, setRequireAuthBusy] = useState(false);
+  const [createDispenser] = useCreateDispenserConfigMutation();
+  const [updateDispenser] = useUpdateDispenserConfigMutation();
 
   const isEditing = mode === 'edit';
   const isViewing = mode === 'view';
@@ -92,6 +106,33 @@ const DispenserConfigModal: React.FC<Props> = ({ isOpen, onClose, dispenser, mod
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
+
+  // Toggle pre-pago atómico (PTS 1.4 + 2.1 + BD orquestados server-side).
+  // Se ejecuta inmediatamente — independiente del "Guardar" del form.
+  // Si el PTS rechaza, el switch vuelve a su valor anterior.
+  const handleToggleRequiresAuthorization = async (next: boolean) => {
+    if (!dispenser) return;
+    if (!form.active) {
+      toast.error('La dispensadora debe estar activa para cambiar el modo de cobro');
+      return;
+    }
+    const previous = form.requiresAuthorization;
+    // Optimistic UI: refleja el cambio mientras la llamada está en vuelo.
+    update('requiresAuthorization', next);
+    setRequireAuthBusy(true);
+    try {
+      const res = await setDispenserRequiresAuthorization(dispenser.dispenserId, next);
+      toast.success(
+        `Bomba #${res.pumpNumber}: modo ${res.requireAuthorization ? 'pre-pago' : 'post-pago'} aplicado al PTS y BD`,
+      );
+      onSuccess();
+    } catch (err: any) {
+      update('requiresAuthorization', previous);
+      toast.error(err?.message || 'Error al cambiar el modo de cobro');
+    } finally {
+      setRequireAuthBusy(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,16 +165,17 @@ const DispenserConfigModal: React.FC<Props> = ({ isOpen, onClose, dispenser, mod
           stopBits: toNullable(form.stopBits) as StopBits | null,
           protocol: form.protocol || null,
           protocolVersion: form.protocolVersion || null,
+          ptsPort: toNullable(form.ptsPort) as number | null,
           busAddress: toNullable(form.busAddress) as number | null,
           timeoutMs: Number(form.timeoutMs),
         };
-        const res = await dispensersConfigService.create(payload);
-        if (res.successful) {
+        try {
+          await createDispenser(payload).unwrap();
           toast.success(`Dispensadora creada: #${payload.pumpNumber}`, { duration: 4000 });
           onSuccess();
           onClose();
-        } else {
-          toast.error(res.error || 'Error al crear dispensadora');
+        } catch (err) {
+          toast.error(getErrorMessage(err, 'Error al crear dispensadora') ?? 'Error al crear dispensadora');
         }
       } else if (isEditing && dispenser) {
         const payload = {
@@ -154,16 +196,17 @@ const DispenserConfigModal: React.FC<Props> = ({ isOpen, onClose, dispenser, mod
           stopBits: toNullable(form.stopBits) as StopBits | null,
           protocol: form.protocol || null,
           protocolVersion: form.protocolVersion || null,
+          ptsPort: toNullable(form.ptsPort) as number | null,
           busAddress: toNullable(form.busAddress) as number | null,
           timeoutMs: form.timeoutMs === '' ? null : Number(form.timeoutMs),
         };
-        const res = await dispensersConfigService.update(dispenser.dispenserId, payload);
-        if (res.successful) {
+        try {
+          await updateDispenser({ id: dispenser.dispenserId, body: payload }).unwrap();
           toast.success('Dispensadora actualizada', { duration: 4000 });
           onSuccess();
           onClose();
-        } else {
-          toast.error(res.error || 'Error al actualizar');
+        } catch (err) {
+          toast.error(getErrorMessage(err, 'Error al actualizar') ?? 'Error al actualizar');
         }
       }
     } catch (err) {
@@ -351,12 +394,6 @@ const DispenserConfigModal: React.FC<Props> = ({ isOpen, onClose, dispenser, mod
                       <option value="2">2</option>
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Bus Addr.</label>
-                    <input type="number" value={form.busAddress}
-                      onChange={(e) => update('busAddress', e.target.value === '' ? '' : parseInt(e.target.value, 10))}
-                      disabled={isViewing} className={inputCls(isViewing)} />
-                  </div>
                 </>
               )}
             </div>
@@ -383,17 +420,86 @@ const DispenserConfigModal: React.FC<Props> = ({ isOpen, onClose, dispenser, mod
                   disabled={isViewing} required min={1}
                   className={inputCls(isViewing)} />
               </div>
+              <div>
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5" title="Puerto serial dentro del PTS Controller (mapea a pumps[i].Port)">
+                  PTS Port
+                </label>
+                <input type="number" value={form.ptsPort}
+                  onChange={(e) => update('ptsPort', e.target.value === '' ? '' : parseInt(e.target.value, 10))}
+                  disabled={isViewing} min={1} max={4}
+                  className={inputCls(isViewing)} placeholder="1-4" />
+              </div>
+              <div>
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5" title="Dirección de bus dentro del puerto PTS (mapea a pumps[i].Address)">
+                  Bus Address
+                </label>
+                <input type="number" value={form.busAddress}
+                  onChange={(e) => update('busAddress', e.target.value === '' ? '' : parseInt(e.target.value, 10))}
+                  disabled={isViewing} min={1}
+                  className={inputCls(isViewing)} placeholder="1-4" />
+              </div>
             </div>
           </div>
 
           {/* Estado */}
           {!isCreating && (
-            <div>
+            <div className="space-y-1.5">
               <label className="flex items-center justify-between px-2 h-7 bg-gray-50 border border-gray-200 rounded-sm cursor-pointer">
                 <span className="text-xs text-text-primary">Activa</span>
                 <input type="checkbox" checked={form.active} onChange={(e) => update('active', e.target.checked)}
                   disabled={isViewing} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
               </label>
+              <div className="flex items-center justify-between px-2 min-h-7 bg-gray-50 border border-gray-200 rounded-sm py-1">
+                <div className="flex items-center gap-1.5">
+                  <CreditCard className="w-3 h-3 text-text-secondary" />
+                  <span className="text-xs text-text-primary">Modo de cobro</span>
+                </div>
+                {isViewing ? (
+                  <span
+                    className={`inline-flex items-center px-1.5 h-5 rounded-sm text-2xs font-medium ${
+                      form.requiresAuthorization
+                        ? 'bg-teal-100 text-teal-800'
+                        : 'bg-gray-200 text-gray-700'
+                    }`}
+                  >
+                    {form.requiresAuthorization ? 'PRE-PAGO' : 'POST-PAGO'}
+                  </span>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <select
+                      value={form.requiresAuthorization ? 'pre' : 'post'}
+                      disabled={requireAuthBusy || !form.active}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === 'pre' || v === 'post') {
+                          handleToggleRequiresAuthorization(v === 'pre');
+                        }
+                      }}
+                      title={
+                        !form.active
+                          ? 'Activa la dispensadora para cambiar el modo'
+                          : 'Aplica los parámetros 1.4 y 2.1 al PTS y actualiza la BD atómicamente'
+                      }
+                      className={`h-7 px-2 text-sm border rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                        form.requiresAuthorization
+                          ? 'border-teal-300 bg-teal-50 text-teal-900 font-medium'
+                          : 'border-gray-300 bg-white text-text-primary'
+                      } ${(requireAuthBusy || !form.active) ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    >
+                      <option value="post">Post-pago</option>
+                      <option value="pre">Pre-pago (CheckIn/CheckOut)</option>
+                    </select>
+                    {requireAuthBusy && (
+                      <RefreshCw className="w-3 h-3 animate-spin text-text-muted" />
+                    )}
+                  </div>
+                )}
+              </div>
+              {!isViewing && (
+                <p className="text-2xs text-text-muted px-1">
+                  El cambio se aplica al PTS y a la BD inmediatamente — no requiere "Guardar".
+                </p>
+              )}
             </div>
           )}
         </div>

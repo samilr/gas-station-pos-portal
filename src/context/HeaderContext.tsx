@@ -1,27 +1,28 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { useCallback } from 'react';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { setSubtitle as setSubtitleAction } from '../store/slices/headerSlice';
 
 interface HeaderContextValue {
   subtitle: string;
   setSubtitle: (text: string) => void;
 }
 
-const HeaderContext = createContext<HeaderContextValue | undefined>(undefined);
-
+/**
+ * Noop wrapper. Se mantiene para no cambiar App.tsx; el estado del header ahora
+ * vive en Redux y se accede vía `useHeader`.
+ */
 export const HeaderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [subtitle, setSubtitle] = useState<string>('');
-  return (
-    <HeaderContext.Provider value={{ subtitle, setSubtitle }}>
-      {children}
-    </HeaderContext.Provider>
-  );
+  return <>{children}</>;
 };
 
 export const useHeader = (): HeaderContextValue => {
-  const ctx = useContext(HeaderContext);
-  if (!ctx) {
-    throw new Error('useHeader debe usarse dentro de HeaderProvider');
-  }
-  return ctx;
+  const dispatch = useAppDispatch();
+  const subtitle = useAppSelector((s) => s.header.subtitle);
+
+  const setSubtitle = useCallback(
+    (text: string) => dispatch(setSubtitleAction(text)),
+    [dispatch]
+  );
+
+  return { subtitle, setSubtitle };
 };
-
-

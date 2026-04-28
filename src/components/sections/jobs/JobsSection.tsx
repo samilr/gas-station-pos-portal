@@ -9,11 +9,12 @@ import { CompactButton } from '../../ui';
 import Toolbar from '../../ui/Toolbar';
 import useScheduledJobs from '../../../hooks/useJobs';
 import {
-  jobsService,
   ScheduledJob,
   JobRunStatus,
   jobRunStatusLabels,
 } from '../../../services/jobsService';
+import { useRunJobMutation, useUpdateJobMutation } from '../../../store/api/jobsApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import JobEditModal from './JobEditModal';
 import JobExecutionsModal from './JobExecutionsModal';
 
@@ -97,6 +98,8 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ job }) => {
 const JobsSection: React.FC = () => {
   const { setSubtitle } = useHeader();
   const { jobs, loading, error, refresh, silentRefresh } = useScheduledJobs(true);
+  const [runJobMut] = useRunJobMutation();
+  const [updateJobMut] = useUpdateJobMutation();
   const [search, setSearch] = useState('');
   const [runningJob, setRunningJob] = useState<string | null>(null);
   const [togglingJob, setTogglingJob] = useState<string | null>(null);
@@ -126,24 +129,18 @@ const JobsSection: React.FC = () => {
     setRunningJob(job.name);
     const toastId = toast.loading(`Ejecutando ${job.displayName}...`);
     try {
-      const res = await jobsService.runJob(job.name);
-      if (res.successful && res.data) {
-        const ex = res.data;
-        if (ex.status === JobRunStatus.Success) {
-          toast.success(`${job.displayName} ejecutado (${formatDuration(ex.durationMs)})${ex.outputSummary ? `\n${ex.outputSummary}` : ''}`, { id: toastId, duration: 5000 });
-        } else if (ex.status === JobRunStatus.Cancelled) {
-          toast(ex.errorMessage?.includes('lock held') ? 'Ya se está ejecutando, espera a que termine' : 'Ejecución cancelada', { id: toastId, icon: 'ℹ️', duration: 5000 });
-        } else if (ex.status === JobRunStatus.Timeout) {
-          toast.error(`Timeout: excedió ${job.timeoutSeconds}s`, { id: toastId, duration: 6000 });
-        } else {
-          toast.error(ex.errorMessage || `Falló: status ${ex.status}`, { id: toastId, duration: 6000 });
-        }
+      const ex = await runJobMut(job.name).unwrap();
+      if (ex.status === JobRunStatus.Success) {
+        toast.success(`${job.displayName} ejecutado (${formatDuration(ex.durationMs)})${ex.outputSummary ? `\n${ex.outputSummary}` : ''}`, { id: toastId, duration: 5000 });
+      } else if (ex.status === JobRunStatus.Cancelled) {
+        toast(ex.errorMessage?.includes('lock held') ? 'Ya se está ejecutando, espera a que termine' : 'Ejecución cancelada', { id: toastId, icon: 'ℹ️', duration: 5000 });
+      } else if (ex.status === JobRunStatus.Timeout) {
+        toast.error(`Timeout: excedió ${job.timeoutSeconds}s`, { id: toastId, duration: 6000 });
       } else {
-        toast.error(res.error || 'Error al ejecutar', { id: toastId, duration: 5000 });
+        toast.error(ex.errorMessage || `Falló: status ${ex.status}`, { id: toastId, duration: 6000 });
       }
     } catch (err) {
-      console.error('Error running job:', err);
-      toast.error('Error de conexión', { id: toastId });
+      toast.error(getErrorMessage(err, 'Error al ejecutar') ?? 'Error al ejecutar', { id: toastId, duration: 5000 });
     } finally {
       setRunningJob(null);
       silentRefresh();
@@ -154,15 +151,10 @@ const JobsSection: React.FC = () => {
     if (togglingJob) return;
     setTogglingJob(job.name);
     try {
-      const res = await jobsService.updateJob(job.name, { isEnabled: !job.isEnabled });
-      if (res.successful) {
-        toast.success(`${job.displayName}: ${!job.isEnabled ? 'habilitado' : 'deshabilitado'}`);
-        silentRefresh();
-      } else {
-        toast.error(res.error || 'Error al cambiar estado');
-      }
+      await updateJobMut({ name: job.name, body: { isEnabled: !job.isEnabled } }).unwrap();
+      toast.success(`${job.displayName}: ${!job.isEnabled ? 'habilitado' : 'deshabilitado'}`);
     } catch (err) {
-      toast.error('Error de conexión');
+      toast.error(getErrorMessage(err, 'Error al cambiar estado') ?? 'Error al cambiar estado');
     } finally {
       setTogglingJob(null);
     }

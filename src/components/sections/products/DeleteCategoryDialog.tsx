@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
-import categoryService, { Category } from '../../../services/categoryService';
+import { Category } from '../../../services/categoryService';
+import { useDeleteCategoryMutation } from '../../../store/api/categoriesApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { CompactButton } from '../../ui';
 
 interface Props {
@@ -13,19 +15,18 @@ interface Props {
 
 const DeleteCategoryDialog: React.FC<Props> = ({ isOpen, onClose, category, onSuccess }) => {
   const [deleting, setDeleting] = useState(false);
+  const [deleteCategory] = useDeleteCategoryMutation();
 
   const handleDelete = async () => {
     if (!category) return;
     setDeleting(true);
     try {
-      const res = await categoryService.remove(category.categoryId);
-      if (res.successful) {
-        toast.success(`Categoría ${category.categoryName} eliminada`);
-        onSuccess(); onClose();
-      } else toast.error(res.error || 'Error al eliminar');
+      await deleteCategory(category.categoryId).unwrap();
+      toast.success(`Categoría ${category.categoryName} eliminada`);
+      onSuccess();
+      onClose();
     } catch (err) {
-      console.error(err);
-      toast.error('Error de conexión');
+      toast.error(getErrorMessage(err, 'Error al eliminar') ?? 'Error al eliminar');
     } finally {
       setDeleting(false);
     }

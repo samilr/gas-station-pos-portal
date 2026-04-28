@@ -1,7 +1,8 @@
 import React from 'react';
 import EntityAutocomplete from '../EntityAutocomplete';
-import { taxService } from '../../../services/taxService';
 import { ITax } from '../../../types/tax';
+import { store } from '../../../store';
+import { taxesApi } from '../../../store/api/taxesApi';
 
 interface TaxAutocompleteProps {
   value: string | null | undefined;
@@ -16,8 +17,8 @@ interface TaxAutocompleteProps {
 }
 
 const fetchTaxes = async (): Promise<ITax[]> => {
-  const res = await taxService.getTaxes();
-  return res.successful ? (res.data ?? []) : [];
+  const result = await store.dispatch(taxesApi.endpoints.listTaxes.initiate());
+  return result.data ?? [];
 };
 
 const TaxAutocomplete: React.FC<TaxAutocompleteProps> = (props) => (

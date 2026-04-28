@@ -47,9 +47,16 @@ const Rail: React.FC<RailProps> = ({ activeSection, expanded = false }) => {
   };
 
   const isActive = (item: MenuItem) => {
-    if (activeSection === item.id || activeSection.startsWith(item.id + '.')) return true;
-    // Check if any sub-item matches the active section
-    return item.subItems?.some(sub => sub.id === activeSection) || false;
+    // Exact sub-item match wins (handles cross-module placements like NCF under Fiscal)
+    if (item.subItems?.some(sub => sub.id === activeSection)) return true;
+    // Prefix match, but only if no other module claims this section as an exact sub-item
+    if (activeSection === item.id || activeSection.startsWith(item.id + '.')) {
+      const claimedElsewhere = menuItems.some(
+        m => m.id !== item.id && m.subItems?.some(sub => sub.id === activeSection)
+      );
+      return !claimedElsewhere;
+    }
+    return false;
   };
 
   const userInitial = user?.name?.charAt(0)?.toUpperCase() || 'U';

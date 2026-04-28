@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usePermissions } from '../../../hooks/usePermissions';
-import { IUser, userService } from '../../../services/userService';
+import { IUser } from '../../../services/userService';
+import { useDeleteUserMutation } from '../../../store/api/usersApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import { PermissionGate } from '../../common';
 import { CompactButton } from '../../ui';
 
@@ -16,22 +18,18 @@ interface DeleteUserDialogProps {
 const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({ isOpen, onClose, user, onSuccess }) => {
   const { } = usePermissions();
   const [deleting, setDeleting] = useState(false);
+  const [deleteUser] = useDeleteUserMutation();
 
   const handleDelete = async () => {
     if (!user) return;
     setDeleting(true);
     try {
-      const response = await userService.deleteUser(user.user_id);
-      if (response.successful) {
-        toast.success(`Usuario eliminado exitosamente \n ${user.name}`, { duration: 5000 });
-        onSuccess();
-        onClose();
-      } else {
-        toast.error('Error al eliminar usuario.', { duration: 5000 });
-      }
-    } catch (error) {
-      console.error('Error al eliminar usuario:', error);
-      toast.error('Error de conexión.', { duration: 5000 });
+      await deleteUser(user.user_id).unwrap();
+      toast.success(`Usuario eliminado exitosamente \n ${user.name}`, { duration: 5000 });
+      onSuccess();
+      onClose();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Error al eliminar usuario.') ?? 'Error al eliminar usuario.', { duration: 5000 });
     } finally {
       setDeleting(false);
     }

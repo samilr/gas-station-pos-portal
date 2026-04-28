@@ -6,8 +6,10 @@ import { CompactButton, Pagination } from '../../ui';
 import StatusDot from '../../ui/StatusDot';
 import Toolbar from '../../ui/Toolbar';
 import useFuelIslands from '../../../hooks/useFuelIslands';
-import fuelIslandService, { FuelIsland } from '../../../services/fuelIslandService';
+import { FuelIsland } from '../../../services/fuelIslandService';
 import { Dispenser } from '../../../services/dispensersConfigService';
+import { useUnassignDispenserFromIslandMutation } from '../../../store/api/fuelIslandsApi';
+import { getErrorMessage } from '../../../store/api/baseApi';
 import FuelIslandModal from './FuelIslandModal';
 import DeleteFuelIslandDialog from './DeleteFuelIslandDialog';
 import AssignDispensersModal from './AssignDispensersModal';
@@ -15,9 +17,9 @@ import AssignDispensersModal from './AssignDispensersModal';
 const FuelIslandsSection: React.FC = () => {
   const { setSubtitle } = useHeader();
   const { fuelIslands, loading, error, refresh } = useFuelIslands();
+  const [unassignDispenser] = useUnassignDispenserFromIslandMutation();
 
   const [search, setSearch] = useState('');
-  const [siteFilter, setSiteFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<'' | 'active' | 'inactive'>('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -37,11 +39,6 @@ const FuelIslandsSection: React.FC = () => {
     return () => setSubtitle('');
   }, [setSubtitle]);
 
-  const uniqueSites = useMemo(
-    () => Array.from(new Set(fuelIslands.map((i) => i.siteId).filter(Boolean))),
-    [fuelIslands],
-  );
-
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return fuelIslands.filter((isl) => {
@@ -52,13 +49,12 @@ const FuelIslandsSection: React.FC = () => {
         isl.siteId.toLowerCase().includes(q) ||
         isl.name.toLowerCase().includes(q) ||
         terminalMatch;
-      const matchesSite = !siteFilter || isl.siteId === siteFilter;
       const matchesStatus = !statusFilter
         || (statusFilter === 'active' && isl.active)
         || (statusFilter === 'inactive' && !isl.active);
-      return matchesSearch && matchesSite && matchesStatus;
+      return matchesSearch && matchesStatus;
     });
-  }, [fuelIslands, search, siteFilter, statusFilter]);
+  }, [fuelIslands, search, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -81,16 +77,10 @@ const FuelIslandsSection: React.FC = () => {
     const label = dispenser.name || `Bomba #${dispenser.pumpNumber}`;
     if (!window.confirm(`¿Remover ${label} de ${island.name}? Quedará sin asignar.`)) return;
     try {
-      const res = await fuelIslandService.unassignDispenser(island.fuelIslandId, dispenser.dispenserId);
-      if (res.successful) {
-        toast.success(`${label} removido de ${island.name}`, { duration: 3000 });
-        refresh();
-      } else {
-        toast.error(res.error || 'Error al remover dispenser');
-      }
+      await unassignDispenser({ islandId: island.fuelIslandId, dispenserId: dispenser.dispenserId }).unwrap();
+      toast.success(`${label} removido de ${island.name}`, { duration: 3000 });
     } catch (err) {
-      console.error(err);
-      toast.error('Error de conexión');
+      toast.error(getErrorMessage(err, 'Error al remover dispenser') ?? 'Error al remover dispenser');
     }
   };
 
@@ -107,14 +97,6 @@ const FuelIslandsSection: React.FC = () => {
           { label: 'Vacías', value: totals.empty, color: 'gray' },
         ]}
       >
-        <select
-          value={siteFilter}
-          onChange={(e) => { setSiteFilter(e.target.value); setPage(1); }}
-          className="h-7 px-2 text-xs border border-gray-300 rounded-sm"
-        >
-          <option value="">Todos los sitios</option>
-          {uniqueSites.map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value as any); setPage(1); }}
@@ -161,7 +143,7 @@ const FuelIslandsSection: React.FC = () => {
               {!loading && pageItems.length === 0 && (
                 <tr><td colSpan={6} className="px-2 py-6 text-center text-text-muted text-xs">
                   <Layers className="w-5 h-5 mx-auto mb-1 text-text-muted" />
-                  No hay fuel islands {search || siteFilter || statusFilter ? 'con esos filtros' : 'registradas'}
+                  No hay fuel islands {search || statusFilter ? 'con esos filtros' : 'registradas'}
                 </td></tr>
               )}
               {!loading && pageItems.map((isl) => {
