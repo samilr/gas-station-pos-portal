@@ -41,6 +41,7 @@ import type {
   PumpTotalsData,
   PumpDisplayData,
 } from '../types/dispenser';
+import type { PtsProxySettings, PumpStatusMeta } from '../types/ptsConfig';
 
 // Re-exportar tipos para retrocompatibilidad
 export type {
@@ -151,18 +152,65 @@ export function p(obj: any): any {
 // Módulo 1 — Monitor
 // ============================================================
 
-export async function getAllPumpStatuses(): Promise<PumpStatusPacket[]> {
-  const res = await apiGet<any>(buildApiUrl('dispensers/status'));
-  if (!res.successful) throw new Error(res.error || 'Error al obtener estado de bombas');
-  return extractPackets<PumpStatusData>(res.data) as PumpStatusPacket[];
+// El backend del proxy PTS ahora envuelve los GETs read-only con metadata
+// del cache (`lastPtsUpdateAt`, `ageSeconds`, `stale`, `fromCache`,
+// `pumpCount`, `error`) al mismo nivel que `data`. El interceptor genérico
+// strippea el envelope, así que usamos fetch raw para preservar los meta.
+async function fetchPumpStatusEnvelope(path: string): Promise<{
+  packets: PtsPacket[];
+  meta: PumpStatusMeta;
+}> {
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    'X-site-ID': 'PORTAL',
+  };
+  const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(buildApiUrl(path), { headers });
+  if (res.status === 401) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('adminUser');
+    window.location.href = '/login';
+    throw new Error('Sesión expirada');
+  }
+
+  const body = await res.json().catch(() => null);
+  if (!body || typeof body !== 'object') {
+    throw new Error(`HTTP ${res.status}`);
+  }
+  if (body.successful === false) {
+    throw new Error(body.error || `Error del PTS (HTTP ${res.status})`);
+  }
+
+  const packets = extractPackets<PumpStatusData>(body.data);
+  const meta: PumpStatusMeta = {
+    lastPtsUpdateAt: body.lastPtsUpdateAt ?? null,
+    ageSeconds: typeof body.ageSeconds === 'number' ? body.ageSeconds : 0,
+    stale: !!body.stale,
+    fromCache: !!body.fromCache,
+    pumpCount: typeof body.pumpCount === 'number' ? body.pumpCount : packets.length,
+    error: body.error ?? null,
+  };
+  return { packets, meta };
 }
 
-export async function getPumpStatus(pump: number): Promise<PumpStatusPacket> {
-  const res = await apiGet<any>(buildApiUrl(`dispensers/status/${pump}`));
-  if (!res.successful) throw new Error(res.error || `Error al obtener estado de bomba ${pump}`);
-  const packets = extractPackets<PumpStatusData>(res.data);
+export async function getAllPumpStatuses(): Promise<{
+  packets: PumpStatusPacket[];
+  meta: PumpStatusMeta;
+}> {
+  const { packets, meta } = await fetchPumpStatusEnvelope('dispensers/status');
+  return { packets: packets as PumpStatusPacket[], meta };
+}
+
+export async function getPumpStatus(pump: number): Promise<{
+  packet: PumpStatusPacket;
+  meta: PumpStatusMeta;
+}> {
+  const { packets, meta } = await fetchPumpStatusEnvelope(`dispensers/status/${pump}`);
   if (packets.length === 0) throw new Error(`Sin datos para bomba ${pump}`);
-  return packets[0] as PumpStatusPacket;
+  return { packet: packets[0] as PumpStatusPacket, meta };
 }
 
 export async function getPumpDisplay(pump: number): Promise<PumpDisplayData | null> {
@@ -331,22 +379,22 @@ export async function updateTanksConfig(tanks: TankConfig[]): Promise<void> {
 
 // ============================================================
 // PTS Connection Settings
+// El backend ahora enriquece la respuesta con `effectivePumpCount`,
+// `pumps[]`, `ports[]`, `discoveryError` (descubierto vía
+// GetPumpsConfiguration). Se reusa el type canónico de ptsConfig.
 // ============================================================
 
-export interface PtsSettings {
-  baseUrl: string;
-  username: string;
-  password: string;
-  pumpCount: number;
-}
+export type PtsSettings = PtsProxySettings;
 
 export async function getPtsSettings(): Promise<PtsSettings | null> {
   const res = await apiGet<any>(buildApiUrl('dispensers/settings'));
   if (!res.successful) return null;
-  return res.data;
+  return res.data as PtsSettings;
 }
 
-export async function updatePtsSettings(data: Partial<PtsSettings>): Promise<void> {
+export async function updatePtsSettings(
+  data: Partial<Pick<PtsSettings, 'baseUrl' | 'username' | 'password' | 'pumpCount'>>,
+): Promise<void> {
   const res = await apiPut<any>(buildApiUrl('dispensers/settings'), data);
   if (!res.successful) throw new Error(res.error || 'Error al actualizar configuración PTS');
 }

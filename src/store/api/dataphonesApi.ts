@@ -3,6 +3,8 @@ import {
   Dataphone,
   CreateDataphoneRequest,
   UpdateDataphoneRequest,
+  TestDataphoneRequest,
+  TestDataphoneResult,
 } from '../../services/dataphoneService';
 
 type DataphoneFilters = { siteId?: string };
@@ -48,6 +50,17 @@ export const dataphonesApi = api.injectEndpoints({
         { type: 'Dataphone', id: 'LIST' },
       ],
     }),
+
+    testDataphoneConnection: build.mutation<
+      TestDataphoneResult,
+      { id: number; body: TestDataphoneRequest }
+    >({
+      query: ({ id, body }) => ({
+        url: `dataphones/${id}/test-connection`,
+        method: 'POST',
+        body,
+      }),
+    }),
   }),
 });
 
@@ -56,4 +69,5 @@ export const {
   useCreateDataphoneMutation,
   useUpdateDataphoneMutation,
   useDeleteDataphoneMutation,
+  useTestDataphoneConnectionMutation,
 } = dataphonesApi;

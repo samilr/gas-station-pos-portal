@@ -93,8 +93,12 @@ const CardPaymentDetailModal: React.FC<Props> = ({ isOpen, onClose, cardPaymentI
 
   const amountDop = (cents: number) => (cents / 100).toLocaleString('es-DO', { minimumFractionDigits: 2 });
 
-  const canVoid = cp && (cp.status === 'Approved' || cp.status === 'LinkedToTrans');
-  const canRefund = cp && cp.status === 'LinkedToTrans';
+  // Reglas del backend (API_ENDPOINTS.md → Card Payments):
+  // - Void:  exige `status === Approved` (mismo lote abierto).
+  // - Refund: cobro `Approved` ya vinculado a una `trans` (`linkedTransNumber` no nulo).
+  // - Link:  cobro `Approved` sin `linkedTransNumber` (huérfano pendiente de reconciliar).
+  const canVoid = cp && cp.status === 'Approved';
+  const canRefund = cp && cp.status === 'Approved' && !!cp.transNumber;
   const canLink = cp && cp.status === 'Approved' && !cp.transNumber;
 
   return (
@@ -121,8 +125,8 @@ const CardPaymentDetailModal: React.FC<Props> = ({ isOpen, onClose, cardPaymentI
             <>
               <div className="grid grid-cols-4 gap-3">
                 <Field label="Estado" value={<span className="font-medium">{cp.status}</span>} />
+                <Field label="Estado proveedor" value={cp.providerStatus} />
                 <Field label="Operación" value={cp.operation} />
-                <Field label="Aprobado" value={cp.approved ? 'Sí' : 'No'} />
                 <Field label="Autorización" value={cp.authorizationNumber} mono />
                 <Field label="Referencia" value={cp.reference} mono />
                 <Field label="Host / Batch" value={`${cp.host ?? '—'} / ${cp.batch ?? '—'}`} mono />

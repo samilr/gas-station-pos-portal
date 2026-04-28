@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Plus, RefreshCw, Edit, Trash2, Eye, Smartphone } from 'lucide-react';
+import { Plus, RefreshCw, Edit, Trash2, Eye, Smartphone, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useHeader } from '../../../context/HeaderContext';
 import { CompactButton, Pagination } from '../../ui';
@@ -11,6 +11,7 @@ import { useUpdateDataphoneMutation } from '../../../store/api/dataphonesApi';
 import { getErrorMessage } from '../../../store/api/baseApi';
 import DataphoneModal from './DataphoneModal';
 import DeleteDataphoneDialog from './DeleteDataphoneDialog';
+import TestDataphoneDialog from './TestDataphoneDialog';
 
 const DataphonesSection: React.FC = () => {
   const { setSubtitle } = useHeader();
@@ -26,6 +27,8 @@ const DataphonesSection: React.FC = () => {
   const [selected, setSelected] = useState<Dataphone | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Dataphone | null>(null);
+  const [testOpen, setTestOpen] = useState(false);
+  const [toTest, setToTest] = useState<Dataphone | null>(null);
 
   useEffect(() => {
     setSubtitle('Dataphones físicos instalados por sitio');
@@ -124,6 +127,7 @@ const DataphonesSection: React.FC = () => {
                   <td className="px-2 text-sm whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1">
                       <CompactButton variant="icon" onClick={() => { setSelected(d); setModalMode('view'); setModalOpen(true); }} title="Ver"><Eye className="w-3.5 h-3.5 text-text-secondary" /></CompactButton>
+                      <CompactButton variant="icon" onClick={() => { setToTest(d); setTestOpen(true); }} title="Probar conexión" disabled={!d.active}><Zap className={`w-3.5 h-3.5 ${d.active ? 'text-amber-600' : 'text-gray-300'}`} /></CompactButton>
                       <CompactButton variant="icon" onClick={() => { setSelected(d); setModalMode('edit'); setModalOpen(true); }} title="Editar"><Edit className="w-3.5 h-3.5 text-blue-600" /></CompactButton>
                       <CompactButton variant="icon" onClick={() => { setToDelete(d); setDeleteOpen(true); }} title="Eliminar"><Trash2 className="w-3.5 h-3.5 text-red-600" /></CompactButton>
                     </div>
@@ -145,6 +149,8 @@ const DataphonesSection: React.FC = () => {
         dataphone={selected} mode={modalMode} onSuccess={refresh} />
       <DeleteDataphoneDialog isOpen={deleteOpen} onClose={() => setDeleteOpen(false)}
         dataphone={toDelete} onSuccess={refresh} />
+      <TestDataphoneDialog isOpen={testOpen} onClose={() => setTestOpen(false)}
+        dataphone={toTest} />
     </div>
   );
 };

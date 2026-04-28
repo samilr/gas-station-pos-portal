@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Wifi, Save, RefreshCw, CheckCircle, XCircle, Eye, EyeOff, Server,
+  Wifi, Save, RefreshCw, CheckCircle, XCircle, Eye, EyeOff, Server, AlertTriangle, Cable,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
@@ -182,15 +182,107 @@ const PtsConnectionSettings: React.FC = () => {
           <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">
             Cantidad de Bombas
           </label>
-          <input
-            type="number"
-            min="0"
-            value={pumpCount}
-            onChange={(e) => setPumpCount(Number(e.target.value))}
-            className="w-28 h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min="0"
+              value={pumpCount}
+              onChange={(e) => setPumpCount(Number(e.target.value))}
+              className="w-28 h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+            {settings && (
+              <span className="text-2xs text-text-muted">
+                Descubiertas por el PTS: <span className="font-mono font-semibold">{settings.effectivePumpCount}</span>
+              </span>
+            )}
+          </div>
           <p className="text-2xs text-gray-400 mt-0.5">0 = auto-detectar desde el PTS</p>
         </div>
+
+        {/* Hardware descubierto desde el PTS Controller */}
+        {settings?.discoveryError && (
+          <div className="bg-amber-50 border border-amber-200 rounded-sm p-2 text-xs text-amber-800 flex items-start gap-2">
+            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <div className="font-medium">No se pudo descubrir las bombas vía PTS</div>
+              <div className="mt-0.5 font-mono break-all">{settings.discoveryError}</div>
+              <div className="mt-0.5 text-amber-700">
+                Se usa el `pumpCount` configurado en disco como fallback. Verifica la URL y credenciales.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {settings && !settings.discoveryError && (settings.pumps?.length || settings.ports?.length) ? (
+          <div className="border border-gray-200 rounded-sm overflow-hidden">
+            <div className="h-7 px-2 flex items-center gap-1.5 bg-gray-50 border-b border-gray-200">
+              <Cable className="w-3 h-3 text-gray-500" />
+              <span className="text-2xs font-semibold uppercase tracking-wide text-gray-600">
+                Hardware descubierto
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200">
+              {/* Bombas */}
+              <div>
+                <div className="h-6 px-2 flex items-center bg-gray-50/50 border-b border-gray-200">
+                  <span className="text-2xs uppercase text-text-muted">
+                    Bombas ({settings.pumps?.length ?? 0})
+                  </span>
+                </div>
+                <table className="w-full text-2xs">
+                  <thead>
+                    <tr className="text-text-muted">
+                      <th className="text-left px-2 py-0.5 font-medium">Id</th>
+                      <th className="text-left px-2 py-0.5 font-medium">Port</th>
+                      <th className="text-left px-2 py-0.5 font-medium">Address</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(settings.pumps ?? []).map((p) => (
+                      <tr key={`pump-${p.Id}`} className="border-t border-gray-100">
+                        <td className="px-2 py-0.5 font-mono">{p.Id}</td>
+                        <td className="px-2 py-0.5 font-mono">{p.Port}</td>
+                        <td className="px-2 py-0.5 font-mono">{p.Address}</td>
+                      </tr>
+                    ))}
+                    {(settings.pumps ?? []).length === 0 && (
+                      <tr><td colSpan={3} className="px-2 py-1 text-text-muted italic">Sin bombas reportadas</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              {/* Puertos */}
+              <div>
+                <div className="h-6 px-2 flex items-center bg-gray-50/50 border-b border-gray-200">
+                  <span className="text-2xs uppercase text-text-muted">
+                    Puertos ({settings.ports?.length ?? 0})
+                  </span>
+                </div>
+                <table className="w-full text-2xs">
+                  <thead>
+                    <tr className="text-text-muted">
+                      <th className="text-left px-2 py-0.5 font-medium">Id</th>
+                      <th className="text-left px-2 py-0.5 font-medium">Protocol</th>
+                      <th className="text-left px-2 py-0.5 font-medium">Baud</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(settings.ports ?? []).map((p) => (
+                      <tr key={`port-${p.Id}`} className="border-t border-gray-100">
+                        <td className="px-2 py-0.5 font-mono">{p.Id}</td>
+                        <td className="px-2 py-0.5 font-mono">{p.Protocol}</td>
+                        <td className="px-2 py-0.5 font-mono">{p.BaudRate}</td>
+                      </tr>
+                    ))}
+                    {(settings.ports ?? []).length === 0 && (
+                      <tr><td colSpan={3} className="px-2 py-1 text-text-muted italic">Sin puertos reportados</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {/* Test Result */}
         {testResult && (

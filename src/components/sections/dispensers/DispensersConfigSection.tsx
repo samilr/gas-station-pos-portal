@@ -134,18 +134,19 @@ const DispensersConfigSection: React.FC = () => {
                 <th className="text-left px-2 font-medium text-gray-500">Conexión</th>
                 <th className="text-left px-2 font-medium text-gray-500">Protocolo</th>
                 <th className="text-left px-2 font-medium text-gray-500">Nozzles</th>
+                <th className="text-left px-2 font-medium text-gray-500">Cobro</th>
                 <th className="text-left px-2 font-medium text-gray-500">Estado</th>
                 <th className="text-right px-2 font-medium text-gray-500">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {loading && (
-                <tr><td colSpan={9} className="px-2 py-6 text-center text-text-muted text-xs">
+                <tr><td colSpan={10} className="px-2 py-6 text-center text-text-muted text-xs">
                   <RefreshCw className="w-4 h-4 animate-spin inline mr-1" /> Cargando...
                 </td></tr>
               )}
               {!loading && pageItems.length === 0 && (
-                <tr><td colSpan={9} className="px-2 py-6 text-center text-text-muted text-xs">
+                <tr><td colSpan={10} className="px-2 py-6 text-center text-text-muted text-xs">
                   <Fuel className="w-5 h-5 mx-auto mb-1 text-text-muted" />
                   No hay dispensadoras {search || statusFilter ? 'con esos filtros' : 'registradas'}
                 </td></tr>
@@ -168,6 +169,18 @@ const DispensersConfigSection: React.FC = () => {
                   </td>
                   <td className="px-2 text-sm text-text-secondary truncate max-w-[140px]">{d.protocol || '—'}</td>
                   <td className="px-2 text-sm text-text-secondary">{d.nozzlesCount}</td>
+                  <td className="px-2 text-sm">
+                    <span
+                      className={`inline-flex items-center px-1.5 h-5 rounded-sm text-2xs font-medium ${
+                        d.requiresAuthorization
+                          ? 'bg-teal-100 text-teal-800'
+                          : 'bg-gray-100 text-gray-700'
+                      }`}
+                      title="Editable por sucursal desde Parámetros PTS"
+                    >
+                      {d.requiresAuthorization ? 'PRE-PAGO' : 'POST-PAGO'}
+                    </span>
+                  </td>
                   <td className="px-2 text-sm">
                     <button onClick={() => toggleActive(d)} className="cursor-pointer" title="Click para cambiar estado">
                       <StatusDot color={d.active ? 'green' : 'gray'} label={d.active ? 'Activa' : 'Inactiva'} />

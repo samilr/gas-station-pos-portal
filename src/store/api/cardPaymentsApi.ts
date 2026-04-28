@@ -1,5 +1,13 @@
 import { api } from './baseApi';
-import { CardPayment, ListFilters } from '../../services/cardPaymentService';
+import {
+  CardPayment,
+  ListFilters,
+  VoidCardPaymentResult,
+  BatchCloseRequest,
+  BatchCloseResult,
+  LastApprovedRequest,
+  LastApprovedResult,
+} from '../../services/cardPaymentService';
 
 interface PaginatedCardPayments {
   data: CardPayment[];
@@ -7,14 +15,15 @@ interface PaginatedCardPayments {
 }
 
 // Mapas de enums numéricos para normalización.
+// Fuente de verdad: `src/GasStationPos.Domain/BusSale/CardPayment.cs` en el backend.
 const STATUS_MAP: Record<number, string> = {
-  0: 'Staged',
+  0: 'Pending',
   1: 'Approved',
-  2: 'Error',
-  3: 'LinkedToTrans',
+  2: 'Declined',
+  3: 'Failed',
   4: 'Voided',
   5: 'Refunded',
-  6: 'Declined',
+  6: 'LinkedToTrans',
 };
 
 const OPERATION_MAP: Record<number, string> = {
@@ -54,6 +63,7 @@ const normalizePayment = (raw: any): CardPayment => ({
   cardProduct: raw.cardProduct ?? null,
   maskedPan: raw.maskedPan ?? null,
   status: normalizeStatus(raw.status) as CardPayment['status'],
+  providerStatus: raw.providerStatus ?? null,
   operation: normalizeOperation(raw.operation) as CardPayment['operation'],
   message: raw.message ?? null,
   rawRequest: raw.rawRequest ?? null,
@@ -118,8 +128,22 @@ export const cardPaymentsApi = api.injectEndpoints({
       providesTags: [{ type: 'CardPayment', id: 'ORPHANED' }],
     }),
 
-    voidCardPayment: build.mutation<unknown, string>({
+    voidCardPayment: build.mutation<VoidCardPaymentResult, string>({
       query: (id) => ({ url: `card-payments/${id}/void`, method: 'POST' }),
+      transformResponse: (raw: unknown): VoidCardPaymentResult => {
+        const d = (raw as { data?: unknown })?.data ?? raw;
+        const r = d as Partial<VoidCardPaymentResult> & Record<string, unknown>;
+        return {
+          cardPaymentId: String(r.cardPaymentId ?? ''),
+          status:
+            typeof r.status === 'number'
+              ? (STATUS_MAP[r.status] ?? 'Voided')
+              : (r.status as string) ?? 'Voided',
+          providerStatus: (r.providerStatus as string) ?? null,
+          rawResponse: (r.rawResponse as string) ?? null,
+          messages: Array.isArray(r.messages) ? (r.messages as string[]) : null,
+        };
+      },
       invalidatesTags: (_r, _e, id) => [
         { type: 'CardPayment', id },
         { type: 'CardPayment', id: 'LIST' },
@@ -137,12 +161,52 @@ export const cardPaymentsApi = api.injectEndpoints({
       ],
     }),
 
-    batchCloseCardPayments: build.mutation<unknown, { siteId: string; terminalId: number }>({
+    batchCloseCardPayments: build.mutation<BatchCloseResult, BatchCloseRequest>({
       query: (body) => ({ url: 'card-payments/batch-close', method: 'POST', body }),
+      transformResponse: (raw: unknown): BatchCloseResult => {
+        const d = (raw as { data?: unknown })?.data ?? raw;
+        const r = d as Record<string, unknown>;
+        return {
+          cardPaymentId: (r.cardPaymentId as string) ?? null,
+          success: Boolean(r.success),
+          closureQuantity:
+            typeof r.closureQuantity === 'number' ? (r.closureQuantity as number) : null,
+          providerStatus: (r.providerStatus as string) ?? null,
+          rawResponse: (r.rawResponse as string) ?? null,
+          messages: Array.isArray(r.messages) ? (r.messages as string[]) : null,
+        };
+      },
       invalidatesTags: [
         { type: 'CardPayment', id: 'LIST' },
         { type: 'CardPayment', id: 'ORPHANED' },
       ],
+    }),
+
+    lastApprovedCardPayment: build.mutation<LastApprovedResult, LastApprovedRequest>({
+      query: (body) => ({ url: 'card-payments/last-approved', method: 'POST', body }),
+      transformResponse: (raw: unknown): LastApprovedResult => {
+        const d = (raw as { data?: unknown })?.data ?? raw;
+        const r = d as Record<string, unknown>;
+        return {
+          approved: Boolean(r.approved),
+          authorizationNumber: (r.authorizationNumber as string) ?? null,
+          reference: typeof r.reference === 'number' ? (r.reference as number) : null,
+          retrievalReference:
+            typeof r.retrievalReference === 'number' ? (r.retrievalReference as number) : null,
+          host: typeof r.host === 'number' ? (r.host as number) : null,
+          batch: typeof r.batch === 'number' ? (r.batch as number) : null,
+          cardProduct: (r.cardProduct as string) ?? null,
+          maskedPan: (r.maskedPan as string) ?? null,
+          holderName: (r.holderName as string) ?? null,
+          terminalId: (r.terminalId as string) ?? null,
+          merchantId: (r.merchantId as string) ?? null,
+          transactionDateTime: (r.transactionDateTime as string) ?? null,
+          messages: Array.isArray(r.messages) ? (r.messages as string[]) : null,
+          rawRequest: (r.rawRequest as string) ?? null,
+          rawResponse: (r.rawResponse as string) ?? null,
+          providerStatus: (r.providerStatus as string) ?? null,
+        };
+      },
     }),
 
     linkCardPaymentTrans: build.mutation<
@@ -167,4 +231,5 @@ export const {
   useRefundCardPaymentMutation,
   useBatchCloseCardPaymentsMutation,
   useLinkCardPaymentTransMutation,
+  useLastApprovedCardPaymentMutation,
 } = cardPaymentsApi;

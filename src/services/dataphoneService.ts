@@ -30,3 +30,27 @@ export interface CreateDataphoneRequest {
 }
 
 export type UpdateDataphoneRequest = Partial<Omit<CreateDataphoneRequest, 'dataphoneId'>>;
+
+export interface TestDataphoneRequest {
+  siteId: string;
+  terminalId: number;
+  amountCents?: number;
+}
+
+export interface TestDataphoneResult {
+  approved: boolean;
+  authorizationNumber: string | null;
+  reference: number | null;
+  retrievalReference: number | null;
+  host: number | null;
+  batch: number | null;
+  cardProduct: string | null;
+  maskedPan: string | null;
+  holderName: string | null;
+  terminalId: string | null;
+  merchantId: string | null;
+  transactionDateTime: string | null;
+  messages: string[] | null;
+  rawRequest?: string | null;
+  rawResponse?: string | null;
+}

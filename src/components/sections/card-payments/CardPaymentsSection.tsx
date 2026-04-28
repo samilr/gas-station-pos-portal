@@ -1,15 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { RefreshCw, Eye, CreditCard, AlertTriangle, Lock } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { RefreshCw, Eye, CreditCard, AlertTriangle, Lock, Ban, Search } from 'lucide-react';
 import { useHeader } from '../../../context/HeaderContext';
 import { CompactButton, Pagination } from '../../ui';
 import Toolbar from '../../ui/Toolbar';
 import { useCardPayments, useOrphanedCardPayments } from '../../../hooks/useCardPayments';
 import { useSelectedSiteId } from '../../../hooks/useSelectedSite';
 import { CardPayment } from '../../../services/cardPaymentService';
-import { useBatchCloseCardPaymentsMutation } from '../../../store/api/cardPaymentsApi';
-import { getErrorMessage } from '../../../store/api/baseApi';
 import CardPaymentDetailModal from './CardPaymentDetailModal';
+import VoidCardPaymentDialog from './VoidCardPaymentDialog';
+import BatchCloseDialog from './BatchCloseDialog';
+import LastApprovedDialog from './LastApprovedDialog';
 
 type Tab = 'all' | 'orphaned';
 
@@ -17,10 +17,10 @@ const statusColor = (status: string): string => {
   switch (status) {
     case 'Approved': return 'bg-green-100 text-green-700';
     case 'LinkedToTrans': return 'bg-blue-100 text-blue-700';
-    case 'Staged': return 'bg-yellow-100 text-yellow-700';
+    case 'Pending': return 'bg-yellow-100 text-yellow-700';
     case 'Voided': return 'bg-gray-100 text-gray-700';
     case 'Refunded': return 'bg-purple-100 text-purple-700';
-    case 'Declined': case 'Error': return 'bg-red-100 text-red-700';
+    case 'Declined': case 'Failed': return 'bg-red-100 text-red-700';
     default: return 'bg-gray-100 text-gray-700';
   }
 };
@@ -44,8 +44,11 @@ const CardPaymentsSection: React.FC = () => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
 
-  const [closing, setClosing] = useState(false);
-  const [batchClose] = useBatchCloseCardPaymentsMutation();
+  const [voidOpen, setVoidOpen] = useState(false);
+  const [voidTarget, setVoidTarget] = useState<CardPayment | null>(null);
+
+  const [batchCloseOpen, setBatchCloseOpen] = useState(false);
+  const [lastApprovedOpen, setLastApprovedOpen] = useState(false);
 
   useEffect(() => {
     setSubtitle('Pagos con tarjeta CardNet');
@@ -74,6 +77,7 @@ const CardPaymentsSection: React.FC = () => {
   }), [cardPaymentsHook.pagination, cardPaymentsHook.payments.length, orphansHook.orphans.length]);
 
   const openDetail = (id: string) => { setDetailId(id); setDetailOpen(true); };
+  const openVoid = (p: CardPayment) => { setVoidTarget(p); setVoidOpen(true); };
 
   const refreshAll = () => {
     cardPaymentsHook.refresh();
@@ -81,20 +85,7 @@ const CardPaymentsSection: React.FC = () => {
   };
 
   const effectiveSiteId = siteId || globalSiteId || '';
-
-  const handleBatchClose = async () => {
-    if (!effectiveSiteId || !terminalId) { toast.error('Selecciona site y terminal para cerrar lote'); return; }
-    setClosing(true);
-    try {
-      await batchClose({ siteId: effectiveSiteId, terminalId: parseInt(terminalId, 10) }).unwrap();
-      toast.success('Lote cerrado');
-    } catch (err) {
-      toast.error(getErrorMessage(err, 'Error al cerrar lote') ?? 'Error al cerrar lote');
-    } finally {
-      setClosing(false);
-      refreshAll();
-    }
-  };
+  const numericTerminalId = terminalId ? parseInt(terminalId, 10) : null;
 
   const amountDop = (cents: number) => (cents / 100).toLocaleString('es-DO', { minimumFractionDigits: 2 });
 
@@ -136,9 +127,11 @@ const CardPaymentsSection: React.FC = () => {
         <CompactButton variant="ghost" onClick={refreshAll} disabled={loading}>
           <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} /> Actualizar
         </CompactButton>
-        <CompactButton variant="primary" onClick={handleBatchClose} disabled={closing || !effectiveSiteId || !terminalId}>
-          {closing ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Lock className="w-3 h-3" />}
-          Cerrar lote
+        <CompactButton variant="ghost" onClick={() => setLastApprovedOpen(true)}>
+          <Search className="w-3 h-3" /> Última aprobada
+        </CompactButton>
+        <CompactButton variant="primary" onClick={() => setBatchCloseOpen(true)}>
+          <Lock className="w-3 h-3" /> Cerrar lote
         </CompactButton>
       </Toolbar>
 
@@ -180,13 +173,27 @@ const CardPaymentsSection: React.FC = () => {
                   <td className="px-2 text-sm text-right font-mono">RD$ {amountDop(p.amountCents)}</td>
                   <td className="px-2 text-sm font-mono text-text-secondary">{p.authorizationNumber || '—'}</td>
                   <td className="px-2 text-sm">
-                    <span className={`px-1.5 py-0.5 rounded text-2xs font-medium ${statusColor(p.status)}`}>{p.status}</span>
+                    <div className="flex flex-col">
+                      <span className={`inline-flex w-fit px-1.5 py-0.5 rounded text-2xs font-medium ${statusColor(p.status)}`}>{p.status}</span>
+                      {p.providerStatus && (
+                        <span className="text-2xs text-text-muted mt-0.5" title="Estado reportado por el datáfono">
+                          {p.providerStatus}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-2 text-2xs text-text-secondary">{new Date(p.createdAt).toLocaleString('es-DO')}</td>
                   <td className="px-2 text-sm whitespace-nowrap text-right">
-                    <CompactButton variant="icon" onClick={() => openDetail(p.cardPaymentId)} title="Ver detalle">
-                      <Eye className="w-3.5 h-3.5 text-text-secondary" />
-                    </CompactButton>
+                    <div className="flex items-center justify-end gap-1">
+                      <CompactButton variant="icon" onClick={() => openDetail(p.cardPaymentId)} title="Ver detalle">
+                        <Eye className="w-3.5 h-3.5 text-text-secondary" />
+                      </CompactButton>
+                      {p.status === 'Approved' && (
+                        <CompactButton variant="icon" onClick={() => openVoid(p)} title="Reversar (void)">
+                          <Ban className="w-3.5 h-3.5 text-red-600" />
+                        </CompactButton>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -209,6 +216,28 @@ const CardPaymentsSection: React.FC = () => {
 
       <CardPaymentDetailModal isOpen={detailOpen} onClose={() => setDetailOpen(false)}
         cardPaymentId={detailId} onChanged={refreshAll} />
+
+      <VoidCardPaymentDialog
+        isOpen={voidOpen}
+        onClose={() => setVoidOpen(false)}
+        cardPayment={voidTarget}
+        onSuccess={refreshAll}
+      />
+
+      <BatchCloseDialog
+        isOpen={batchCloseOpen}
+        onClose={() => setBatchCloseOpen(false)}
+        defaultSiteId={effectiveSiteId || null}
+        defaultTerminalId={numericTerminalId}
+        onSuccess={refreshAll}
+      />
+
+      <LastApprovedDialog
+        isOpen={lastApprovedOpen}
+        onClose={() => setLastApprovedOpen(false)}
+        defaultSiteId={effectiveSiteId || null}
+        defaultTerminalId={numericTerminalId}
+      />
     </div>
   );
 };

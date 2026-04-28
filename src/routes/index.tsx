@@ -30,6 +30,7 @@ import ReportsSection from '../components/sections/dispensers/ReportsSection';
 import FuelTransactionsSection from '../components/sections/dispensers/FuelTransactionsSection';
 import FuelDashboardSection from '../components/sections/dispensers/FuelDashboardSection';
 import DispensersConfigSection from '../components/sections/dispensers/DispensersConfigSection';
+import PtsConfigSection from '../components/sections/dispensers/PtsConfigSection';
 import FuelIslandsSection from '../components/sections/dispensers/FuelIslandsSection';
 import DispensersWorkbenchSection from '../components/sections/dispensers/DispensersWorkbenchSection';
 import RolesSection from '../components/sections/users/RolesSection';
@@ -299,6 +300,10 @@ export const router = createBrowserRouter([
             )
           },
           {
+            path: 'fuel',
+            element: <PermissionRoute permission="transactions.view"><FuelTransactionsSection /></PermissionRoute>
+          },
+          {
             path: 'revenue',
             element: (
               <PermissionRoute permission="transactions.view">
@@ -417,6 +422,10 @@ export const router = createBrowserRouter([
             element: <PermissionRoute permission="dispensers.view"><DispensersConfigSection /></PermissionRoute>
           },
           {
+            path: 'pts-config',
+            element: <PermissionRoute permission="dispensers.view"><PtsConfigSection /></PermissionRoute>
+          },
+          {
             path: 'islands',
             element: <PermissionRoute permission="dispensers.view"><FuelIslandsSection /></PermissionRoute>
           },
@@ -451,10 +460,6 @@ export const router = createBrowserRouter([
           {
             path: 'reports',
             element: <PermissionRoute permission="dispensers.view"><ReportsSection /></PermissionRoute>
-          },
-          {
-            path: 'transactions',
-            element: <PermissionRoute permission="dispensers.view"><FuelTransactionsSection /></PermissionRoute>
           }
         ]
       },

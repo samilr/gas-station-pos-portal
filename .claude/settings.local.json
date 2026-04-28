@@ -45,7 +45,8 @@
       "Bash(sed -i '23,218d' src/components/sections/dispensers/DispensersWorkbenchSection.tsx)",
       "Bash(echo \"EXIT:$?\")",
       "Bash(echo \"---exit---$?\")",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(echo \"EXITCODE=$?\")"
     ]
   }
 }

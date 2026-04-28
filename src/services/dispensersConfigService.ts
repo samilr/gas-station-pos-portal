@@ -31,8 +31,10 @@ export interface Dispenser {
 
   protocol: string | null;
   protocolVersion: string | null;
+  ptsPort: number | null;
   busAddress: number | null;
   timeoutMs: number;
+  requiresAuthorization: boolean;
 
   createdAt: string;
   updatedAt: string | null;
@@ -57,8 +59,10 @@ export interface CreateDispenserRequest {
   stopBits?: StopBits | null;
   protocol?: string | null;
   protocolVersion?: string | null;
+  ptsPort?: number | null;
   busAddress?: number | null;
   timeoutMs: number;
+  requiresAuthorization?: boolean;
 }
 
 export type UpdateDispenserRequest = Partial<Omit<CreateDispenserRequest, 'siteId' | 'pumpNumber'>> & {
