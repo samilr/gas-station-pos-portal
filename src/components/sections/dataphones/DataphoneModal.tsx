@@ -2,7 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Smartphone, Save, X, Edit, Plus, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Dataphone } from '../../../services/dataphoneService';
-import { useCreateDataphoneMutation, useUpdateDataphoneMutation } from '../../../store/api/dataphonesApi';
+import {
+  useCreateDataphoneMutation,
+  useUpdateDataphoneMutation,
+} from '../../../store/api/dataphonesApi';
 import { getErrorMessage } from '../../../store/api/baseApi';
 import { CompactButton } from '../../ui';
 import { SiteAutocomplete, DataphoneSupplierAutocomplete } from '../../ui/autocompletes';
@@ -71,14 +74,13 @@ const DataphoneModal: React.FC<Props> = ({ isOpen, onClose, dataphone, mode, onS
     setLoading(true);
     try {
       if (isCreating) {
-        if (form.dataphoneId === '' || !form.name || !form.siteId || form.dataphoneSupplierId === '' ||
+        if (!form.name || !form.siteId || form.dataphoneSupplierId === '' ||
             !form.dataphoneIpAddress || form.dataphoneResponsePort === '' || form.terminalRequestPort === '' || form.transTimeout === '') {
           toast.error('Completa los campos obligatorios');
           setLoading(false);
           return;
         }
         const payload = {
-          dataphoneId: Number(form.dataphoneId),
           name: form.name, siteId: form.siteId,
           dataphoneSupplierId: Number(form.dataphoneSupplierId),
           dataphoneIpAddress: form.dataphoneIpAddress,
@@ -154,14 +156,15 @@ const DataphoneModal: React.FC<Props> = ({ isOpen, onClose, dataphone, mode, onS
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">ID *</label>
-              <input type="number" value={form.dataphoneId}
-                onChange={(e) => update('dataphoneId', e.target.value === '' ? '' : parseInt(e.target.value, 10))}
-                disabled={isViewing || isEditing} required min={1}
-                className={inputCls(isViewing || isEditing)} />
-            </div>
-            <div className="col-span-2">
+            {isViewing && (
+              <div>
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">ID</label>
+                <input type="number" value={form.dataphoneId}
+                  disabled
+                  className={inputCls(true)} />
+              </div>
+            )}
+            <div className={isViewing ? 'col-span-2' : 'col-span-3'}>
               <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Nombre *</label>
               <input type="text" value={form.name} onChange={(e) => update('name', e.target.value)}
                 disabled={isViewing} required className={inputCls(isViewing)} placeholder="CARDNET" />

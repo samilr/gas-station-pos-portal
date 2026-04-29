@@ -1,427 +1,506 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Lock, AlertCircle, ArrowLeft, CheckCircle, Clock, RefreshCw } from 'lucide-react';
+import {
+  Mail,
+  Lock,
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle,
+  Clock,
+  RefreshCw,
+  KeyRound,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  Send,
+  Info,
+} from 'lucide-react';
+import { authService } from '../../services/authService';
 import logoImage from '../../assets/isladominicana.png';
 import shellImage from '../../assets/Shell.png';
-import bgShell from '../../assets/shell_do.jpg';
+
+type Step = 'email' | 'code' | 'password' | 'done';
+
+const OTP_DURATION_SECONDS = 15 * 60;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const CODE_REGEX = /^\d{6}$/;
 
 interface ForgotPasswordProps {
   onBackToLogin: () => void;
 }
 
 const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBackToLogin }) => {
+  const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [step, setStep] = useState<'email' | 'code' | 'password'>('email');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [info, setInfo] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(600); // 10 minutos en segundos
-  const [codeSent, setCodeSent] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
 
-  // Timer para el código
+  const codeExpired = step === 'code' && timeLeft === 0;
+
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (step === 'code' && timeLeft > 0 && codeSent) {
-      interval = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            setError('El código ha expirado. Solicita uno nuevo.');
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [step, timeLeft, codeSent]);
+    if (timeLeft <= 0) return;
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timeLeft]);
 
   const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
   };
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError('');
+    setInfo('');
 
-    try {
-      // Simular envío de código
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setCodeSent(true);
-      setTimeLeft(600); // Reiniciar timer
-      setStep('code');
-      setSuccess('Código enviado a tu correo electrónico');
-      
-      // Limpiar mensaje de éxito después de 3 segundos
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (error) {
-      setError('Error al enviar el código. Intenta nuevamente.');
-    } finally {
-      setIsLoading(false);
+    if (!EMAIL_REGEX.test(email)) {
+      setError('Ingresa un correo electrónico válido.');
+      return;
     }
+
+    setIsLoading(true);
+    const result = await authService.forgotPassword(email);
+    setIsLoading(false);
+
+    if (!result.successful) {
+      setError(result.error || 'No se pudo enviar el código. Intenta nuevamente.');
+      return;
+    }
+
+    setInfo(
+      result.message ||
+        'Si el email existe en nuestro sistema, recibirás un código de verificación.'
+    );
+    setCode('');
+    setTimeLeft(OTP_DURATION_SECONDS);
+    setStep('code');
   };
 
   const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError('');
+    setInfo('');
 
-    try {
-      // Simular verificación de código
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      if (code === '123456') { // Código demo
-        setStep('password');
-        setSuccess('Código verificado correctamente');
-        setTimeout(() => setSuccess(''), 3000);
-      } else {
-        setError('Código incorrecto. Verifica e intenta nuevamente.');
-      }
-    } catch (error) {
-      setError('Error al verificar el código. Intenta nuevamente.');
-    } finally {
-      setIsLoading(false);
+    if (!CODE_REGEX.test(code)) {
+      setError('El código debe tener exactamente 6 dígitos.');
+      return;
     }
+
+    setIsLoading(true);
+    const result = await authService.validateOtp(email, code);
+    setIsLoading(false);
+
+    if (!result.successful) {
+      setError(result.error || 'Código OTP inválido.');
+      return;
+    }
+
+    setStep('password');
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError('');
-
-    if (newPassword !== confirmPassword) {
-      setError('Las contraseñas no coinciden');
-      setIsLoading(false);
-      return;
-    }
+    setInfo('');
 
     if (newPassword.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
-      setIsLoading(false);
+      setError('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError('Las contraseñas no coinciden.');
       return;
     }
 
-    try {
-      // Simular cambio de contraseña
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setSuccess('Contraseña cambiada exitosamente');
-      setTimeout(() => {
-        onBackToLogin();
-      }, 2000);
-    } catch (error) {
-      setError('Error al cambiar la contraseña. Intenta nuevamente.');
-    } finally {
-      setIsLoading(false);
+    setIsLoading(true);
+    const result = await authService.resetPassword(email, code, newPassword);
+    setIsLoading(false);
+
+    if (!result.successful) {
+      setError(result.error || 'No se pudo restablecer la contraseña.');
+      return;
     }
+
+    setStep('done');
   };
 
   const handleResendCode = async () => {
-    setIsLoading(true);
     setError('');
+    setInfo('');
+    setIsLoading(true);
+    const result = await authService.forgotPassword(email);
+    setIsLoading(false);
 
-    try {
-      // Simular reenvío de código
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setTimeLeft(600);
-      setCodeSent(true);
-      setSuccess('Nuevo código enviado a tu correo electrónico');
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (error) {
-      setError('Error al reenviar el código. Intenta nuevamente.');
-    } finally {
-      setIsLoading(false);
+    if (!result.successful) {
+      setError(result.error || 'No se pudo reenviar el código.');
+      return;
     }
+
+    setInfo('Hemos generado un nuevo código. El anterior queda invalidado.');
+    setCode('');
+    setTimeLeft(OTP_DURATION_SECONDS);
   };
 
-  const renderEmailStep = () => (
-    <form onSubmit={handleSendCode} className="space-y-6">
-      <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-          Correo Electrónico
-        </label>
-        <div className="relative">
-          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200"
-            placeholder="tu@email.com"
-          />
-        </div>
-      </div>
+  const requestNewCode = () => {
+    setError('');
+    setInfo('');
+    setCode('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setTimeLeft(0);
+    setStep('email');
+  };
 
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl transition-colors duration-200"
-        style={{ 
-          background: isLoading 
-            ? 'linear-gradient(135deg, #808184 0%, #6a6a6c 100%)' 
-            : 'linear-gradient(135deg, #d83c30 0%, #c02820 100%)'
-        }}
-      >
-        {isLoading ? 'Enviando código...' : 'Enviar Código de Verificación'}
-      </button>
-    </form>
-  );
+  const headerInfo: Record<
+    Step,
+    {
+      title: string;
+      icon: React.ComponentType<{ className?: string }>;
+      stepLabel: string;
+      subtitle: string;
+    }
+  > = {
+    email: {
+      title: 'Recuperar contraseña',
+      icon: Mail,
+      stepLabel: 'Paso 1 de 3',
+      subtitle: 'Ingresa tu correo y te enviaremos un código de verificación.',
+    },
+    code: {
+      title: 'Verificar código',
+      icon: KeyRound,
+      stepLabel: 'Paso 2 de 3',
+      subtitle: `Ingresa el código de 6 dígitos enviado a ${email}.`,
+    },
+    password: {
+      title: 'Nueva contraseña',
+      icon: Lock,
+      stepLabel: 'Paso 3 de 3',
+      subtitle: 'Define una contraseña segura para tu cuenta.',
+    },
+    done: {
+      title: 'Contraseña actualizada',
+      icon: ShieldCheck,
+      stepLabel: 'Listo',
+      subtitle: 'Ya puedes iniciar sesión con tu nueva contraseña.',
+    },
+  };
 
-  const renderCodeStep = () => (
-    <form onSubmit={handleVerifyCode} className="space-y-6">
-      <div className="text-center">
-        <p className="text-sm text-gray-600 mb-4">
-          Hemos enviado un código de verificación a <strong>{email}</strong>
-        </p>
-        
-        {/* Timer */}
-        <div className="flex items-center justify-center space-x-2 mb-4">
-          <Clock className="w-4 h-4 text-gray-500" />
-          <span className="text-sm font-medium text-gray-700">
-            Tiempo restante: {formatTime(timeLeft)}
-          </span>
-        </div>
-      </div>
-
-      <div>
-        <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-2">
-          Código de Verificación
-        </label>
-        <input
-          id="code"
-          type="text"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          required
-          maxLength={6}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 text-center text-lg font-mono"
-          placeholder="000000"
-        />
-        <p className="text-xs text-gray-500 mt-1">Código demo: 123456</p>
-      </div>
-
-      <button
-        type="submit"
-        disabled={isLoading || timeLeft === 0}
-        className="w-full disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl transition-colors duration-200"
-        style={{ 
-          background: isLoading 
-            ? 'linear-gradient(135deg, #808184 0%, #6a6a6c 100%)' 
-            : 'linear-gradient(135deg, #d83c30 0%, #c02820 100%)'
-        }}
-      >
-        {isLoading ? 'Verificando...' : 'Verificar Código'}
-      </button>
-
-      {timeLeft === 0 && (
-        <button
-          type="button"
-          onClick={handleResendCode}
-          disabled={isLoading}
-          className="w-full text-white font-semibold py-3 px-4 rounded-xl transition-colors duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ background: 'linear-gradient(135deg, #808184 0%, #6a6a6c 100%)' }}
-        >
-          <RefreshCw className="w-4 h-4" />
-          <span>{isLoading ? 'Reenviando...' : 'Reenviar Código'}</span>
-        </button>
-      )}
-    </form>
-  );
-
-  const renderPasswordStep = () => (
-    <form onSubmit={handleResetPassword} className="space-y-6">
-      <div>
-        <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
-          Nueva Contraseña
-        </label>
-        <div className="relative">
-          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            id="newPassword"
-            type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            required
-            minLength={6}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200"
-            placeholder="••••••••"
-          />
-        </div>
-      </div>
-
-      <div>
-        <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-          Confirmar Nueva Contraseña
-        </label>
-        <div className="relative">
-          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            id="confirmPassword"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-            minLength={6}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200"
-            placeholder="••••••••"
-          />
-        </div>
-      </div>
-
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl transition-colors duration-200"
-        style={{ 
-          background: isLoading 
-            ? 'linear-gradient(135deg, #808184 0%, #6a6a6c 100%)' 
-            : 'linear-gradient(135deg, #d83c30 0%, #c02820 100%)'
-        }}
-      >
-        {isLoading ? 'Cambiando contraseña...' : 'Cambiar Contraseña'}
-      </button>
-    </form>
-  );
+  const head = headerInfo[step];
+  const HeadIcon = head.icon;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 relative overflow-hidden">
-      {/* Background image layer (sutil debajo) */}
-      <div
-        className="absolute inset-0 bg-center bg-cover opacity-5 pointer-events-none"
-        style={{ backgroundImage: `url(${bgShell})` }}
-      />
-
-      <div className="relative z-10 min-h-screen flex flex-col">
-        {/* Header con logos (igual a Login) */}
-        <div className="w-full py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between">
-              {/* Logo ISLA */}
-              <div className="flex items中心 space-x-2 sm:space-x-3">
-                {logoImage ? (
-                  <img 
-                    src={logoImage}
-                    alt="ISLA Logo" 
-                    className="h-12 sm:h-14 w-auto object-contain"
-                  />
-                ) : (
-                  <div 
-                    className="w-10 h-10 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center shadow-lg" 
-                    style={{ backgroundColor: '#d83c30' }}
-                  > 
-                    <span className="text-white font-bold text-sm sm:text-xl">ISLA</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Shell Logo */}
-              <div className="flex items-center space-x-2">
-                {shellImage ? (
-                  <img 
-                    src={shellImage}
-                    alt="Shell Logo" 
-                    className="h-8 sm:h-12 w-auto object-contain"
-                  />
-                ) : (
-                  <div 
-                    className="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center" 
-                    style={{ backgroundColor: '#d83c30' }}
-                  >
-                    <span className="text-white font-bold text-xs sm:text-sm">S</span>
-                  </div>
-                )}
-                <div className="text-xs sm:text-sm font-medium" style={{ color: '#273691' }}>
-                  Shell Licensee
-                </div>
-              </div>
-            </div>
+    <div className="min-h-screen bg-app-bg flex flex-col">
+      {/* Top bar */}
+      <div className="h-12 bg-white border-b border-table-border px-4 flex items-center justify-between flex-shrink-0">
+        {logoImage ? (
+          <img src={logoImage} alt="ISLA" className="h-7 w-auto object-contain" />
+        ) : (
+          <div className="w-7 h-7 rounded-sm flex items-center justify-center bg-blue-600">
+            <span className="text-white font-bold text-2xs">ISLA</span>
           </div>
+        )}
+        <div className="flex items-center gap-2">
+          {shellImage && <img src={shellImage} alt="Shell" className="h-6 w-auto object-contain" />}
+          <span className="text-2xs text-text-muted uppercase tracking-wide">Shell Licensee</span>
         </div>
+      </div>
 
-        {/* Contenido principal */}
-        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8">
-          <div className="w-full max-w-md mx-auto">
-            {/* Card */}
-            <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-100 overflow-hidden relative">
-              <button
-                onClick={onBackToLogin}
-                className="absolute top-4 left-4 p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
-                aria-label="Volver al login"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
+      {/* Main */}
+      <div className="flex-1 flex items-center justify-center px-4">
+        <div className="w-full max-w-sm">
+          <div className="flex justify-center mb-3">
+            <span className="text-2xl font-bold text-text-primary uppercase tracking-wide">
+              GasOps
+            </span>
+          </div>
 
-              <div className="p-6 sm:p-8">
-                {/* Header */}
-                <div className="text-center mb-8">
-                  <div 
-                    className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 shadow-lg" 
-                    style={{ background: 'linear-gradient(135deg, #d83c30 0%, #c02820 100%)' }}
-                  >
-                    <Lock className="w-8 h-8 text-white" />
-                  </div>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-black mb-2">
-                    {step === 'email' && 'Recuperar Contraseña'}
-                    {step === 'code' && 'Verificar Código'}
-                    {step === 'password' && 'Nueva Contraseña'}
-                  </h1>
-                  <p className="text-sm sm:text-base" style={{ color: '#808184' }}>
-                    {step === 'email' && 'Ingresa tu correo electrónico para recibir un código de verificación'}
-                    {step === 'code' && 'Ingresa el código de 6 dígitos enviado a tu correo'}
-                    {step === 'password' && 'Crea una nueva contraseña segura'}
-                  </p>
+          <div className="bg-white rounded-sm border border-table-border overflow-hidden shadow-sm">
+            {/* Card header */}
+            <div className="h-8 bg-table-header border-b border-table-border px-3 flex items-center gap-2">
+              <HeadIcon className="w-3.5 h-3.5 text-blue-600" />
+              <span className="text-xs font-semibold text-text-primary uppercase tracking-wide">
+                {head.title}
+              </span>
+              <span className="ml-auto text-2xs text-text-muted">{head.stepLabel}</span>
+            </div>
+
+            {/* Body */}
+            <div className="p-4 space-y-3">
+              <p className="text-xs text-text-muted leading-relaxed">{head.subtitle}</p>
+
+              {error && (
+                <div className="flex items-start gap-2 p-2 border border-red-200 bg-red-50 rounded-sm text-xs text-red-700">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                  <span className="break-words">{error}</span>
                 </div>
+              )}
 
-                {/* Mensajes */}
-                {error && (
-                  <div className="mb-6 p-4 rounded-xl border-l-4 border-red-500 bg-red-50">
-                    <div className="flex items-center">
-                      <AlertCircle className="w-5 h-5 text-red-500 mr-3 flex-shrink-0" />
-                      <span className="text-sm text-red-700">{error}</span>
+              {info && (
+                <div className="flex items-start gap-2 p-2 border border-blue-200 bg-blue-50 rounded-sm text-xs text-blue-700">
+                  <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                  <span className="break-words">{info}</span>
+                </div>
+              )}
+
+              {step === 'email' && (
+                <form onSubmit={handleSendCode} className="space-y-3">
+                  <div>
+                    <label
+                      htmlFor="email"
+                      className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5"
+                    >
+                      Correo electrónico
+                    </label>
+                    <div className="relative">
+                      <Mail className="w-3.5 h-3.5 text-text-muted absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        disabled={isLoading}
+                        autoFocus
+                        autoComplete="email"
+                        placeholder="usuario@isladom.com.do"
+                        className="w-full h-7 pl-7 pr-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
+                      />
                     </div>
                   </div>
-                )}
-
-                {success && (
-                  <div className="mb-6 p-4 rounded-xl border-l-4 border-green-500 bg-green-50">
-                    <div className="flex items-center">
-                      <CheckCircle className="w-5 h-5 text-green-600 mr-3 flex-shrink-0" />
-                      <span className="text-sm text-green-700">{success}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Formularios por paso */}
-                {step === 'email' && renderEmailStep()}
-                {step === 'code' && renderCodeStep()}
-                {step === 'password' && renderPasswordStep()}
-
-                {/* Enlace de volver */}
-                <div className="mt-6 text-center">
                   <button
-                    onClick={onBackToLogin}
-                    className="text-sm font-medium hover:underline"
-                    style={{ color: '#d83c30' }}
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full h-8 flex items-center justify-center gap-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    Volver al login
+                    {isLoading ? (
+                      <>
+                        <RefreshCw className="w-3 h-3 animate-spin" /> Enviando código...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-3 h-3" /> Enviar código
+                      </>
+                    )}
+                  </button>
+                </form>
+              )}
+
+              {step === 'code' && (
+                <form onSubmit={handleVerifyCode} className="space-y-3">
+                  <div>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <label
+                        htmlFor="code"
+                        className="block text-2xs uppercase tracking-wide text-text-muted"
+                      >
+                        Código de 6 dígitos
+                      </label>
+                      <span
+                        className={`flex items-center gap-1 text-2xs ${
+                          codeExpired ? 'text-red-600' : 'text-text-muted'
+                        }`}
+                      >
+                        <Clock className="w-3 h-3" />
+                        {codeExpired ? 'Expirado' : formatTime(timeLeft)}
+                      </span>
+                    </div>
+                    <input
+                      id="code"
+                      type="text"
+                      inputMode="numeric"
+                      value={code}
+                      onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      required
+                      maxLength={6}
+                      disabled={isLoading || codeExpired}
+                      autoFocus
+                      autoComplete="one-time-code"
+                      placeholder="000000"
+                      className="w-full h-9 px-2 text-base text-center font-mono tracking-[0.5em] border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isLoading || codeExpired || code.length !== 6}
+                    className="w-full h-8 flex items-center justify-center gap-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? (
+                      <>
+                        <RefreshCw className="w-3 h-3 animate-spin" /> Verificando...
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck className="w-3 h-3" /> Verificar código
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResendCode}
+                    disabled={isLoading}
+                    className="w-full h-7 flex items-center justify-center gap-1.5 text-2xs font-medium text-blue-600 hover:bg-blue-50 rounded-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    Reenviar código
+                  </button>
+                </form>
+              )}
+
+              {step === 'password' && (
+                <form onSubmit={handleResetPassword} className="space-y-3">
+                  <div>
+                    <label
+                      htmlFor="newPassword"
+                      className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5"
+                    >
+                      Nueva contraseña
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-3.5 h-3.5 text-text-muted absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        id="newPassword"
+                        type={showPassword ? 'text' : 'password'}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        required
+                        minLength={6}
+                        disabled={isLoading}
+                        autoFocus
+                        autoComplete="new-password"
+                        placeholder="Mínimo 6 caracteres"
+                        className="w-full h-7 pl-7 pr-7 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((s) => !s)}
+                        tabIndex={-1}
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center rounded-sm hover:bg-gray-100"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-3.5 h-3.5 text-text-muted" />
+                        ) : (
+                          <Eye className="w-3.5 h-3.5 text-text-muted" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="confirmPassword"
+                      className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5"
+                    >
+                      Confirmar contraseña
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-3.5 h-3.5 text-text-muted absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        id="confirmPassword"
+                        type={showConfirm ? 'text' : 'password'}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        minLength={6}
+                        disabled={isLoading}
+                        autoComplete="new-password"
+                        placeholder="Repite la contraseña"
+                        className="w-full h-7 pl-7 pr-7 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirm((s) => !s)}
+                        tabIndex={-1}
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center rounded-sm hover:bg-gray-100"
+                      >
+                        {showConfirm ? (
+                          <EyeOff className="w-3.5 h-3.5 text-text-muted" />
+                        ) : (
+                          <Eye className="w-3.5 h-3.5 text-text-muted" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full h-8 flex items-center justify-center gap-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? (
+                      <>
+                        <RefreshCw className="w-3 h-3 animate-spin" /> Actualizando...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-3 h-3" /> Restablecer contraseña
+                      </>
+                    )}
+                  </button>
+                </form>
+              )}
+
+              {step === 'done' && (
+                <div className="space-y-3">
+                  <div className="flex items-start gap-2 p-2 border border-green-200 bg-green-50 rounded-sm text-xs text-green-700">
+                    <CheckCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                    <span>
+                      Contraseña restablecida exitosamente. Ya puedes iniciar sesión con tu nueva
+                      contraseña.
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onBackToLogin}
+                    className="w-full h-8 flex items-center justify-center gap-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-sm transition-all"
+                  >
+                    Ir a iniciar sesión
                   </button>
                 </div>
-              </div>
+              )}
+
+              {step !== 'done' && (
+                <div className="pt-2 border-t border-table-border flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={onBackToLogin}
+                    className="flex items-center gap-1 text-2xs text-text-muted hover:text-blue-600 hover:underline"
+                  >
+                    <ArrowLeft className="w-3 h-3" />
+                    Volver al login
+                  </button>
+                  {(step === 'code' || step === 'password') && (
+                    <button
+                      type="button"
+                      onClick={requestNewCode}
+                      className="text-2xs text-blue-600 hover:underline"
+                    >
+                      Solicitar nuevo código
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
+
+          <p className="mt-2 text-2xs text-text-muted text-center">
+            Acceso restringido a personal autorizado
+          </p>
         </div>
+      </div>
+
+      {/* Footer */}
+      <div className="h-8 border-t border-table-border px-4 flex items-center justify-center flex-shrink-0">
+        <p className="text-2xs text-text-muted">
+          © 2025 ISLA Dominicana de Petróleo Corp. Todos los derechos reservados.
+        </p>
       </div>
     </div>
   );

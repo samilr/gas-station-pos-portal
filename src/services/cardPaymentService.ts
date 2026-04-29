@@ -75,6 +75,22 @@ export interface BatchCloseResult {
   messages: string[] | null;
 }
 
+export interface ReadCardRequest {
+  siteId: string;
+  terminalId: number;
+}
+
+export interface ReadCardResult {
+  read: boolean;
+  cardProduct: string | null;
+  maskedPan: string | null;
+  holderName: string | null;
+  bin: string | null;
+  messages: string[] | null;
+  rawRequest?: string | null;
+  rawResponse?: string | null;
+}
+
 export interface LastApprovedRequest {
   siteId: string;
   terminalId: number;

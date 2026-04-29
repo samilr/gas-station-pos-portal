@@ -6,6 +6,7 @@ export interface IAppConfig {
   required: boolean;
   apiKey?: string;
   recentTransactionWindowMinutes?: number;
+  privilegedRecentTransactionWindowMinutes?: number;
 }
 
 export interface ICreateAppConfigDto {
@@ -16,6 +17,7 @@ export interface ICreateAppConfigDto {
   required: boolean;
   apiKey?: string;
   recentTransactionWindowMinutes?: number;
+  privilegedRecentTransactionWindowMinutes?: number;
 }
 
 export interface IUpdateAppConfigDto {
@@ -25,4 +27,5 @@ export interface IUpdateAppConfigDto {
   required?: boolean;
   apiKey?: string;
   recentTransactionWindowMinutes?: number;
+  privilegedRecentTransactionWindowMinutes?: number;
 }

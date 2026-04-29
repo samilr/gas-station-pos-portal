@@ -17,7 +17,6 @@ export interface Dataphone {
 }
 
 export interface CreateDataphoneRequest {
-  dataphoneId: number;
   name: string;
   siteId: string;
   dataphoneSupplierId: number;
@@ -29,7 +28,7 @@ export interface CreateDataphoneRequest {
   active: boolean;
 }
 
-export type UpdateDataphoneRequest = Partial<Omit<CreateDataphoneRequest, 'dataphoneId'>>;
+export type UpdateDataphoneRequest = Partial<CreateDataphoneRequest>;
 
 export interface TestDataphoneRequest {
   siteId: string;

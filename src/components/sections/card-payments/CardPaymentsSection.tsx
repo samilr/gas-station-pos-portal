@@ -10,6 +10,7 @@ import CardPaymentDetailModal from './CardPaymentDetailModal';
 import VoidCardPaymentDialog from './VoidCardPaymentDialog';
 import BatchCloseDialog from './BatchCloseDialog';
 import LastApprovedDialog from './LastApprovedDialog';
+import ReadCardDialog from './ReadCardDialog';
 
 type Tab = 'all' | 'orphaned';
 
@@ -49,6 +50,7 @@ const CardPaymentsSection: React.FC = () => {
 
   const [batchCloseOpen, setBatchCloseOpen] = useState(false);
   const [lastApprovedOpen, setLastApprovedOpen] = useState(false);
+  const [readCardOpen, setReadCardOpen] = useState(false);
 
   useEffect(() => {
     setSubtitle('Pagos con tarjeta CardNet');
@@ -129,6 +131,9 @@ const CardPaymentsSection: React.FC = () => {
         </CompactButton>
         <CompactButton variant="ghost" onClick={() => setLastApprovedOpen(true)}>
           <Search className="w-3 h-3" /> Última aprobada
+        </CompactButton>
+        <CompactButton variant="ghost" onClick={() => setReadCardOpen(true)}>
+          <CreditCard className="w-3 h-3" /> Leer tarjeta
         </CompactButton>
         <CompactButton variant="primary" onClick={() => setBatchCloseOpen(true)}>
           <Lock className="w-3 h-3" /> Cerrar lote
@@ -235,6 +240,13 @@ const CardPaymentsSection: React.FC = () => {
       <LastApprovedDialog
         isOpen={lastApprovedOpen}
         onClose={() => setLastApprovedOpen(false)}
+        defaultSiteId={effectiveSiteId || null}
+        defaultTerminalId={numericTerminalId}
+      />
+
+      <ReadCardDialog
+        isOpen={readCardOpen}
+        onClose={() => setReadCardOpen(false)}
         defaultSiteId={effectiveSiteId || null}
         defaultTerminalId={numericTerminalId}
       />

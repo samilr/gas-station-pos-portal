@@ -38,5 +38,6 @@ export interface ITerminal {
   productListType: number;
   fuelIslandId: number | null;
   fuelIslandEnabled: boolean;
+  dataphoneEnabled: boolean;
   device?: ITerminalDevice | null;
 }

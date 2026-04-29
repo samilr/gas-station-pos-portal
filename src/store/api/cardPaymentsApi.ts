@@ -7,6 +7,8 @@ import {
   BatchCloseResult,
   LastApprovedRequest,
   LastApprovedResult,
+  ReadCardRequest,
+  ReadCardResult,
 } from '../../services/cardPaymentService';
 
 interface PaginatedCardPayments {
@@ -209,6 +211,24 @@ export const cardPaymentsApi = api.injectEndpoints({
       },
     }),
 
+    readCard: build.mutation<ReadCardResult, ReadCardRequest>({
+      query: (body) => ({ url: 'card-payments/read-card', method: 'POST', body }),
+      transformResponse: (raw: unknown): ReadCardResult => {
+        const d = (raw as { data?: unknown })?.data ?? raw;
+        const r = d as Record<string, unknown>;
+        return {
+          read: Boolean(r.read),
+          cardProduct: (r.cardProduct as string) ?? null,
+          maskedPan: (r.maskedPan as string) ?? null,
+          holderName: (r.holderName as string) ?? null,
+          bin: (r.bin as string) ?? null,
+          messages: Array.isArray(r.messages) ? (r.messages as string[]) : null,
+          rawRequest: (r.rawRequest as string) ?? null,
+          rawResponse: (r.rawResponse as string) ?? null,
+        };
+      },
+    }),
+
     linkCardPaymentTrans: build.mutation<
       unknown,
       { id: string; body: { transNumber: string; transPaymLine: number } }
@@ -232,4 +252,5 @@ export const {
   useBatchCloseCardPaymentsMutation,
   useLinkCardPaymentTransMutation,
   useLastApprovedCardPaymentMutation,
+  useReadCardMutation,
 } = cardPaymentsApi;

@@ -7,6 +7,7 @@ import DashboardHome from '../components/sections/dashboard/DashboardHome';
 import UsersSection from '../components/sections/users/UsersSection';
 import UserProfile from '../components/sections/users/UserProfile';
 import TransactionsSection from '../components/sections/transactions/TransactionsSection';
+import FuelTransactionsAdminSection from '../components/sections/transactions/FuelTransactionsAdminSection';
 import TerminalsSection from '../components/sections/pos/TerminalsSection';
 import DevicesSection from '../components/sections/pos/DevicesSection';
 import HostTypesSection from '../components/sections/pos/HostTypesSection';
@@ -289,7 +290,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'list',
-            element: <PermissionRoute permission="transactions.view"><TransactionsSection /></PermissionRoute>
+            element: <PermissionRoute permission="transactions.view"><FuelTransactionsAdminSection /></PermissionRoute>
           },
           {
             path: 'tienda',

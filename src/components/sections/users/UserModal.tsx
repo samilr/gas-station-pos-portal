@@ -8,7 +8,12 @@ import { getErrorMessage } from "../../../store/api/baseApi";
 import { PermissionGate } from "../../common";
 import { Role } from "../../../config/permissions";
 import { CompactButton } from "../../ui";
-import { SiteAutocomplete, RoleAutocomplete, StaftGroupAutocomplete } from "../../ui/autocompletes";
+import {
+  SiteAutocomplete,
+  RoleAutocomplete,
+  StaftGroupAutocomplete,
+  TerminalAutocomplete,
+} from "../../ui/autocompletes";
 
 interface UserFormData {
   username: string;
@@ -22,22 +27,21 @@ interface UserFormData {
   terminal_id: number;
   shift: number;
   active: number;
-  connected: number;
   portal_access: number;
 }
 
 interface CreateUserDto {
   username: string;
-  name: string;
-  email?: string;
   password: string;
+  name?: string;
   roleId: number;
-  portalAccess: boolean;
   staftId: number;
-  siteId: string;
-  terminalId: number;
-  shift: number;
-  staftGroupId: number;
+  email?: string;
+  siteId?: string;
+  terminalId?: number;
+  shift?: number;
+  staftGroupId?: number;
+  portalAccess: boolean;
 }
 
 interface UpdateUserDto {
@@ -47,8 +51,7 @@ interface UpdateUserDto {
   password?: string;
   roleId?: number;
   portalAccess?: boolean;
-  connected?: boolean;
-  active?: boolean;
+  active?: 0 | 1;
   staftId?: number;
   siteId?: string;
   terminalId?: number;
@@ -64,114 +67,99 @@ interface UserModalProps {
   onSuccess: () => void;
 }
 
+const ROLE_NAME_TO_ID: Record<string, string> = {
+  ADMIN: "1",
+  CONFIGURATION: "2",
+  SUPERVISOR: "3",
+  MANAGER: "4",
+  SELLER: "5",
+  AUDIT: "6",
+  ACCOUNTANT: "7",
+};
+
+const getRoleIdFromUser = (u: IUser): string => {
+  if (u.role_id != null && String(u.role_id).trim() !== "") return String(u.role_id);
+  return ROLE_NAME_TO_ID[(u.role || "").toUpperCase()] ?? "";
+};
+
+const EMPTY_FORM: UserFormData = {
+  username: "",
+  name: "",
+  email: "",
+  password: "",
+  role: "",
+  staft_group: "",
+  staft_id: "",
+  site_id: "",
+  terminal_id: 0,
+  shift: 1,
+  active: 1,
+  portal_access: 0,
+};
+
 const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSuccess }) => {
   const { canEditUsers } = usePermissions();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [createUser] = useCreateUserMutation();
   const [updateUser] = useUpdateUserMutation();
-  const [formData, setFormData] = useState<UserFormData>({
-    username: "", name: "", email: "", password: "", role: "5", staft_group: "",
-    staft_id: "", site_id: "", terminal_id: 1, shift: 1, active: 1, connected: 0, portal_access: 0,
-  });
+  const [formData, setFormData] = useState<UserFormData>(EMPTY_FORM);
 
   const isEditing = mode === "edit";
   const isViewing = mode === "view";
   const isCreating = mode === "create";
 
-  const getRoleId = (role: string): number => {
-    const roleNum = parseInt(role);
-    if (!isNaN(roleNum)) return roleNum;
-    switch (role.toLowerCase()) {
-      case "admin": return 1;
-      case "configuration": return 2;
-      case "supervisor": return 3;
-      case "manager": return 4;
-      case "seller": return 5;
-      default: return 5;
-    }
-  };
-
-  const getRoleIdFromString = (roleName: string): string => {
-    switch (roleName.toUpperCase()) {
-      case "ADMIN": return "1";
-      case "CONFIGURATION": return "2";
-      case "SUPERVISOR": return "3";
-      case "MANAGER": return "4";
-      case "SELLER": return "5";
-      default: return "5";
-    }
-  };
-
-  const getGroupId = (groupName: string): string => {
-    const groupNum = parseInt(groupName);
-    if (!isNaN(groupNum)) return groupNum.toString();
-    switch (groupName.toLowerCase()) {
-      case "vendedor pista": return "1";
-      case "vendedor tienda": return "2";
-      case "administrador estacion":
-      case "administrador estación": return "3";
-      case "administracion isla":
-      case "administración isla": return "4";
-      default: return "1";
-    }
-  };
-
-  const mapToCreateUserDto = (formData: UserFormData): CreateUserDto => ({
-    username: formData.username,
-    name: formData.name,
-    email: formData.email || undefined,
-    password: formData.password,
-    roleId: getRoleId(formData.role),
-    portalAccess: formData.portal_access === 1,
-    staftId: parseInt(formData.staft_id) || 0,
-    siteId: formData.site_id,
-    terminalId: formData.terminal_id,
-    shift: formData.shift,
-    staftGroupId: parseInt(formData.staft_group) || 0,
+  const mapToCreateUserDto = (f: UserFormData): CreateUserDto => ({
+    username: f.username,
+    password: f.password,
+    name: f.name || undefined,
+    roleId: parseInt(f.role, 10),
+    staftId: parseInt(f.staft_id, 10) || 0,
+    email: f.email || undefined,
+    siteId: f.site_id || undefined,
+    terminalId: f.terminal_id || undefined,
+    shift: f.shift || undefined,
+    staftGroupId: parseInt(f.staft_group, 10) || undefined,
+    portalAccess: f.portal_access === 1,
   });
 
-  const mapToUpdateUserDto = (formData: UserFormData): UpdateUserDto => {
-    const updateData: UpdateUserDto = {
-      username: formData.username,
-      name: formData.name,
-      email: formData.email || undefined,
-      roleId: getRoleId(formData.role),
-      portalAccess: formData.portal_access === 1,
-      connected: formData.connected === 1,
-      active: formData.active === 1,
-      staftId: parseInt(formData.staft_id) || 0,
-      siteId: formData.site_id,
-      terminalId: formData.terminal_id,
-      shift: formData.shift,
-      staftGroupId: parseInt(formData.staft_group) || 0,
+  const mapToUpdateUserDto = (f: UserFormData): UpdateUserDto => {
+    const dto: UpdateUserDto = {
+      username: f.username,
+      name: f.name,
+      email: f.email || undefined,
+      roleId: parseInt(f.role, 10),
+      portalAccess: f.portal_access === 1,
+      active: f.active === 1 ? 1 : 0,
+      staftId: parseInt(f.staft_id, 10) || 0,
+      siteId: f.site_id || undefined,
+      terminalId: f.terminal_id || undefined,
+      shift: f.shift,
+      staftGroupId: parseInt(f.staft_group, 10) || undefined,
     };
-    if (formData.password) updateData.password = formData.password;
-    return updateData;
+    if (f.password) dto.password = f.password;
+    return dto;
   };
 
   useEffect(() => {
-    if (user && isOpen && (isEditing || isViewing)) {
+    if (!isOpen) return;
+    if (user && (isEditing || isViewing)) {
       setFormData({
         username: user.username || "",
         name: user.name || "",
         email: user.email || "",
         password: "",
-        role: getRoleIdFromString(user.role || ""),
-        staft_group: getGroupId(user.staft_group || ""),
+        role: getRoleIdFromUser(user),
+        staft_group: user.staft_group_id != null ? String(user.staft_group_id) : "",
         staft_id: user.staft_id || "",
         site_id: user.site_id || "",
-        terminal_id: user.terminal_id || 1,
+        terminal_id: user.terminal_id || 0,
         shift: user.shift || 1,
-        connected: user.connected ? 1 : 0,
         active: user.active,
         portal_access: user.portal_access ? 1 : 0,
       });
-    } else if (isCreating && isOpen) {
-      setFormData({
-        username: "", name: "", email: "", password: "", role: "5", staft_group: "",
-        staft_id: "", site_id: "", terminal_id: 1, shift: 1, active: 1, portal_access: 0, connected: 0,
-      });
+    } else if (isCreating) {
+      setFormData(EMPTY_FORM);
     }
   }, [user, isOpen, isEditing, isViewing, isCreating]);
 
@@ -182,8 +170,8 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
       [name]:
         type === "checkbox"
           ? (e.target as HTMLInputElement).checked ? 1 : 0
-          : name === "terminal_id" || name === "shift" || name === "active" || name === "portal_access" || name === "connected"
-          ? parseInt(value)
+          : name === "terminal_id" || name === "shift" || name === "active" || name === "portal_access"
+          ? parseInt(value, 10)
           : value,
     }));
   };
@@ -194,25 +182,19 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
     setLoading(true);
     try {
       if (isEditing) {
-        try {
-          await updateUser({ userId: user!.user_id, body: mapToUpdateUserDto(formData) }).unwrap();
-          toast.success(`Usuario actualizado exitosamente \n ${formData.name}`, { duration: 5000 });
-          onSuccess(); onClose();
-        } catch (err) {
-          toast.error(getErrorMessage(err, "Error al actualizar usuario.") ?? "Error al actualizar usuario.", { duration: 5000 });
-        }
+        await updateUser({ userId: user!.user_id, body: mapToUpdateUserDto(formData) }).unwrap();
+        toast.success(`Usuario actualizado exitosamente \n ${formData.name}`, { duration: 5000 });
+        onSuccess();
+        onClose();
       } else {
-        try {
-          await createUser(mapToCreateUserDto(formData)).unwrap();
-          toast.success(`Usuario creado exitosamente \n ${formData.name}`, { duration: 5000 });
-          onSuccess(); onClose();
-        } catch (err) {
-          toast.error(getErrorMessage(err, "Error al crear usuario.") ?? "Error al crear usuario.", { duration: 5000 });
-        }
+        await createUser(mapToCreateUserDto(formData)).unwrap();
+        toast.success(`Usuario creado exitosamente \n ${formData.name}`, { duration: 5000 });
+        onSuccess();
+        onClose();
       }
-    } catch (error) {
-      console.error("Error al procesar usuario:", error);
-      toast.error("Error de conexión.", { duration: 5000 });
+    } catch (err) {
+      const fallback = isEditing ? "Error al actualizar usuario." : "Error al crear usuario.";
+      toast.error(getErrorMessage(err, fallback) ?? fallback, { duration: 5000 });
     } finally {
       setLoading(false);
     }
@@ -267,11 +249,11 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
                 <input type="text" name="username" value={formData.username} onChange={handleInputChange} required disabled={isViewing} className={inputCls(isViewing)} />
               </div>
               <div>
-                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Email *</label>
-                <input type="email" name="email" value={formData.email} onChange={handleInputChange} required disabled={isViewing} className={inputCls(isViewing)} />
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Email</label>
+                <input type="email" name="email" value={formData.email} onChange={handleInputChange} disabled={isViewing} className={inputCls(isViewing)} />
               </div>
               <div>
-                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Contraseña {!isEditing && "*"}</label>
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Contraseña {!isEditing && !isViewing && "*"}</label>
                 <div className="relative">
                   <input type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleInputChange}
                     required={!isEditing && !isViewing} disabled={isViewing}
@@ -327,12 +309,21 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
                 <input type="number" name="staft_id" value={formData.staft_id} onChange={handleInputChange} required disabled={isViewing} className={inputCls(isViewing)} />
               </div>
               <div>
-                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Sucursal *</label>
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Sucursal</label>
                 <SiteAutocomplete
                   value={formData.site_id}
-                  onChange={(v) => setFormData(prev => ({ ...prev, site_id: v ?? '' }))}
+                  onChange={(v) => setFormData(prev => ({ ...prev, site_id: v ?? '', terminal_id: 0 }))}
                   disabled={isViewing}
-                  required
+                />
+              </div>
+              <div>
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Terminal</label>
+                <TerminalAutocomplete
+                  value={formData.terminal_id || null}
+                  onChange={(v) => setFormData(prev => ({ ...prev, terminal_id: v ?? 0 }))}
+                  siteId={formData.site_id || null}
+                  disabled={isViewing || !formData.site_id}
+                  allowClear
                 />
               </div>
               <div>
@@ -347,21 +338,19 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, mode, onSu
             </div>
           </div>
 
-          <div>
-            <h4 className="text-2xs font-semibold uppercase tracking-wide text-text-secondary mb-2 pb-1 border-b border-gray-200">Estado</h4>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="flex items-center justify-between px-2 h-7 bg-gray-50 border border-gray-200 rounded-sm cursor-pointer">
-                <span className="text-xs text-text-primary">Conectado</span>
-                <input type="checkbox" name="connected" checked={formData.connected === 1} onChange={handleInputChange}
-                  disabled={isViewing} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-              </label>
-              <label className="flex items-center justify-between px-2 h-7 bg-gray-50 border border-gray-200 rounded-sm cursor-pointer">
-                <span className="text-xs text-text-primary">Activo</span>
-                <input type="checkbox" name="active" checked={formData.active === 1} onChange={handleInputChange}
-                  disabled={isViewing} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-              </label>
+          {!isCreating && (
+            <div>
+              <h4 className="text-2xs font-semibold uppercase tracking-wide text-text-secondary mb-2 pb-1 border-b border-gray-200">Estado</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="flex items-center justify-between px-2 h-7 bg-gray-50 border border-gray-200 rounded-sm cursor-pointer">
+                  <span className="text-xs text-text-primary">Activo</span>
+                  <input type="checkbox" name="active" checked={formData.active === 1}
+                    onChange={(e) => setFormData(prev => ({ ...prev, active: e.target.checked ? 1 : 0 }))}
+                    disabled={isViewing} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                </label>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="flex items-center justify-end gap-2 px-4 h-11 border-t border-gray-200 bg-gray-50 flex-shrink-0">

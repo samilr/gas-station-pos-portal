@@ -20,6 +20,7 @@ interface TerminalFormData {
   fuelIslandId: number | null;
   unassignFuelIsland: boolean;
   fuelIslandEnabled: boolean;
+  dataphoneEnabled: boolean;
   terminalType: number;
   productList: number;
   useCustomerDisplay: boolean;
@@ -54,6 +55,7 @@ const EMPTY_FORM: TerminalFormData = {
   fuelIslandId: null,
   unassignFuelIsland: false,
   fuelIslandEnabled: true,
+  dataphoneEnabled: false,
   terminalType: 1,
   productList: 1,
   useCustomerDisplay: false,
@@ -86,6 +88,7 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
         fuelIslandId: terminal.fuelIslandId ?? null,
         unassignFuelIsland: false,
         fuelIslandEnabled: terminal.fuelIslandEnabled ?? true,
+        dataphoneEnabled: terminal.dataphoneEnabled ?? false,
         terminalType: terminal.terminalType ?? 1,
         productList: terminal.productList ?? 1,
         useCustomerDisplay: terminal.useCustomerDisplay ?? false,
@@ -172,6 +175,11 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isViewing) return;
+
+    if (formData.fuelIslandEnabled && (formData.unassignFuelIsland || formData.fuelIslandId == null)) {
+      toast.error('Selecciona una isleta para activar la integración');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -284,13 +292,40 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
             </label>
           </div>
 
-          {/* Fuel Island */}
+          {/* Integraciones */}
           <div className="space-y-2 pt-2 border-t border-gray-100">
             <h4 className="text-2xs font-semibold uppercase tracking-wide text-text-secondary flex items-center gap-1">
-              <Layers className="w-3 h-3 text-orange-500" /> Fuel Island
+              <Layers className="w-3 h-3 text-orange-500" /> Integraciones
             </h4>
             <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
+              <label
+                className={`col-span-2 flex items-center justify-between px-2 h-7 rounded-sm cursor-pointer border ${
+                  formData.dataphoneEnabled
+                    ? 'bg-blue-50/50 border-blue-100'
+                    : 'bg-gray-50 border-gray-200'
+                }`}
+              >
+                <span className={`text-xs font-medium flex items-center gap-1 ${formData.dataphoneEnabled ? 'text-blue-900' : 'text-text-primary'}`}>
+                  <Smartphone className="w-3 h-3" /> Datafono integrado
+                </span>
+                <input
+                  type="checkbox"
+                  name="dataphoneEnabled"
+                  checked={formData.dataphoneEnabled}
+                  onChange={handleInputChange}
+                  disabled={isViewing}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+              </label>
+
+              <p className="col-span-2 text-2xs text-text-muted flex items-start gap-1 -mt-1">
+                <Info className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                {formData.dataphoneEnabled
+                  ? 'El terminal procesará pagos con tarjeta vía dataphone físico conectado.'
+                  : 'El terminal no aceptará pagos con tarjeta.'}
+              </p>
+
+              <div className="col-span-2 pt-2 border-t border-gray-100">
                 <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Isleta asignada</label>
                 <select
                   value={fuelIslandSelectValue}
@@ -303,10 +338,9 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
                       ? 'Primero ingresa el Site ID'
                       : loadingIslands
                         ? 'Cargando isletas...'
-                        : isEditing ? '— No cambiar —' : '— Sin asignar —'}
+                        : isEditing ? '— No cambiar —' : '— Ninguna —'}
                   </option>
-                  {isEditing && <option value="__UNASSIGN__">— Sin asignar —</option>}
-                  {!isEditing && formData.fuelIslandId == null && null}
+                  {isEditing && <option value="__UNASSIGN__">— Ninguna —</option>}
                   {fuelIslands.map((i) => (
                     <option key={i.fuelIslandId} value={i.fuelIslandId}>
                       {i.name}{!i.active ? ' (inactiva)' : ''}
@@ -322,8 +356,8 @@ const TerminalModal: React.FC<TerminalModalProps> = ({ isOpen, onClose, terminal
                     : 'bg-amber-50 border-amber-200'
                 }`}
               >
-                <span className={`text-xs font-medium ${formData.fuelIslandEnabled ? 'text-blue-900' : 'text-amber-900'}`}>
-                  Integración activa (flujo automático)
+                <span className={`text-xs font-medium flex items-center gap-1 ${formData.fuelIslandEnabled ? 'text-blue-900' : 'text-amber-900'}`}>
+                  <Layers className="w-3 h-3" /> Integración con isleta (flujo automático)
                 </span>
                 <input
                   type="checkbox"

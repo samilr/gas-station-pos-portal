@@ -21,6 +21,7 @@ interface CreateTerminalRequest {
   active?: boolean;
   fuelIslandId?: number | null;
   fuelIslandEnabled?: boolean;
+  dataphoneEnabled?: boolean;
   terminalType?: number;
   productList?: number;
   useCustomerDisplay?: boolean;
@@ -37,6 +38,7 @@ interface UpdateTerminalRequest {
   fuelIslandId?: number | null;
   unassignFuelIsland?: boolean;
   fuelIslandEnabled?: boolean;
+  dataphoneEnabled?: boolean;
   terminalType?: number;
   productList?: number;
   useCustomerDisplay?: boolean;

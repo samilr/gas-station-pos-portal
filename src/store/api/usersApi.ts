@@ -22,8 +22,7 @@ interface UpdateUserRequest {
   password?: string;
   roleId?: number;
   portalAccess?: boolean;
-  active?: boolean;
-  connected?: boolean;
+  active?: 0 | 1;
   staftId?: number;
   siteId?: string;
   terminalId?: number;

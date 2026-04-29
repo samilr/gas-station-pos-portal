@@ -72,17 +72,53 @@ export const authService = {
     }
   },
 
-  async forgotPassword(data: {
-    adminUsername: string;
-    adminPassword: string;
-    sellerUsername: string;
-    sellerPassword: string;
-  }): Promise<{ successful: boolean; error?: string }> {
+  async forgotPassword(email: string): Promise<{ successful: boolean; message?: string; error?: string }> {
     try {
-      const response = await apiPost(buildApiUrl('auth/forgot-password'), data);
-      return { successful: response.successful, error: response.error };
+      const response = await apiPost<{ successful: boolean; message: string }>(
+        buildApiUrl('auth/forgot-password'),
+        { email }
+      );
+      return {
+        successful: response.successful,
+        message: response.data?.message,
+        error: response.error,
+      };
     } catch (error) {
-      return { successful: false, error: 'Error al reiniciar contraseña' };
+      return { successful: false, error: 'Error de conexión. Intenta nuevamente.' };
+    }
+  },
+
+  async validateOtp(email: string, code: string): Promise<{ successful: boolean; error?: string }> {
+    try {
+      const response = await apiPost<{ successful: boolean; message: string }>(
+        buildApiUrl('auth/validate-otp'),
+        { email, code }
+      );
+      return {
+        successful: response.successful,
+        error: response.successful ? undefined : (response.error || 'Código OTP inválido.'),
+      };
+    } catch (error) {
+      return { successful: false, error: 'Error de conexión. Intenta nuevamente.' };
+    }
+  },
+
+  async resetPassword(
+    email: string,
+    code: string,
+    newPassword: string
+  ): Promise<{ successful: boolean; error?: string }> {
+    try {
+      const response = await apiPost(
+        buildApiUrl('auth/reset-password'),
+        { email, code, newPassword }
+      );
+      return {
+        successful: response.successful,
+        error: response.successful ? undefined : (response.error || 'No se pudo restablecer la contraseña.'),
+      };
+    } catch (error) {
+      return { successful: false, error: 'Error de conexión. Intenta nuevamente.' };
     }
   },
 };
