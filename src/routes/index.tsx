@@ -38,6 +38,7 @@ import RolesSection from '../components/sections/users/RolesSection';
 import StaftGroupsSection from '../components/sections/users/StaftGroupsSection';
 import PeriodStaftSection from '../components/sections/users/PeriodStaftSection';
 import FuelPumpShiftsSection from '../components/sections/users/FuelPumpShiftsSection';
+import ShiftsSection from '../components/sections/users/ShiftsSection';
 import TaxpayersSection from '../components/sections/gov/TaxpayersSection';
 import TaxesSection from '../components/sections/gov/TaxesSection';
 import CfConfigSection from '../components/sections/gov/CfConfigSection';
@@ -216,6 +217,10 @@ export const router = createBrowserRouter([
           {
             path: 'fuel-pump-shifts',
             element: <PermissionRoute permission="users.view"><FuelPumpShiftsSection /></PermissionRoute>
+          },
+          {
+            path: 'shifts',
+            element: <PermissionRoute permission="users.view"><ShiftsSection /></PermissionRoute>
           },
           {
             path: 'profile',

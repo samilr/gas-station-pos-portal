@@ -8,3 +8,4 @@ export { default as DataphoneSupplierAutocomplete } from './DataphoneSupplierAut
 export { default as StaftGroupAutocomplete } from './StaftGroupAutocomplete';
 export { default as StaftAutocomplete } from './StaftAutocomplete';
 export { default as RoleAutocomplete } from './RoleAutocomplete';
+export { default as ShiftAutocomplete } from './ShiftAutocomplete';

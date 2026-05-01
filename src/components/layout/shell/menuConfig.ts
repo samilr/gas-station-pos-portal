@@ -7,7 +7,7 @@ import {
   Tag, ClipboardList, History, Barcode,
   PlayCircle, Percent, Rows3, Columns, CalendarClock,
   ShoppingBag, UserCog, Wallet, Scale, Server, Sliders,
-  UserCheck
+  UserCheck, Clock
 } from 'lucide-react';
 
 export interface SubMenuItem {
@@ -69,6 +69,7 @@ export const menuItems: MenuItem[] = [
       { id: 'users.staft-groups', label: 'Grupos de Cajeros', icon: BookUser, permission: 'users.view' },
       { id: 'users.period-staft', label: 'Programación de Cajeros', icon: CalendarClock, permission: 'users.view' },
       { id: 'users.fuel-pump-shifts', label: 'Asignación por Bomba', icon: UserCheck, permission: 'users.view' },
+      { id: 'users.shifts', label: 'Turnos', icon: Clock, permission: 'users.view' },
     ],
   },
   {
@@ -169,6 +170,7 @@ export const sectionTitles: Record<string, string> = {
   'users.staft-groups': 'Grupos de Cajeros',
   'users.period-staft': 'Programación de Cajeros',
   'users.fuel-pump-shifts': 'Asignación por Bomba',
+  'users.shifts': 'Turnos',
 
   dispensers: 'Control Estación',
   'dispensers.dashboard': 'Dashboard',

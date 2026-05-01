@@ -141,6 +141,7 @@ export const useNavigation = () => {
     'users.staft-groups': '/dashboard/users/staft-groups',
     'users.period-staft': '/dashboard/users/period-staft',
     'users.fuel-pump-shifts': '/dashboard/users/fuel-pump-shifts',
+    'users.shifts': '/dashboard/users/shifts',
   };
 
   return {

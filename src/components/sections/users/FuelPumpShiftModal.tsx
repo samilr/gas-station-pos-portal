@@ -13,7 +13,7 @@ import toast from 'react-hot-toast';
 import { fuelPumpShiftService } from '../../../services/fuelPumpShiftService';
 import { IFuelPumpShift } from '../../../types/fuelPumpShift';
 import { CompactButton } from '../../ui';
-import { SiteAutocomplete, StaftAutocomplete } from '../../ui/autocompletes';
+import { SiteAutocomplete, StaftAutocomplete, ShiftAutocomplete } from '../../ui/autocompletes';
 import { useAuth } from '../../../context/AuthContext';
 
 export type FuelPumpShiftModalMode = 'create' | 'substitute' | 'edit' | 'close';
@@ -67,7 +67,7 @@ const FuelPumpShiftModal: React.FC<FuelPumpShiftModalProps> = ({
       : todayIso();
   const initialPumpId: number | '' =
     mode === 'create' ? defaults?.pumpId ?? '' : context?.pumpId ?? '';
-  const initialShift: number | '' = mode !== 'create' && context ? context.shift : '';
+  const initialShift: number | null = mode !== 'create' && context ? context.shift : null;
   const initialStaftId =
     (mode === 'edit' || mode === 'close') && context ? context.staftId : null;
   const initialClosedBy =
@@ -76,7 +76,7 @@ const FuelPumpShiftModal: React.FC<FuelPumpShiftModalProps> = ({
   const [siteId, setSiteId] = useState<string | null>(initialSiteId);
   const [date, setDate] = useState<string>(initialDate);
   const [pumpId, setPumpId] = useState<number | ''>(initialPumpId);
-  const [shift, setShift] = useState<number | ''>(initialShift);
+  const [shift, setShift] = useState<number | null>(initialShift);
   const [staftId, setStaftId] = useState<number | null>(initialStaftId);
   const [closedByStaftId, setClosedByStaftId] = useState<number | null>(initialClosedBy);
   const [saving, setSaving] = useState(false);
@@ -91,7 +91,7 @@ const FuelPumpShiftModal: React.FC<FuelPumpShiftModalProps> = ({
       setSiteId(defaults?.siteId ?? null);
       setDate(defaults?.date ?? todayIso());
       setPumpId(defaults?.pumpId ?? '');
-      setShift('');
+      setShift(null);
       setStaftId(null);
       setClosedByStaftId(null);
       return;
@@ -126,7 +126,7 @@ const FuelPumpShiftModal: React.FC<FuelPumpShiftModalProps> = ({
       if (!siteId) return 'Selecciona una sucursal.';
       if (!date) return 'Selecciona una fecha.';
       if (pumpId === '' || Number(pumpId) <= 0) return 'Ingresa un número de bomba válido (≥ 1).';
-      if (shift === '' || Number(shift) <= 0) return 'Ingresa un número de turno válido (≥ 1).';
+      if (!shift || shift <= 0) return 'Selecciona un turno.';
       if (!staftId) return 'Selecciona un cajero.';
     }
     if (mode === 'substitute') {
@@ -159,7 +159,7 @@ const FuelPumpShiftModal: React.FC<FuelPumpShiftModalProps> = ({
           siteId: siteId!,
           date,
           pumpId: Number(pumpId),
-          shift: Number(shift),
+          shift: shift!,
           staftId: staftId!,
         });
       } else if (mode === 'substitute' && context) {
@@ -244,15 +244,13 @@ const FuelPumpShiftModal: React.FC<FuelPumpShiftModalProps> = ({
             <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">
               Sucursal
             </label>
-            {isContextLocked ? (
-              <input
-                value={siteId ?? ''}
-                readOnly
-                className="w-full h-7 px-2 text-sm bg-gray-100 border border-gray-300 rounded-sm"
-              />
-            ) : (
-              <SiteAutocomplete value={siteId} onChange={(v) => setSiteId(v)} required />
-            )}
+            <SiteAutocomplete
+              value={siteId}
+              onChange={(v) => setSiteId(v)}
+              required
+              disabled={isContextLocked}
+              allowClear={!isContextLocked}
+            />
           </div>
 
           <div>
@@ -288,14 +286,12 @@ const FuelPumpShiftModal: React.FC<FuelPumpShiftModalProps> = ({
               <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">
                 Turno
               </label>
-              <input
-                type="number"
-                min={1}
+              <ShiftAutocomplete
                 value={shift}
-                onChange={(e) => setShift(e.target.value === '' ? '' : Number(e.target.value))}
+                onChange={(v) => setShift(v)}
                 required
                 disabled={isContextLocked}
-                className="w-full h-7 px-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
+                allowClear={!isContextLocked}
               />
             </div>
           </div>
