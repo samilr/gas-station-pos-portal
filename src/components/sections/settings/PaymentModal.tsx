@@ -24,13 +24,14 @@ const PaymentModal: React.FC<Props> = ({ payment, onClose, onSaved }) => {
     image: payment?.image || '',
     currencyId: payment?.currencyId || 'DOP',
     active: payment?.paymentActive ?? payment?.active ?? true,
+    isPrepaid: payment?.isPrepaid ?? false,
   });
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true);
     const res = isEdit
-      ? await paymentService.updatePayment(form.paymentId, { name: form.name, sequence: form.sequence, paymentType: form.paymentType, currencyId: form.currencyId, active: form.active })
+      ? await paymentService.updatePayment(form.paymentId, { name: form.name, sequence: form.sequence, paymentType: form.paymentType, currencyId: form.currencyId, active: form.active, isPrepaid: form.isPrepaid })
       : await paymentService.createPayment(form);
     setSaving(false);
     if (res.successful) { toast.success(isEdit ? 'Actualizado' : 'Creado'); onSaved(); }
@@ -82,11 +83,21 @@ const PaymentModal: React.FC<Props> = ({ payment, onClose, onSaved }) => {
             <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Secuencia</label>
             <input type="number" value={form.sequence} onChange={e => setForm(f => ({ ...f, sequence: Number(e.target.value) }))} className={inputCls} />
           </div>
-          <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
-            <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))}
-              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-            Activo
-          </label>
+          <div className="flex flex-col gap-1.5 pt-1 border-t border-gray-100">
+            <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
+              <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+              Activo
+            </label>
+            <label className="flex items-start gap-2 text-sm text-text-primary cursor-pointer">
+              <input type="checkbox" checked={form.isPrepaid} onChange={e => setForm(f => ({ ...f, isPrepaid: e.target.checked }))}
+                className="mt-0.5 rounded border-gray-300 text-purple-600 focus:ring-purple-500" />
+              <span className="flex flex-col">
+                <span>Prepagado <span className="ml-1 inline-flex px-1 py-0.5 rounded text-2xs font-medium bg-purple-100 text-purple-700">Shell Card / Tickets</span></span>
+                <span className="text-2xs text-text-muted">Las trans con este método se marcan como internas y no se reportan a DGII.</span>
+              </span>
+            </label>
+          </div>
         </div>
 
         <div className="flex items-center justify-end gap-2 px-4 h-11 border-t border-gray-200 bg-gray-50 flex-shrink-0">

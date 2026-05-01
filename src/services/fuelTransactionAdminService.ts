@@ -132,7 +132,7 @@ export interface FuelAdminResponse {
 }
 
 // 0=SinEnviar, 1=Enviado, 2=Aceptado, 3=AceptadoCondicional, 4=Rechazado,
-// 5=Repetido, 6=ErrorProveedor, 7=ErrorInterno, 10=DatosInvalidos.
+// 5=Repetido, 6=ErrorProveedor, 7=ErrorInterno, 10=DatosInvalidos, 12=Prepagado.
 const cfStatusMap: Record<number, string> = {
   0: 'Sin enviar',
   1: 'Enviado',
@@ -143,6 +143,7 @@ const cfStatusMap: Record<number, string> = {
   6: 'Error proveedor',
   7: 'Error interno',
   10: 'Datos inválidos',
+  12: 'Prepagado',
 };
 
 export const cfStatusLabel = (status: number): string =>
@@ -156,6 +157,7 @@ export const cfStatusBadgeClass = (status: number): string => {
     case 0: return 'bg-gray-100 text-gray-700';
     case 4: case 6: case 7: case 10: return 'bg-red-100 text-red-700';
     case 5: return 'bg-orange-100 text-orange-700';
+    case 12: return 'bg-purple-100 text-purple-700';
     default: return 'bg-gray-100 text-gray-700';
   }
 };

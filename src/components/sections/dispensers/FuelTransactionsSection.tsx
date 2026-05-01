@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Filter, RefreshCw, X, FuelIcon, UserCheck, UserX } from 'lucide-react';
+import { Filter, RefreshCw, X, FuelIcon, UserCheck, UserX, Wand2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { FuelTransaction, FuelTransactionsPagination, FuelStats } from '../../../services/fuelTransactionService';
 import { store } from '../../../store';
@@ -11,6 +11,7 @@ import { mapFuelProductName } from '../../../utils/fuelProductMapping';
 import { CompactButton, Pagination, Toolbar } from '../../ui';
 import AssignStaftModal from './AssignStaftModal';
 import FuelTransactionDetailModal from './FuelTransactionDetailModal';
+import ReconcileStaftModal from '../users/ReconcileStaftModal';
 
 const FuelTransactionsSection: React.FC = () => {
   const [transactions, setTransactions] = useState<FuelTransaction[]>([]);
@@ -38,6 +39,7 @@ const FuelTransactionsSection: React.FC = () => {
 
   const [assignModalId, setAssignModalId] = useState<number | null>(null);
   const [detailTransaction, setDetailTransaction] = useState<FuelTransaction | null>(null);
+  const [reconcileOpen, setReconcileOpen] = useState(false);
 
   useEffect(() => {
     setSubtitle('Transacciones de dispensadoras de combustible');
@@ -207,12 +209,17 @@ const FuelTransactionsSection: React.FC = () => {
           { label: 'Volumen Total', value: `${stats.totalVolume.toFixed(2)} G.`, color: 'sky' },
           { label: 'Online', value: stats.onlineCount, color: 'green' },
           { label: 'Offline', value: stats.offlineCount, color: stats.offlineCount > 0 ? 'red' : 'gray' },
-          ...Object.entries(stats.byProduct).map(([name, data]) => ({
-            label: name,
-            value: formatCurrency(data.amount),
-          }))
         ]}
       >
+        <CompactButton
+          variant="ghost"
+          onClick={() => setReconcileOpen(true)}
+          disabled={!globalSiteId}
+          title="Asigna staff a las ventas con staft_id NULL en un rango de fechas"
+        >
+          <Wand2 className="w-3.5 h-3.5" />
+          Reconciliar atribuciones
+        </CompactButton>
         <CompactButton
           variant={showFilters ? 'primary' : 'icon'}
           onClick={() => setShowFilters(!showFilters)}
@@ -229,6 +236,26 @@ const FuelTransactionsSection: React.FC = () => {
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
         </CompactButton>
       </Toolbar>
+
+      {/* Totalizadores por producto */}
+      {Object.keys(stats.byProduct).length > 0 && (
+        <div className="h-8 flex items-center gap-3 px-1 mb-2 flex-shrink-0 flex-wrap">
+          <span className="text-2xs uppercase tracking-wide text-text-muted flex items-center gap-1">
+            <FuelIcon className="w-3 h-3" />
+            Por producto
+          </span>
+          {Object.entries(stats.byProduct).map(([name, data]) => (
+            <span key={name} className="flex items-center gap-1 text-sm text-text-secondary">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0" />
+              {name}{' '}
+              <strong className="text-text-primary font-mono">{formatCurrency(data.amount)}</strong>
+              <span className="text-2xs text-text-muted font-mono">
+                · {data.volume.toFixed(2)} G.
+              </span>
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Panel de filtros */}
       {showFilters && (
@@ -455,6 +482,17 @@ const FuelTransactionsSection: React.FC = () => {
         isOpen={detailTransaction !== null}
         onClose={() => setDetailTransaction(null)}
         transaction={detailTransaction}
+      />
+
+      <ReconcileStaftModal
+        isOpen={reconcileOpen}
+        onClose={() => setReconcileOpen(false)}
+        defaults={{
+          siteId: globalSiteId ?? null,
+          startDate: startDateFilter || undefined,
+          endDate: endDateFilter || undefined,
+          pumpId: pumpFilter === '' ? undefined : Number(pumpFilter),
+        }}
       />
     </div>
   );

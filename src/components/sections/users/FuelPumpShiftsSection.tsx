@@ -7,7 +7,6 @@ import {
   UserCog,
   Lock,
   Unlock,
-  Wand2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { fuelPumpShiftService } from '../../../services/fuelPumpShiftService';
@@ -21,7 +20,6 @@ import { SiteAutocomplete } from '../../ui/autocompletes';
 import { useSelectedSiteId } from '../../../hooks/useSelectedSite';
 import { formatTimeOnly } from '../../../utils/dateUtils';
 import FuelPumpShiftModal, { FuelPumpShiftModalMode } from './FuelPumpShiftModal';
-import ReconcileStaftModal from './ReconcileStaftModal';
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
@@ -41,7 +39,6 @@ const FuelPumpShiftsSection: React.FC = () => {
     mode: FuelPumpShiftModalMode;
     context: IFuelPumpShift | null;
   } | null>(null);
-  const [reconcileOpen, setReconcileOpen] = useState(false);
 
   useEffect(() => {
     if (!siteId) return;
@@ -193,15 +190,6 @@ const FuelPumpShiftsSection: React.FC = () => {
         <CompactButton variant="primary" onClick={openCreate} disabled={!siteId}>
           <Plus className="w-3.5 h-3.5" />
           Asignar staff
-        </CompactButton>
-        <CompactButton
-          variant="ghost"
-          onClick={() => setReconcileOpen(true)}
-          disabled={!siteId}
-          title="Asigna staff a las ventas con staft_id NULL en un rango de fechas"
-        >
-          <Wand2 className="w-3.5 h-3.5" />
-          Reconciliar atribuciones
         </CompactButton>
         <CompactButton variant="icon" onClick={load} disabled={loading || !siteId}>
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -364,16 +352,6 @@ const FuelPumpShiftsSection: React.FC = () => {
           }}
         />
       )}
-
-      <ReconcileStaftModal
-        isOpen={reconcileOpen}
-        onClose={() => setReconcileOpen(false)}
-        defaults={{
-          siteId,
-          endDate: date,
-          pumpId: pumpFilter === '' ? undefined : Number(pumpFilter),
-        }}
-      />
     </div>
   );
 };

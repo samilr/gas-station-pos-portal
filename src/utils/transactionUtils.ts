@@ -12,6 +12,8 @@ export const getStatusText = (cfStatus: number): string => {
       return 'Aceptada';
     case CFStatus.REJECTED:
       return 'Rechazada';
+    case CFStatus.PREPAID:
+      return 'Prepagada';
     default:
       return 'Desconocido';
   }
@@ -29,6 +31,8 @@ export const getStatusColor = (cfStatus: number): string => {
       return 'bg-yellow-100 text-yellow-800';
     case CFStatus.REJECTED:
       return 'bg-red-100 text-red-800';
+    case CFStatus.PREPAID:
+      return 'bg-purple-100 text-purple-800';
     default:
       return 'bg-gray-100 text-gray-800';
   }

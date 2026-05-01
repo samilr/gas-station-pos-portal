@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Fuel, X, ChevronDown, ChevronRight, AlertTriangle, Receipt, CreditCard } from 'lucide-react';
+import { Fuel, X, ChevronDown, ChevronRight, AlertTriangle, Receipt, CreditCard, Wallet } from 'lucide-react';
 import {
   FuelTransactionAdmin,
   cfStatusLabel,
@@ -126,6 +126,14 @@ const FuelTransactionAdminDetailModal: React.FC<Props> = ({ isOpen, onClose, tra
               />
               {openTrans && (
                 <div className="space-y-3">
+                  {trans.cfStatus === 12 && (
+                    <div className="bg-purple-50 border border-purple-200 rounded-sm px-3 py-2 flex items-center gap-2">
+                      <Wallet className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                      <span className="text-xs text-purple-700">
+                        <strong>Trans prepagada</strong> — cobrada por canal externo (Shell Card / Tickets). No emite e-NCF ni se reporta a DGII.
+                      </span>
+                    </div>
+                  )}
                   <div className="grid grid-cols-3 gap-3">
                     <Field label="NCF" value={trans.cfNumber} mono />
                     <Field label="Tipo CF" value={trans.cfType} mono />

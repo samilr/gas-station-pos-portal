@@ -326,6 +326,8 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
         return 'yellow';
       case CFStatus.REJECTED:
         return 'red';
+      case CFStatus.PREPAID:
+        return 'purple';
       default:
         return 'gray';
     }
@@ -341,6 +343,8 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
         return 'Pendiente';
       case CFStatus.REJECTED:
         return 'Rechazada';
+      case CFStatus.PREPAID:
+        return 'Prepagada';
       default:
         return 'Desconocido';
     }
@@ -460,6 +464,7 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({ isNCFView = f
                       <option value={CFStatus.ACCEPTED}>Aceptadas</option>
                       <option value={CFStatus.PENDING}>Pendientes</option>
                       <option value={CFStatus.REJECTED}>Rechazadas</option>
+                      <option value={CFStatus.PREPAID}>Prepagadas</option>
                     </select>
                   </div>
                   <div>

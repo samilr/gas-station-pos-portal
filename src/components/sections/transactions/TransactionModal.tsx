@@ -14,6 +14,7 @@ import {
   Clock9,
   Monitor,
   Receipt,
+  Wallet,
 } from "lucide-react";
 import {
   getCfTypeText,
@@ -94,6 +95,8 @@ const getStatusDotColor = (cfStatus: number) => {
     case CFStatus.PENDING:
     case 0: case 1: case 5: case 6: case 7: case 8:
       return "yellow";
+    case CFStatus.PREPAID:
+      return "purple";
     default:
       return "gray";
   }
@@ -109,6 +112,8 @@ const getStatusLabel = (cfStatus: number) => {
     case CFStatus.PENDING:
     case 0: case 1: case 5: case 6: case 7: case 8:
       return "Pendiente";
+    case CFStatus.PREPAID:
+      return "Prepagada";
     default:
       return "Desconocido";
   }
@@ -181,8 +186,12 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
               </h3>
               <div className="flex items-center gap-2 text-2xs text-text-muted">
                 <span className="font-mono">{transaction.transNumber}</span>
-                <span>·</span>
-                <span className="font-mono">{transaction.cfNumber}</span>
+                {transaction.cfNumber && (
+                  <>
+                    <span>·</span>
+                    <span className="font-mono">{transaction.cfNumber}</span>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -214,6 +223,19 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
             </div>
           )}
 
+          {/* Prepaid banner */}
+          {transaction.cfStatus === CFStatus.PREPAID && (
+            <div className="mb-2 bg-purple-50 border border-purple-200 rounded-sm px-3 py-2 flex items-center gap-3">
+              <Wallet className="w-4 h-4 text-purple-600 flex-shrink-0" />
+              <div className="text-xs">
+                <span className="text-purple-700 font-semibold">Transacción prepagada</span>
+                <span className="text-purple-600 ml-2">
+                  Cobrada por canal externo (Shell Card / Tickets). No emite e-NCF ni se reporta a DGII.
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Top row: 3 columns - General / Totals / QR */}
           <div className="grid grid-cols-12 gap-2 mb-2">
             {/* General info - 5 cols */}
@@ -224,7 +246,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
               </div>
               <div className="p-3 grid grid-cols-2 gap-x-4 gap-y-0">
                 <InfoRow label="Transacción" value={transaction.transNumber} mono />
-                <InfoRow label="e-NCF" value={transaction.cfNumber} mono />
+                <InfoRow label="e-NCF" value={transaction.cfNumber || '—'} mono />
                 <InfoRow label="Fecha" value={formatDate(transaction.transDate)} />
                 <InfoRow label="Terminal" value={transaction.terminalId} />
                 <InfoRow label="Sucursal" value={transaction.siteId} />
@@ -281,6 +303,10 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                       )}
                     </div>
                   </div>
+                ) : transaction.cfStatus === CFStatus.PREPAID ? (
+                  <p className="text-xs text-purple-700">
+                    Trans prepagada — sin e-NCF ni reporte fiscal.
+                  </p>
                 ) : (
                   <p className="text-xs text-text-muted">Sin QR disponible</p>
                 )}

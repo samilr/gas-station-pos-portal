@@ -61,6 +61,7 @@ const PaymentsSection: React.FC = () => {
                   <th className="px-2 text-left text-xs font-medium text-gray-500">ID</th>
                   <th className="px-2 text-left text-xs font-medium text-gray-500">Nombre</th>
                   <th className="px-2 text-left text-xs font-medium text-gray-500">Tipo</th>
+                  <th className="px-2 text-center text-xs font-medium text-gray-500">Prepago</th>
                   <th className="px-2 text-center text-xs font-medium text-gray-500">Estado</th>
                   <th className="px-2 text-right text-xs font-medium text-gray-500">Acciones</th>
                 </tr>
@@ -73,6 +74,15 @@ const PaymentsSection: React.FC = () => {
                       <td className="px-2 text-sm whitespace-nowrap font-mono text-gray-400">{p.paymentId.trim()}</td>
                       <td className="px-2 text-sm whitespace-nowrap font-medium text-gray-900">{p.name.trim()}</td>
                       <td className="px-2 text-sm whitespace-nowrap text-gray-600">{paymentTypeLabels[p.paymentType] || `Tipo ${p.paymentType}`}</td>
+                      <td className="px-2 text-sm whitespace-nowrap text-center">
+                        {p.isPrepaid ? (
+                          <span className="inline-flex px-1.5 py-0.5 rounded text-2xs font-medium bg-purple-100 text-purple-700" title="No reporta a DGII">
+                            Prepago
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 text-xs">—</span>
+                        )}
+                      </td>
                       <td className="px-2 text-sm whitespace-nowrap text-center">
                         <span
                           className={`inline-block w-2 h-2 rounded-full ${isActive ? 'bg-green-500' : 'bg-red-500'}`}
@@ -89,7 +99,7 @@ const PaymentsSection: React.FC = () => {
                   );
                 })}
                 {payments.length === 0 && (
-                  <tr><td colSpan={5} className="px-2 py-6 text-center text-sm text-gray-400">Sin metodos de pago</td></tr>
+                  <tr><td colSpan={6} className="px-2 py-6 text-center text-sm text-gray-400">Sin metodos de pago</td></tr>
                 )}
               </tbody>
             </table>

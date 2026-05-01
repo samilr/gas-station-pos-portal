@@ -68,7 +68,8 @@ export enum CFStatus {
   PENDING = 0,    // Pendiente
   ACCEPTED = 2,   // Aceptada
   ACCEPTED_ALT = 3, // Aceptada (alternativo)
-  REJECTED = 4    // Rechazada
+  REJECTED = 4,   // Rechazada
+  PREPAID = 12    // Prepagada (Shell Card / Tickets — no se reporta a DGII)
 }
 
 export enum PaymentType {

@@ -13,6 +13,7 @@ export interface IPayment {
   posMultipleOf: number;
   paymentActive?: boolean;
   active?: boolean;
+  isPrepaid?: boolean;
 }
 
 export interface ICreatePaymentDto {
@@ -23,6 +24,7 @@ export interface ICreatePaymentDto {
   image?: string;
   currencyId: string;
   active: boolean;
+  isPrepaid?: boolean;
 }
 
 export interface IUpdatePaymentDto {
@@ -32,4 +34,5 @@ export interface IUpdatePaymentDto {
   image?: string;
   currencyId?: string;
   active?: boolean;
+  isPrepaid?: boolean;
 }
