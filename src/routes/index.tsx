@@ -37,6 +37,7 @@ import DispensersWorkbenchSection from '../components/sections/dispensers/Dispen
 import RolesSection from '../components/sections/users/RolesSection';
 import StaftGroupsSection from '../components/sections/users/StaftGroupsSection';
 import PeriodStaftSection from '../components/sections/users/PeriodStaftSection';
+import FuelPumpShiftsSection from '../components/sections/users/FuelPumpShiftsSection';
 import TaxpayersSection from '../components/sections/gov/TaxpayersSection';
 import TaxesSection from '../components/sections/gov/TaxesSection';
 import CfConfigSection from '../components/sections/gov/CfConfigSection';
@@ -211,6 +212,10 @@ export const router = createBrowserRouter([
           {
             path: 'period-staft',
             element: <PermissionRoute permission="users.view"><PeriodStaftSection /></PermissionRoute>
+          },
+          {
+            path: 'fuel-pump-shifts',
+            element: <PermissionRoute permission="users.view"><FuelPumpShiftsSection /></PermissionRoute>
           },
           {
             path: 'profile',
