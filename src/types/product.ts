@@ -1,22 +1,22 @@
 export interface IProduct {
-  product_id: string;
+  productId: string;
   name: string;
-  description?: string;
-  category_id: string;
-  account_group_id?: string;
+  description?: string | null;
+  categoryId: string;
+  accountGroupId?: string | null;
   miscellaneous: boolean;
   recipe: boolean;
-  tax_id: string;
-  price?: number;
-  price_is_taxed: boolean;
-  costing_method: number;
-  input_unit_id: string;
-  output_unit_id: string;
-  allow_discount: boolean;
-  expected_profit?: number;
-  weight_net?: number;
-  weight_gross?: number;
-  image?: string;
+  taxId: string;
+  price?: number | null;
+  priceIsTaxed: boolean;
+  costingMethod: number;
+  inputUnitId: string;
+  outputUnitId: string;
+  allowDiscount: boolean;
+  expectedProfit?: number | null;
+  weightNet?: number | null;
+  weightGross?: number | null;
+  image?: string | null;
   inventory: boolean;
   active: boolean;
 }

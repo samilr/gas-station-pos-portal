@@ -25,26 +25,26 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
   useEffect(() => {
     if (product && (mode === 'edit' || mode === 'view')) {
       setFormData({
-        productId: product.product_id,
+        productId: product.productId,
         name: product.name,
-        description: product.description || '',
-        categoryId: product.category_id,
-        accountGroupId: product.account_group_id || '',
+        description: product.description ?? '',
+        categoryId: product.categoryId,
+        accountGroupId: product.accountGroupId ?? '',
         miscellaneous: product.miscellaneous,
         recipe: product.recipe,
-        taxId: product.tax_id,
-        price: product.price || 0,
-        priceIsTaxed: product.price_is_taxed,
-        costingMethod: product.costing_method,
-        inputUnitId: product.input_unit_id,
-        outputUnitId: product.output_unit_id,
-        allowDiscount: product.allow_discount,
-        expectedProfit: product.expected_profit || 0,
-        weightNet: product.weight_net || 0,
-        weightGross: product.weight_gross || 0,
-        image: product.image || '',
+        taxId: product.taxId,
+        price: product.price ?? 0,
+        priceIsTaxed: product.priceIsTaxed,
+        costingMethod: product.costingMethod,
+        inputUnitId: product.inputUnitId,
+        outputUnitId: product.outputUnitId,
+        allowDiscount: product.allowDiscount,
+        expectedProfit: product.expectedProfit ?? 0,
+        weightNet: product.weightNet ?? 0,
+        weightGross: product.weightGross ?? 0,
+        image: product.image ?? '',
         inventory: product.inventory,
-        active: product.active
+        active: product.active,
       });
     } else if (mode === 'create') {
       setFormData({
@@ -155,12 +155,11 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
             <div className="space-y-3">
               <h4 className="text-2xs font-semibold uppercase tracking-wide text-text-secondary mb-2 pb-1 border-b border-gray-200">Configuración</h4>
               <div>
-                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Impuesto *</label>
+                <label className="block text-2xs uppercase tracking-wide text-text-muted mb-0.5">Impuesto</label>
                 <TaxAutocomplete
                   value={formData.taxId}
                   onChange={(v) => handleInputChange('taxId', v ?? '')}
                   disabled={isDisabled}
-                  required
                 />
               </div>
               <div>

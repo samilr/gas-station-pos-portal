@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Fuel, X, ChevronDown, ChevronRight, AlertTriangle, Receipt, CreditCard, Wallet } from 'lucide-react';
+import { Fuel, X, ChevronDown, ChevronRight, Receipt, CreditCard, Wallet } from 'lucide-react';
 import {
   FuelTransactionAdmin,
   cfStatusLabel,
@@ -111,7 +111,7 @@ const FuelTransactionAdminDetailModal: React.FC<Props> = ({ isOpen, onClose, tra
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Sección 1: Trans */}
-          {trans ? (
+          {trans && (
             <div>
               <SectionHeader
                 open={openTrans}
@@ -231,18 +231,6 @@ const FuelTransactionAdminDetailModal: React.FC<Props> = ({ isOpen, onClose, tra
                   )}
                 </div>
               )}
-            </div>
-          ) : (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-sm p-3 flex items-start gap-2">
-              <AlertTriangle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
-              <div className="text-xs">
-                <div className="font-semibold text-yellow-800">Venta pendiente</div>
-                <div className="text-yellow-700">
-                  Esta fuel_transaction no fue promovida a <code className="font-mono">trans</code>: no tiene NCF ni cierre fiscal.
-                  La promoción a venta real se realiza desde el POS Android vía <code className="font-mono">POST /api/trans/create</code> (efectivo)
-                  o <code className="font-mono">POST /api/card-payments/process</code> (con tarjeta).
-                </div>
-              </div>
             </div>
           )}
 

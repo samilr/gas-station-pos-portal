@@ -3,6 +3,7 @@ import { X, Copy, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { periodStaftService } from '../../../services/periodStaftService';
 import { CompactButton } from '../../ui';
+import { toLocalIsoDate } from '../../../utils/dateUtils';
 
 interface Props {
   siteId: string;
@@ -11,12 +12,12 @@ interface Props {
   onDone: () => void;
 }
 
-const todayIso = () => new Date().toISOString().substring(0, 10);
+const todayIso = () => toLocalIsoDate();
 
 const addDays = (iso: string, days: number): string => {
   const d = new Date(iso);
   d.setDate(d.getDate() + days);
-  return d.toISOString().substring(0, 10);
+  return toLocalIsoDate(d);
 };
 
 const DuplicateDayDialog: React.FC<Props> = ({ siteId, defaultSourceDate, onClose, onDone }) => {

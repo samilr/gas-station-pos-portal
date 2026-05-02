@@ -162,6 +162,18 @@ export const cfStatusBadgeClass = (status: number): string => {
   }
 };
 
+export const cfStatusDotColor = (status: number): string => {
+  switch (status) {
+    case 2: case 3: return 'green';
+    case 1: return 'yellow';
+    case 0: return 'gray';
+    case 4: case 6: case 7: case 10: return 'red';
+    case 5: return 'orange';
+    case 12: return 'purple';
+    default: return 'gray';
+  }
+};
+
 // 0=Pending, 1=Approved, 2=Declined, 3=Failed, 4=Voided, 5=Refunded,
 // 6=LinkedToTrans, 7=PreAuthorized, 8=Captured, 9=CheckInAnnulled.
 // NOTA: una venta normal aprobada permanece en `Approved` (1) aunque tenga

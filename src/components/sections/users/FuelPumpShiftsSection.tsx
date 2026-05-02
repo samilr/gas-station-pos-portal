@@ -18,10 +18,10 @@ import StatusDot from '../../ui/StatusDot';
 import Toolbar from '../../ui/Toolbar';
 import { SiteAutocomplete } from '../../ui/autocompletes';
 import { useSelectedSiteId } from '../../../hooks/useSelectedSite';
-import { formatTimeOnly } from '../../../utils/dateUtils';
+import { formatTimeOnly, toLocalIsoDate } from '../../../utils/dateUtils';
 import FuelPumpShiftModal, { FuelPumpShiftModalMode } from './FuelPumpShiftModal';
 
-const todayIso = () => new Date().toISOString().slice(0, 10);
+const todayIso = () => toLocalIsoDate();
 
 const FuelPumpShiftsSection: React.FC = () => {
   const globalSiteId = useSelectedSiteId();

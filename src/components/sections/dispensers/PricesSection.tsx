@@ -22,6 +22,7 @@ import type {
 import { useHeader } from '../../../context/HeaderContext';
 import { CompactButton } from '../../ui';
 import Toolbar from '../../ui/Toolbar';
+import { toLocalIsoDateTime } from '../../../utils/dateUtils';
 
 type Tab = 'global' | 'per-pump' | 'scheduler';
 
@@ -359,7 +360,7 @@ const SchedulerTab: React.FC = () => {
         Enabled: false,
         FuelGradeId: grades[0]?.Id || 1,
         Price: 0,
-        DateTime: new Date().toISOString().slice(0, 16),
+        DateTime: toLocalIsoDateTime(),
       },
     ]);
     setHasChanges(true);

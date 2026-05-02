@@ -1,56 +1,45 @@
 /**
- * Utilidades para el manejo de fechas UTC a hora local de Santo Domingo
+ * Utilidades para el formateo de fechas que ya vienen en hora local desde el backend.
+ * No se aplica conversión UTC — los strings se interpretan como hora local del navegador.
  */
 
-/**
- * Convierte una fecha UTC a hora local de Santo Domingo (UTC-4)
- * @param dateString - Fecha en formato string o Date
- * @returns Objeto con fecha y hora formateadas
- */
 export const formatDateToSantoDomingo = (dateString: string | Date): { date: string; time: string } => {
-  // Crear fecha UTC y convertir a hora local de Santo Domingo (UTC-4)
-  const utcDate = new Date(dateString);
-  const santoDomingoDate = new Date(utcDate.getTime() - (4 * 60 * 60 * 1000)); // Restar 4 horas
+  const date = new Date(dateString);
 
-  const dateFormatted = santoDomingoDate.toLocaleDateString('es-DO', {
+  const dateFormatted = date.toLocaleDateString('es-DO', {
     year: 'numeric',
     month: '2-digit',
-    day: '2-digit'
+    day: '2-digit',
   });
 
-  const timeFormatted = santoDomingoDate.toLocaleTimeString('es-DO', {
+  const timeFormatted = date.toLocaleTimeString('es-DO', {
     hour: '2-digit',
     minute: '2-digit',
-    hour12: true // Formato 12 horas con AM/PM
+    hour12: true,
   });
 
   return { date: dateFormatted, time: timeFormatted };
 };
 
 export const formatDateTimeToSantoDomingo = (dateString: string | Date): Date => {
-  // Crear fecha UTC y convertir a hora local de Santo Domingo (UTC-4)
-  const utcDate = new Date(dateString);
-  const santoDomingoDate = new Date(utcDate.getTime() - (4 * 60 * 60 * 1000)); // Restar 4 horas
-  return santoDomingoDate;
+  return new Date(dateString);
 };
 
 /**
- * Convierte una fecha UTC a hora local de Santo Domingo y retorna solo la fecha
- * @param dateString - Fecha en formato string o Date
- * @returns Fecha formateada
+ * Retorna la fecha en formato dd-MM-yyyy interpretando la entrada en hora local.
  */
 export const formatDateOnly = (dateString: string | Date): string => {
   const date = new Date(dateString);
-  
-  const day = date.getUTCDate().toString().padStart(2, '0');
-  const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
-  const year = date.getUTCFullYear();
-  
+
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+
   return `${day}-${month}-${year}`;
 };
 
 /**
- * Formatea una fecha en formato dd/MM/yyyy (forzado, sin depender de locale)
+ * Formatea una fecha en formato dd/MM/yyyy (forzado, sin depender de locale).
  */
 export const formatDateDMY = (dateInput: string | Date): string => {
   const date = new Date(dateInput);
@@ -61,36 +50,53 @@ export const formatDateDMY = (dateInput: string | Date): string => {
 };
 
 /**
- * Convierte una fecha UTC a hora local de Santo Domingo y retorna solo la hora
- * @param dateString - Fecha en formato string o Date
- * @returns Hora formateada
+ * Retorna solo la hora en formato local (12h con AM/PM).
  */
 export const formatTimeOnly = (dateString: string | Date): string => {
-  const utcDate = new Date(dateString);
-  const santoDomingoDate = new Date(utcDate.getTime() - (4 * 60 * 60 * 1000));
+  const date = new Date(dateString);
 
-  return santoDomingoDate.toLocaleTimeString('es-DO', {
+  return date.toLocaleTimeString('es-DO', {
     hour: '2-digit',
     minute: '2-digit',
-    hour12: true // Formato 12 horas con AM/PM
+    hour12: true,
   });
 };
 
 /**
- * Convierte una fecha UTC a hora local de Santo Domingo con formato completo
- * @param dateString - Fecha en formato string o Date
- * @returns Fecha y hora completa formateada
+ * Formatea fecha y hora completa en formato local.
  */
 export const formatFullDateTime = (dateString: string | Date): string => {
-  const utcDate = new Date(dateString);
-  const santoDomingoDate = new Date(utcDate.getTime() - (4 * 60 * 60 * 1000));
-  
-  return santoDomingoDate.toLocaleString('es-DO', {
+  const date = new Date(dateString);
+
+  return date.toLocaleString('es-DO', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
-    hour12: false
+    hour12: false,
   });
+};
+
+/**
+ * Devuelve YYYY-MM-DD en hora local (no UTC). Útil para inputs `<input type="date">`,
+ * filtros de hoy, claves de agrupación por día, etc.
+ */
+export const toLocalIsoDate = (date?: Date): string => {
+  const d = date ?? new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+/**
+ * Devuelve YYYY-MM-DDTHH:MM en hora local. Útil para inputs `<input type="datetime-local">`.
+ */
+export const toLocalIsoDateTime = (date?: Date): string => {
+  const d = date ?? new Date();
+  const datePart = toLocalIsoDate(d);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${datePart}T${hh}:${mm}`;
 };

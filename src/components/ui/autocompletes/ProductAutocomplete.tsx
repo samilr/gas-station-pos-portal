@@ -17,8 +17,10 @@ interface ProductAutocompleteProps {
 }
 
 const fetchProducts = async (): Promise<IProduct[]> => {
-  const result = await store.dispatch(productsApi.endpoints.listProducts.initiate());
-  return result.data ?? [];
+  const result = await store.dispatch(
+    productsApi.endpoints.listProducts.initiate({ limit: 200 }),
+  );
+  return result.data?.data ?? [];
 };
 
 const ProductAutocomplete: React.FC<ProductAutocompleteProps> = (props) => (
@@ -26,8 +28,8 @@ const ProductAutocomplete: React.FC<ProductAutocompleteProps> = (props) => (
     {...props}
     cacheKey="products"
     fetchOptions={fetchProducts}
-    getValue={(p) => p.product_id}
-    getLabel={(p) => `${p.product_id} - ${p.name}`}
+    getValue={(p) => p.productId}
+    getLabel={(p) => `${p.productId} - ${p.name}`}
     placeholder={props.placeholder ?? 'Selecciona un producto'}
     emptyText="No hay productos"
   />

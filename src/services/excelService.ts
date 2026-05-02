@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import { ITransactionResume, IProductResume, IPaymentResume, PaymentType } from '../types/transaction';
 import { formatDate, formatCurrency, getPaymentTypeText, getStatusText, getCfTypeText } from '../utils/transactionUtils';
+import { toLocalIsoDate } from '../utils/dateUtils';
 
 export interface ExcelExportOptions {
   filename?: string;
@@ -36,7 +37,7 @@ export class ExcelService {
       XLSX.utils.book_append_sheet(workbook, paymentsSheet, 'Pagos');
       
       // Generar el archivo
-      const filename = options.filename || `transacciones_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const filename = options.filename || `transacciones_${toLocalIsoDate()}.xlsx`;
       XLSX.writeFile(workbook, filename);
       
     } catch (error) {

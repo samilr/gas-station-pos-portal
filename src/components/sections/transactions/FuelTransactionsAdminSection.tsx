@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Filter, RefreshCw, X, FuelIcon, CreditCard, Receipt, AlertCircle } from 'lucide-react';
+import { Filter, RefreshCw, X, FuelIcon, CreditCard, Banknote, Wallet } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   FuelTransactionAdmin,
   FuelAdminPagination,
   FuelAdminStats,
   cfStatusLabel,
-  cfStatusBadgeClass,
+  cfStatusDotColor,
 } from '../../../services/fuelTransactionAdminService';
 import { store } from '../../../store';
 import {
@@ -18,12 +18,16 @@ import { useHeader } from '../../../context/HeaderContext';
 import { useSelectedSiteId } from '../../../hooks/useSelectedSite';
 import { mapFuelProductName } from '../../../utils/fuelProductMapping';
 import { CompactButton, Pagination, Toolbar } from '../../ui';
+import StatusDot from '../../ui/StatusDot';
 import SiteAutocomplete from '../../ui/autocompletes/SiteAutocomplete';
 import StaftAutocomplete from '../../ui/autocompletes/StaftAutocomplete';
 import FuelTransactionAdminDetailModal from './FuelTransactionAdminDetailModal';
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP', minimumFractionDigits: 2 }).format(amount);
+
+const formatAmount = (amount: number) =>
+  `$${new Intl.NumberFormat('es-DO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount)}`;
 
 const formatDate = (dateString: string) => {
   try {
@@ -39,33 +43,45 @@ const formatTime = (dateString: string) => {
   } catch { return dateString; }
 };
 
-const lastFour = (s: string | null | undefined) => (s && s.length > 4 ? s.slice(-4) : s ?? '');
-
-interface RowState {
-  badgeText: string;
+interface PaymentMethodInfo {
+  label: string;
+  detail?: string;
   badgeClass: string;
   icon: React.ReactNode;
 }
 
-const computeRowState = (row: FuelTransactionAdmin): RowState => {
-  if (!row.trans) {
-    return {
-      badgeText: 'Pendiente',
-      badgeClass: 'bg-yellow-100 text-yellow-700',
-      icon: <AlertCircle className="w-3 h-3" />,
-    };
-  }
+const cashMethod: PaymentMethodInfo = {
+  label: 'Efectivo',
+  badgeClass: 'bg-gray-100 text-gray-700',
+  icon: <Banknote className="w-3 h-3" />,
+};
+
+const getPaymentMethod = (row: FuelTransactionAdmin): PaymentMethodInfo => {
   if (row.cardPayments.length > 0) {
+    const cp = row.cardPayments[0];
+    const last4 = cp.maskedPan ? cp.maskedPan.slice(-4) : null;
     return {
-      badgeText: 'Tarjeta',
+      label: last4 ? `Tarjeta **${last4}` : 'Tarjeta',
       badgeClass: 'bg-blue-100 text-blue-700',
       icon: <CreditCard className="w-3 h-3" />,
     };
   }
+  const types = Array.from(new Set((row.trans?.payments ?? []).map((p) => p.type).filter(Boolean)));
+  if (types.length === 0) return cashMethod;
+  if (types.length > 1) {
+    return {
+      label: 'Mixto',
+      detail: types.join(' · '),
+      badgeClass: 'bg-purple-100 text-purple-700',
+      icon: <Wallet className="w-3 h-3" />,
+    };
+  }
+  const type = types[0].toUpperCase();
+  if (type === 'EFECTIVO' || type === 'CASH') return cashMethod;
   return {
-    badgeText: 'Efectivo',
-    badgeClass: 'bg-gray-100 text-gray-700',
-    icon: <Receipt className="w-3 h-3" />,
+    label: types[0],
+    badgeClass: 'bg-indigo-100 text-indigo-700',
+    icon: <Wallet className="w-3 h-3" />,
   };
 };
 
@@ -406,89 +422,80 @@ const FuelTransactionsAdminSection: React.FC = () => {
               <thead>
                 <tr className="h-8 text-xs uppercase tracking-wide bg-table-header border-b border-table-border">
                   <th className="text-left px-2 font-semibold text-gray-600">Fecha/Hora</th>
-                  <th className="text-left px-2 font-semibold text-gray-600">Site / PTS</th>
+                  <th className="text-left px-2 font-semibold text-gray-600">Site</th>
+                  <th className="text-left px-2 font-semibold text-gray-600">NCF</th>
+                  <th className="text-left px-2 font-semibold text-gray-600">Vendedor</th>
+                  <th className="text-left px-2 font-semibold text-gray-600">Método Pago</th>
                   <th className="text-left px-2 font-semibold text-gray-600">Bomba</th>
                   <th className="text-left px-2 font-semibold text-gray-600">Producto</th>
                   <th className="text-right px-2 font-semibold text-gray-600">Volumen</th>
                   <th className="text-right px-2 font-semibold text-gray-600">Monto</th>
-                  <th className="text-left px-2 font-semibold text-gray-600">Cajero</th>
-                  <th className="text-left px-2 font-semibold text-gray-600">Estado</th>
-                  <th className="text-left px-2 font-semibold text-gray-600">NCF</th>
                 </tr>
               </thead>
               <tbody>
-                {transactions.map((t) => {
-                  const rs = computeRowState(t);
-                  const isReturn = t.trans?.isReturn === true;
-                  return (
-                    <tr
-                      key={t.transactionId}
-                      onClick={() => setSelectedRow(t)}
-                      className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover transition-colors cursor-pointer"
-                      title="Ver detalle 360°"
-                    >
-                      <td className="px-2 text-[13px] whitespace-nowrap">
-                        <span className="text-gray-900 font-medium">{formatDate(t.transactionDate)}</span>
-                        <span className="text-gray-500 ml-1.5 text-xs">{formatTime(t.transactionDate)}</span>
-                      </td>
-                      <td className="px-2 text-xs text-gray-700 whitespace-nowrap font-mono">
-                        {t.siteId ?? '—'} <span className="text-gray-400">·</span> {lastFour(t.ptsId) || '—'}
-                      </td>
-                      <td className="px-2 text-sm text-gray-700 whitespace-nowrap">
-                        <div className="flex items-center gap-1">
-                          <FuelIcon className="w-3 h-3 text-gray-400" />
-                          <span>P{t.pump} · M{t.nozzle}</span>
-                        </div>
-                      </td>
-                      <td className="px-2 text-sm whitespace-nowrap">
-                        <span className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-700 text-xs font-semibold">
-                          {mapFuelProductName(t.fuelGradeName)}
-                        </span>
-                      </td>
-                      <td className="px-2 text-[13px] text-gray-900 text-right font-mono whitespace-nowrap">
-                        {t.volume.toFixed(3)} <span className="text-gray-400 text-[10px]">G.</span>
-                      </td>
-                      <td className="px-2 text-sm font-bold text-gray-900 text-right font-mono whitespace-nowrap tabular-nums">
-                        {formatCurrency(t.amount)}
-                      </td>
-                      <td className="px-2 text-xs text-gray-700 whitespace-nowrap">
-                        {t.staftId != null ? (
-                          <span className="font-mono">#{t.staftId} <span className="text-gray-500">{t.staftName ?? ''}</span></span>
-                        ) : <span className="text-gray-400">—</span>}
-                      </td>
-                      <td className="px-2 text-xs whitespace-nowrap">
-                        <div className="flex items-center gap-1">
-                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-2xs font-medium ${rs.badgeClass}`}>
-                            {rs.icon}{rs.badgeText}
+                {transactions.map((t) => (
+                  <tr
+                    key={t.transactionId}
+                    onClick={() => setSelectedRow(t)}
+                    className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover transition-colors cursor-pointer"
+                    title="Ver detalle 360°"
+                  >
+                    <td className="px-2 text-[13px] whitespace-nowrap">
+                      <span className="text-gray-900 font-medium">{formatDate(t.transactionDate)}</span>
+                      <span className="text-gray-500 ml-1.5 text-xs">{formatTime(t.transactionDate)}</span>
+                    </td>
+                    <td className="px-2 text-xs text-gray-700 whitespace-nowrap font-mono">
+                      {t.siteId ?? '—'}
+                    </td>
+                    <td className="px-2 text-xs whitespace-nowrap">
+                      {t.trans?.cfNumber ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="font-mono">{t.trans.cfNumber}</span>
+                          <span title={cfStatusLabel(t.trans.cfStatus)}>
+                            <StatusDot color={cfStatusDotColor(t.trans.cfStatus)} label="" />
                           </span>
-                          {isReturn && (
-                            <span className="inline-flex px-1.5 py-0.5 rounded text-2xs font-medium bg-red-100 text-red-700">
-                              Devolución
-                            </span>
-                          )}
-                          {t.trans?.transNumber && (
-                            <span className="font-mono text-2xs text-text-muted">{t.trans.transNumber}</span>
-                          )}
-                          {t.cardPayments[0]?.cardProduct && (
-                            <span className="text-2xs text-text-muted">
-                              {t.cardPayments[0].cardProduct} {t.cardPayments[0].maskedPan ?? ''}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-2 text-xs whitespace-nowrap">
-                        {t.trans?.cfNumber ? (
+                        </span>
+                      ) : <span className="text-gray-400">—</span>}
+                    </td>
+                    <td className="px-2 text-xs text-gray-700 whitespace-nowrap">
+                      {t.staftId != null ? (
+                        <span className="font-mono" title={t.staftName ?? ''}>#{t.staftId}</span>
+                      ) : <span className="text-gray-400">—</span>}
+                    </td>
+                    <td className="px-2 text-xs whitespace-nowrap">
+                      {(() => {
+                        const pm = getPaymentMethod(t);
+                        return (
                           <div className="flex items-center gap-1">
-                            <span className="font-mono">{t.trans.cfNumber}</span>
-                            <span className={`inline-flex px-1 py-0.5 rounded text-2xs font-medium ${cfStatusBadgeClass(t.trans.cfStatus)}`}>
-                              {cfStatusLabel(t.trans.cfStatus)}
+                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-2xs font-medium ${pm.badgeClass}`}>
+                              {pm.icon}{pm.label}
                             </span>
+                            {pm.detail && (
+                              <span className="text-2xs text-text-muted font-mono">{pm.detail}</span>
+                            )}
                           </div>
-                        ) : <span className="text-gray-400">—</span>}
-                      </td>
-                    </tr>
-                  );
-                })}
+                        );
+                      })()}
+                    </td>
+                    <td className="px-2 text-sm text-gray-700 whitespace-nowrap">
+                      <div className="flex items-center gap-1">
+                        <FuelIcon className="w-3 h-3 text-gray-400" />
+                        <span>P{t.pump} · M{t.nozzle}</span>
+                      </div>
+                    </td>
+                    <td className="px-2 text-sm whitespace-nowrap">
+                      <span className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-700 text-xs font-semibold">
+                        {mapFuelProductName(t.fuelGradeName)}
+                      </span>
+                    </td>
+                    <td className="px-2 text-[13px] text-gray-900 text-right font-mono whitespace-nowrap">
+                      {t.volume.toFixed(3)} <span className="text-gray-400 text-[10px]">G.</span>
+                    </td>
+                    <td className="px-2 text-sm font-bold text-gray-900 text-right font-mono whitespace-nowrap tabular-nums">
+                      {formatAmount(t.amount)}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

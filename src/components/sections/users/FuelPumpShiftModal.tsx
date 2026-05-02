@@ -15,6 +15,7 @@ import { IFuelPumpShift } from '../../../types/fuelPumpShift';
 import { CompactButton } from '../../ui';
 import { SiteAutocomplete, StaftAutocomplete, ShiftAutocomplete } from '../../ui/autocompletes';
 import { useAuth } from '../../../context/AuthContext';
+import { toLocalIsoDate } from '../../../utils/dateUtils';
 
 export type FuelPumpShiftModalMode = 'create' | 'substitute' | 'edit' | 'close';
 
@@ -31,7 +32,7 @@ interface FuelPumpShiftModalProps {
   onSaved: () => void;
 }
 
-const todayIso = () => new Date().toISOString().slice(0, 10);
+const todayIso = () => toLocalIsoDate();
 
 const TITLE: Record<FuelPumpShiftModalMode, string> = {
   create: 'Asignar staff a bomba',

@@ -25,7 +25,7 @@ const DeleteProductDialog: React.FC<DeleteProductDialogProps> = ({
           </div>
           <h3 className="text-base font-semibold text-text-primary text-center mb-1">Eliminar Producto</h3>
           <p className="text-sm text-text-secondary text-center mb-4">
-            ¿Eliminar el producto <strong>{product.name}</strong> (ID: {product.product_id})?
+            ¿Eliminar el producto <strong>{product.name}</strong> (ID: {product.productId})?
             <br /><span className="font-medium text-red-600">Esta acción no se puede deshacer.</span>
           </p>
           <div className="flex gap-2">

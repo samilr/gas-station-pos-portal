@@ -7,8 +7,9 @@ import { CompactButton, Toolbar } from '../../ui';
 import { SiteAutocomplete } from '../../ui/autocompletes';
 import PeriodStaftModal from './PeriodStaftModal';
 import DuplicateDayDialog from './DuplicateDayDialog';
+import { toLocalIsoDate } from '../../../utils/dateUtils';
 
-const todayIso = () => new Date().toISOString().substring(0, 10);
+const todayIso = () => toLocalIsoDate();
 
 const formatHour = (h: string | null | undefined): string => {
   if (!h) return '';

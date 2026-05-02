@@ -5,6 +5,7 @@ import { periodStaftService } from '../../../services/periodStaftService';
 import { IPeriodStaft } from '../../../types/periodStaft';
 import { CompactButton } from '../../ui';
 import { SiteAutocomplete, StaftAutocomplete, StaftGroupAutocomplete, TerminalAutocomplete } from '../../ui/autocompletes';
+import { toLocalIsoDate } from '../../../utils/dateUtils';
 
 interface Props {
   row: IPeriodStaft | null;
@@ -40,7 +41,7 @@ const PeriodStaftModal: React.FC<Props> = ({ row, defaultSiteId, defaultDate, on
 
   const [form, setForm] = useState({
     siteId: row?.siteId ?? defaultSiteId ?? '',
-    date: toDateInput(row?.date) || defaultDate || new Date().toISOString().substring(0, 10),
+    date: toDateInput(row?.date) || defaultDate || toLocalIsoDate(),
     shift: row?.shift ?? 1,
     staftId: row?.staftId ?? null as number | null,
     isManager: row?.isManager ?? false,

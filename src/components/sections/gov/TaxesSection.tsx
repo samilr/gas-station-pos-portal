@@ -20,6 +20,7 @@ import { getErrorMessage } from '../../../store/api/baseApi';
 import { CompactButton } from '../../ui';
 import StatusDot from '../../ui/StatusDot';
 import Toolbar from '../../ui/Toolbar';
+import { toLocalIsoDate } from '../../../utils/dateUtils';
 
 // --- Tax Modal ---
 const TaxModal: React.FC<{ tax: ITax | null; taxTypes: ITaxType[]; onClose: () => void; onSaved: () => void }> = ({ tax, taxTypes, onClose, onSaved }) => {
@@ -134,7 +135,7 @@ const TaxLineModal: React.FC<{
     taxId,
     line: line?.line ?? 1,
     rate: line?.rate ?? 0,
-    startTime: line?.startTime ? line.startTime.split('T')[0] : new Date().toISOString().split('T')[0],
+    startTime: line?.startTime ? line.startTime.split('T')[0] : toLocalIsoDate(),
     endTime: line?.endTime ? line.endTime.split('T')[0] : '',
     status: line?.status ?? true,
   });

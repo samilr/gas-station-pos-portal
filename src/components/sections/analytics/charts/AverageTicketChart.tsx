@@ -23,7 +23,7 @@ const AverageTicketChart: React.FC<AverageTicketChartProps> = ({ data, title }) 
 
     data.forEach(transaction => {
       const date = new Date(transaction.transDate);
-      const dateKey = date.toISOString().split('T')[0];
+      const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
       const dayOfWeek = date.toLocaleDateString('es-ES', { weekday: 'short' });
 
       if (!dailyData[dateKey]) {

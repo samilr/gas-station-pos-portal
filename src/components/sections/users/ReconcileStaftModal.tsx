@@ -13,6 +13,7 @@ import {
   ReconcileStaftResult,
 } from '../../../services/fuelTransactionReconcileService';
 import { CompactButton } from '../../ui';
+import { toLocalIsoDate } from '../../../utils/dateUtils';
 import { SiteAutocomplete } from '../../ui/autocompletes';
 
 interface ReconcileStaftModalProps {
@@ -26,11 +27,11 @@ interface ReconcileStaftModalProps {
   };
 }
 
-const todayIso = () => new Date().toISOString().slice(0, 10);
+const todayIso = () => toLocalIsoDate();
 const daysAgoIso = (n: number) => {
   const d = new Date();
   d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
+  return toLocalIsoDate(d);
 };
 
 const ReconcileStaftModal: React.FC<ReconcileStaftModalProps> = ({

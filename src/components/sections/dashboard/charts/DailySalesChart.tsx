@@ -35,6 +35,14 @@ const DailySalesChart: React.FC<DailySalesChartProps> = ({
   const [customStartDate, setCustomStartDate] = useState(chartFilters.startDate);
   const [customEndDate, setCustomEndDate] = useState(chartFilters.endDate);
 
+  const todayString = (() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  })();
+
   const handlePeriodChange = (period: ChartFilters['period']) => {
     onUpdateFilters({ period });
   };
@@ -210,9 +218,6 @@ const DailySalesChart: React.FC<DailySalesChartProps> = ({
         <div className="flex items-end justify-between gap-1 h-[220px] border-b border-table-border">
           {data.map((item, index) => {
             const percentage = (item.sales / maxSales) * 100;
-            const now = new Date();
-            const santoDomingoDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Santo_Domingo' }));
-            const todayString = santoDomingoDate.toISOString().split('T')[0];
             const isToday = item.date === todayString;
             const barHeight = Math.max((percentage / 100) * 200, 4);
 
@@ -240,9 +245,6 @@ const DailySalesChart: React.FC<DailySalesChartProps> = ({
         </div>
         <div className="flex justify-between gap-1 mt-1">
           {data.map((item, index) => {
-            const now = new Date();
-            const santoDomingoDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Santo_Domingo' }));
-            const todayString = santoDomingoDate.toISOString().split('T')[0];
             const isToday = item.date === todayString;
             return (
               <div key={index} className="flex-1 text-center min-w-0">

@@ -46,7 +46,8 @@
       "Bash(echo \"EXIT:$?\")",
       "Bash(echo \"---exit---$?\")",
       "Bash(npm run *)",
-      "Bash(echo \"EXITCODE=$?\")"
+      "Bash(echo \"EXITCODE=$?\")",
+      "Bash(grep -E \"\\\\.tsx$\")"
     ]
   }
 }

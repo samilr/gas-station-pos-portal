@@ -4,11 +4,12 @@ import {
   useCreateProductMutation,
   useUpdateProductMutation,
   useDeleteProductMutation,
+  IListProductsParams,
 } from '../store/api/productsApi';
 import { getErrorMessage } from '../store/api/baseApi';
 
-export const useProducts = () => {
-  const { data, isLoading, error, refetch } = useListProductsQuery();
+export const useProducts = (params?: IListProductsParams) => {
+  const { data, isLoading, isFetching, error, refetch } = useListProductsQuery(params ?? {});
   const [createMut] = useCreateProductMutation();
   const [updateMut] = useUpdateProductMutation();
   const [deleteMut] = useDeleteProductMutation();
@@ -41,8 +42,10 @@ export const useProducts = () => {
   };
 
   return {
-    products: data ?? [],
+    products: data?.data ?? [],
+    pagination: data?.pagination ?? null,
     loading: isLoading,
+    fetching: isFetching,
     error: getErrorMessage(error, 'Error al cargar productos'),
     refreshProducts: refetch,
     createProduct,

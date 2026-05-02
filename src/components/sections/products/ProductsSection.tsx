@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Package, Filter, RefreshCw, Plus, Edit, Trash2, DollarSign, Scale, Tag } from 'lucide-react';
 
 import ProductModal from './ProductModal';
@@ -16,57 +16,56 @@ import Toolbar from '../../ui/Toolbar';
 
 const ProductsSection: React.FC = () => {
   const { } = useAuth();
-  const { products, loading, error, refreshProducts, createProduct, updateProduct, deleteProduct } = useProducts();
-  usePermissions();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Debounce: el server hace el filtro por nombre/productId, no queremos
+  // disparar una request por cada tecla.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(searchTerm.trim());
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
+  const { products, pagination, loading, fetching, error, refreshProducts, createProduct, updateProduct, deleteProduct } =
+    useProducts({ page: currentPage, limit: itemsPerPage, search: debouncedSearch });
+  usePermissions();
   const [statusFilter, setStatusFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view'>('create');
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const filteredProducts = (Array.isArray(products) ? products : []).filter(product => {
-    const matchesSearch =
-      (product.product_id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (product.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (product.category_id || '').toLowerCase().includes(searchTerm.toLowerCase());
+  const productList = Array.isArray(products) ? products : [];
+  const hasLocalFilters = statusFilter !== '' || categoryFilter !== '';
 
+  // Búsqueda por nombre/productId la hace el server vía `search`. Aquí solo
+  // aplicamos los filtros que siguen siendo locales (estado y categoría).
+  const filteredProducts = productList.filter(product => {
     const matchesStatus = statusFilter === '' ||
       (statusFilter === 'active' && product.active) ||
       (statusFilter === 'inactive' && !product.active);
 
     const matchesCategory = categoryFilter === '' ||
-      product.category_id === categoryFilter;
+      product.categoryId === categoryFilter;
 
-    return matchesSearch && matchesStatus && matchesCategory;
+    return matchesStatus && matchesCategory;
   });
-
-  // Paginación
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentProducts = filteredProducts.slice(startIndex, endIndex);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
+  const handlePageSizeChange = (size: number) => {
+    setItemsPerPage(size);
+    setCurrentPage(1);
   };
 
   const handleRefresh = () => {
@@ -102,7 +101,7 @@ const ProductsSection: React.FC = () => {
       let result;
 
       if (modalMode === 'edit' && selectedProduct) {
-        result = await updateProduct(selectedProduct.product_id, data);
+        result = await updateProduct(selectedProduct.productId, data);
         if (result.successful) {
           toast.success('Producto actualizado correctamente');
         } else {
@@ -130,7 +129,7 @@ const ProductsSection: React.FC = () => {
 
     setDeleteLoading(true);
     try {
-      const result = await deleteProduct(selectedProduct.product_id);
+      const result = await deleteProduct(selectedProduct.productId);
       if (result.successful) {
         toast.success('Producto eliminado correctamente');
         setShowDeleteDialog(false);
@@ -146,9 +145,8 @@ const ProductsSection: React.FC = () => {
     }
   };
 
-  // Calcular estadísticas (defensivo ante respuestas no-array)
-  const productList = Array.isArray(products) ? products : [];
-  const totalProducts = productList.length;
+  // Stats: el total real proviene del API; el resto son sobre la página cargada.
+  const totalProducts = pagination?.total ?? productList.length;
   const activeProducts = productList.filter(p => p.active).length;
   const inactiveProducts = productList.filter(p => !p.active).length;
   const inventoryProducts = productList.filter(p => p.inventory).length;
@@ -185,9 +183,9 @@ const ProductsSection: React.FC = () => {
         <CompactButton
           variant="ghost"
           onClick={handleRefresh}
-          disabled={loading}
+          disabled={fetching}
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${fetching ? 'animate-spin' : ''}`} />
           Actualizar
         </CompactButton>
         <PermissionGate permissions={['products.create']}>
@@ -265,9 +263,9 @@ const ProductsSection: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {currentProducts.map((product) => (
+              {filteredProducts.map((product) => (
                 <tr
-                  key={product.product_id}
+                  key={product.productId}
                   className="h-8 max-h-8 border-b border-table-border hover:bg-row-hover cursor-pointer transition-colors"
                   onClick={() => handleViewDetails(product)}
                 >
@@ -275,13 +273,13 @@ const ProductsSection: React.FC = () => {
                     <div className="flex items-center gap-1">
                       <Package className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
                       <span className="font-medium text-gray-900 text-ellipsis overflow-hidden whitespace-nowrap">{product.name}</span>
-                      <span className="text-xs text-gray-400">({product.product_id})</span>
+                      <span className="text-xs text-gray-400">({product.productId})</span>
                     </div>
                   </td>
                   <td className="px-2 text-sm whitespace-nowrap">
                     <div className="flex items-center gap-1">
                       <Tag className="w-3 h-3 text-gray-400" />
-                      <span className="text-gray-900">{product.category_id}</span>
+                      <span className="text-gray-900">{product.categoryId}</span>
                     </div>
                   </td>
                   <td className="px-2 text-sm whitespace-nowrap">
@@ -346,16 +344,16 @@ const ProductsSection: React.FC = () => {
           </table>
         </div>
 
-        {/* Pagination */}
+        {/* Pagination (server-side: API devuelve page/limit/total/totalPages) */}
         <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={filteredProducts.length}
-          pageSize={itemsPerPage}
+          currentPage={pagination?.page ?? currentPage}
+          totalPages={pagination?.totalPages ?? 1}
+          totalItems={pagination?.total ?? productList.length}
+          pageSize={pagination?.limit ?? itemsPerPage}
           onPageChange={handlePageChange}
-          onPageSizeChange={(size) => { setItemsPerPage(size); setCurrentPage(1); }}
+          onPageSizeChange={handlePageSizeChange}
           itemLabel="productos"
-          filteredTotal={productList.length}
+          filteredTotal={hasLocalFilters ? filteredProducts.length : undefined}
         />
       </div>
 
