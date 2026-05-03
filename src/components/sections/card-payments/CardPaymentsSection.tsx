@@ -26,6 +26,19 @@ const statusColor = (status: string): string => {
   }
 };
 
+const providerStatusLabel = (ps: string | null | undefined): string => {
+  if (!ps) return '—';
+  if (ps === 'Successful') return 'Aprobado';
+  return ps;
+};
+
+const providerStatusColor = (ps: string | null | undefined): string => {
+  if (!ps) return 'bg-gray-100 text-gray-700';
+  if (ps === 'Successful') return 'bg-green-100 text-green-700';
+  if (ps === 'Failed' || ps === 'Declined') return 'bg-red-100 text-red-700';
+  return 'bg-gray-100 text-gray-700';
+};
+
 const CardPaymentsSection: React.FC = () => {
   const { setSubtitle } = useHeader();
   const globalSiteId = useSelectedSiteId();
@@ -178,14 +191,9 @@ const CardPaymentsSection: React.FC = () => {
                   <td className="px-2 text-sm text-right font-mono">RD$ {amountDop(p.amountCents)}</td>
                   <td className="px-2 text-sm font-mono text-text-secondary">{p.authorizationNumber || '—'}</td>
                   <td className="px-2 text-sm">
-                    <div className="flex flex-col">
-                      <span className={`inline-flex w-fit px-1.5 py-0.5 rounded text-2xs font-medium ${statusColor(p.status)}`}>{p.status}</span>
-                      {p.providerStatus && (
-                        <span className="text-2xs text-text-muted mt-0.5" title="Estado reportado por el datáfono">
-                          {p.providerStatus}
-                        </span>
-                      )}
-                    </div>
+                    <span className={`inline-flex w-fit px-1.5 py-0.5 rounded text-2xs font-medium ${providerStatusColor(p.providerStatus)}`}>
+                      {providerStatusLabel(p.providerStatus)}
+                    </span>
                   </td>
                   <td className="px-2 text-2xs text-text-secondary">{new Date(p.createdAt).toLocaleString('es-DO')}</td>
                   <td className="px-2 text-sm whitespace-nowrap text-right">
