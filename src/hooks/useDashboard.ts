@@ -148,10 +148,24 @@ const computeSiteDates = (filters: SiteChartFilters): { startDate: string; endDa
   }
 };
 
-export const useDashboard = () => {
+export interface UseDashboardControlledFilters {
+  startDate: string;
+  endDate: string;
+  siteId?: string | null;
+}
+
+export const useDashboard = (controlled?: UseDashboardControlledFilters) => {
   const globalSiteId = useSelectedSiteId();
-  const siteIdParam = globalSiteId ?? undefined;
+  const fallbackSiteId = globalSiteId ?? undefined;
   const todayDate = getCurrentSantoDomingoDate();
+
+  // Si hay filtros controlados, las queries "core" usan ese rango y siteId.
+  // Si no, mantienen el comportamiento legacy (today + globalSiteId).
+  const coreStart = controlled?.startDate || todayDate;
+  const coreEnd = controlled?.endDate || todayDate;
+  const coreSiteId = controlled
+    ? (controlled.siteId ?? undefined)
+    : fallbackSiteId;
 
   const [chartFilters, setChartFilters] = useState<ChartFilters>({
     startDate: '',
@@ -166,15 +180,18 @@ export const useDashboard = () => {
   });
 
   // Core queries (cache automática por siteId + fecha).
-  const summaryQ = useGetSalesAndReturnsSummaryQuery({ startDate: todayDate, siteId: siteIdParam });
-  const topTransactionsQ = useGetTopTransactionsQuery({ startDate: todayDate, limit: 5, siteId: siteIdParam });
+  const summaryQ = useGetSalesAndReturnsSummaryQuery({ startDate: coreStart, siteId: coreSiteId });
+  const topTransactionsQ = useGetTopTransactionsQuery({ startDate: coreStart, limit: 5, siteId: coreSiteId });
   const allTransQ = useGetTransactionsQuery({
-    startDate: todayDate,
-    endDate: todayDate,
+    startDate: coreStart,
+    endDate: coreEnd,
     limit: 100,
-    siteId: siteIdParam,
+    siteId: coreSiteId,
   });
-  const topProductsQ = useGetTopProductsQuery({ startDate: todayDate, limit: 10, siteId: siteIdParam });
+  const topProductsQ = useGetTopProductsQuery({ startDate: coreStart, limit: 10, siteId: coreSiteId });
+
+  // Charts legacy siguen con su filterbar interno (siteId del global aún).
+  const siteIdParam = fallbackSiteId;
 
   const chartDates = useMemo(() => computeChartDates(chartFilters), [chartFilters]);
   const dailySalesQ = useGetDailySalesQuery(

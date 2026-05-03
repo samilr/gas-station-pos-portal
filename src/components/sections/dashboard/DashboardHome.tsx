@@ -1,167 +1,239 @@
-import React from "react";
+import React, { useCallback, useState } from 'react';
 import {
-  Users,
-  CreditCard,
-  RefreshCw,
-  BarChart3,
-  XCircle,
-  User,
-  DollarSign,
-  Fuel,
-  Store,
-  Building2,
-} from "lucide-react";
-import { useDashboard } from "./../../../hooks/useDashboard";
-import { formatCurrency, formatNumber, formatRelativeTime } from "./../../../utils/dashboardUtils";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "./../../../context/AuthContext";
-import DailySalesChart from "./charts/DailySalesChart";
-import SiteSalesChart from "./charts/SiteSalesChart";
-import CfTypePieChart from "./charts/CfTypePieChart";
-import TopProductsChart from "./charts/TopProductsChart";
-import FuelDailyTrendChart from "../dispensers/charts/FuelDailyTrendChart";
-import FuelByFuelGradeChart from "../dispensers/charts/FuelByFuelGradeChart";
-import useFuelDashboard from "../../../hooks/useFuelDashboard";
-import { CompactButton } from "../../ui";
-import Toolbar from "../../ui/Toolbar";
+  Users, CreditCard, RefreshCw, BarChart3, XCircle, User, Building2,
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
+import { useDashboard } from '../../../hooks/useDashboard';
+import useFuelDashboard from '../../../hooks/useFuelDashboard';
+import { useFuelDashboardExtra } from '../../../hooks/useFuelDashboardExtra';
+import { useSelectedSiteId } from '../../../hooks/useSelectedSite';
+import { formatCurrency, formatRelativeTime } from '../../../utils/dashboardUtils';
+import { toLocalIsoDate } from '../../../utils/dateUtils';
+import { FuelDashboardFilters } from '../../../services/fuelTransactionService';
+import { CompactButton } from '../../ui';
+import FuelDashboardFiltersBar from './FuelDashboardFiltersBar';
+import PeriodComparisonKpis from './charts/PeriodComparisonKpis';
+import PaymentMethodsDonut from './charts/PaymentMethodsDonut';
+import HeatmapChart from './charts/HeatmapChart';
+import ByShiftChart from './charts/ByShiftChart';
+import TopStaftTable from './charts/TopStaftTable';
+import ByStaftDailyChart from './charts/ByStaftDailyChart';
+import FuelByFuelGradeChart from '../dispensers/charts/FuelByFuelGradeChart';
+import FuelDailyTrendChart from '../dispensers/charts/FuelDailyTrendChart';
+import FuelHourlyChart from '../dispensers/charts/FuelHourlyChart';
+import TopProductsChart from './charts/TopProductsChart';
+import CfTypePieChart from './charts/CfTypePieChart';
 
 const DashboardHome: React.FC = () => {
   let navigate: any;
-  try { navigate = useNavigate(); } catch (error) { navigate = (path: string) => { window.location.href = path; }; }
+  try {
+    navigate = useNavigate();
+  } catch {
+    navigate = (path: string) => {
+      window.location.href = path;
+    };
+  }
 
   const { user } = useAuth();
-  const {
-    totalTransactions, totalSales, totalReturns, totalStoreSales,
-    salesByVendor, dailySales, chartLoading, chartError, chartFilters,
-    siteSales, siteLoading, siteError, siteChartFilters,
-    cfTypeData, recentTransactions, allTransactions, topProducts,
-    loading, error, refresh,
-    updateChartFilters, refreshChartData, getChartStats,
-    refreshSiteData, updateSiteChartFilters, getSiteStats,
-  } = useDashboard();
+  const globalSiteId = useSelectedSiteId();
 
-  // Summary de combustible del día (real, desde fuel_transactions).
-  const fuelToday = useFuelDashboard({
-    initialPeriod: 'today',
-    enabled: { summary: true },
+  const [filters, setFilters] = useState<FuelDashboardFilters>(() => {
+    const today = toLocalIsoDate();
+    return {
+      startDate: today,
+      endDate: today,
+      siteId: globalSiteId ?? null,
+      excludeOffline: true,
+    };
   });
 
-  // Charts de combustible (últimos 7 días).
+  // 6 nuevos endpoints — alimentados por el filterbar global.
+  const extra = useFuelDashboardExtra(filters);
+
+  // Charts existentes de fuel (daily-trend, by-fuel-grade, hourly) con los mismos filtros.
   const fuelDash = useFuelDashboard({
-    initialPeriod: '7d',
-    enabled: { dailyTrend: true, byFuelGrade: true },
+    enabled: { dailyTrend: true, byFuelGrade: true, hourly: true },
+    controlledFilters: filters,
   });
 
-  const totalFuelSales = fuelToday.summary?.totalAmount ?? 0;
-  const fuelTxCount = fuelToday.summary?.txCount ?? 0;
+  // Legacy preservado: Recent Transactions + TopProducts + CfType de tienda/NCF.
+  const {
+    cfTypeData, recentTransactions, allTransactions, topProducts,
+    error: legacyError,
+  } = useDashboard({
+    startDate: filters.startDate ?? '',
+    endDate: filters.endDate ?? '',
+    siteId: filters.siteId,
+  });
+
+  const refreshAll = useCallback(() => {
+    extra.paymentMethods.refetch();
+    extra.byStaft.refetch();
+    extra.byStaftByDay.refetch();
+    extra.periodComparison.refetch();
+    extra.heatmap.refetch();
+    extra.byShift.refetch();
+  }, [extra]);
+
+  const anyFetching =
+    extra.paymentMethods.isFetching ||
+    extra.byStaft.isFetching ||
+    extra.byStaftByDay.isFetching ||
+    extra.periodComparison.isFetching ||
+    extra.heatmap.isFetching ||
+    extra.byShift.isFetching;
 
   const getCurrentSantoDomingoDateTime = () => {
     const now = new Date();
-    const formatter = new Intl.DateTimeFormat("es-DO", {
-      timeZone: "America/Santo_Domingo",
-      weekday: "long", year: "numeric", month: "long", day: "numeric",
-      hour: "2-digit", minute: "2-digit", hour12: true,
+    const formatter = new Intl.DateTimeFormat('es-DO', {
+      timeZone: 'America/Santo_Domingo',
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: true,
     });
     return formatter.format(now);
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-md font-semibold text-text-primary">Bienvenido, {user?.name || "Usuario"}</p>
-            <p className="text-xs text-text-muted">{getCurrentSantoDomingoDateTime()}</p>
-          </div>
-          <CompactButton variant="primary" onClick={refresh}><RefreshCw className="w-3 h-3" /> Actualizar</CompactButton>
-        </div>
-        <div className="grid grid-cols-4 gap-3">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white rounded-sm p-3 border border-table-border animate-pulse">
-              <div className="space-y-2">
-                <div className="h-3 bg-gray-200 rounded w-20"></div>
-                <div className="h-5 bg-gray-200 rounded w-16"></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <p className="text-md font-semibold text-text-primary">Bienvenido, {user?.name || "Usuario"}</p>
-          <CompactButton variant="primary" onClick={refresh}><RefreshCw className="w-3 h-3" /> Reintentar</CompactButton>
-        </div>
-        <div className="bg-red-50 border border-red-200 rounded-sm p-3 flex items-center gap-2">
-          <XCircle className="w-4 h-4 text-red-600" />
-          <span className="text-sm text-red-700">{error}</span>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-2">
-      {/* Header + Stats toolbar */}
+      {/* Header */}
       <div className="flex items-center justify-between mb-1">
         <div>
-          <p className="text-md font-semibold text-text-primary">Bienvenido, {user?.name || "Usuario"}</p>
+          <p className="text-md font-semibold text-text-primary">
+            Bienvenido, {user?.name || 'Usuario'}
+          </p>
           <p className="text-xs text-text-muted">{getCurrentSantoDomingoDateTime()}</p>
         </div>
-        <CompactButton variant="ghost" onClick={refresh}><RefreshCw className="w-3 h-3" /> Actualizar</CompactButton>
       </div>
 
-      {/* Compact stat cards */}
-      <div className="grid grid-cols-4 gap-2">
-        {[
-          { title: "Ventas Totales", value: formatCurrency(totalSales), sub: `${formatNumber(totalTransactions)} trans.`, color: "text-green-600", onClick: () => navigate("/dashboard/transactions") },
-          { title: "Retornos", value: formatCurrency(totalReturns), sub: "devoluciones", color: "text-red-600", onClick: () => navigate("/dashboard/transactions") },
-          { title: "Combustible", value: formatCurrency(totalFuelSales), sub: `${formatNumber(fuelTxCount)} trans.`, color: "text-orange-600", onClick: () => navigate("/dashboard/transactions/fuel") },
-          { title: "Tienda", value: formatCurrency(totalStoreSales), sub: "conveniencia", color: "text-purple-600", onClick: () => navigate("/dashboard/transactions/tienda") },
-        ].map((stat) => (
-          <div key={stat.title} onClick={stat.onClick}
-            className="bg-white rounded-sm p-2 border border-table-border hover:bg-row-hover cursor-pointer transition-colors">
-            <p className="text-2xs text-text-muted uppercase tracking-wide">{stat.title}</p>
-            <p className={`text-md font-bold ${stat.color}`}>{stat.value}</p>
-            <p className="text-2xs text-text-muted">{stat.sub}</p>
-          </div>
-        ))}
+      {/* Filterbar global */}
+      <FuelDashboardFiltersBar
+        filters={filters}
+        onChange={setFilters}
+        onRefresh={refreshAll}
+        refreshing={anyFetching}
+      />
+
+      {/* ROW 1 — KPIs con comparación de período */}
+      <PeriodComparisonKpis
+        data={extra.periodComparison.data}
+        isLoading={extra.periodComparison.isLoading}
+        isFetching={extra.periodComparison.isFetching}
+        error={extra.periodComparison.error}
+        onRetry={() => extra.periodComparison.refetch()}
+      />
+
+      {/* ROW 2 — Distribución por hora + Mix por combustible */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+        <FuelHourlyChart
+          data={fuelDash.hourly}
+          loading={fuelDash.loading}
+          error={fuelDash.error}
+        />
+        <FuelByFuelGradeChart
+          data={fuelDash.byFuelGrade}
+          loading={fuelDash.loading}
+          error={fuelDash.error}
+        />
       </div>
 
-      {/* Recent Transactions + Sales by Vendor */}
-      <div className="grid grid-cols-2 gap-2">
+      {/* ROW 3 — Tendencia diaria + Métodos de pago */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+        <FuelDailyTrendChart
+          data={fuelDash.dailyTrend}
+          loading={fuelDash.loading}
+          error={fuelDash.error}
+        />
+        <PaymentMethodsDonut
+          data={extra.paymentMethods.data}
+          isLoading={extra.paymentMethods.isLoading}
+          isFetching={extra.paymentMethods.isFetching}
+          error={extra.paymentMethods.error}
+          onRetry={() => extra.paymentMethods.refetch()}
+        />
+      </div>
+
+      {/* ROW 3.5 — Heatmap día × hora (full width) */}
+      <HeatmapChart
+        data={extra.heatmap.data}
+        isLoading={extra.heatmap.isLoading}
+        isFetching={extra.heatmap.isFetching}
+        error={extra.heatmap.error}
+        onRetry={() => extra.heatmap.refetch()}
+      />
+
+      {/* ROW 4 — Performance */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+        <ByShiftChart
+          data={extra.byShift.data}
+          isLoading={extra.byShift.isLoading}
+          isFetching={extra.byShift.isFetching}
+          error={extra.byShift.error}
+          onRetry={() => extra.byShift.refetch()}
+        />
+        <TopStaftTable
+          data={extra.byStaft.data}
+          isLoading={extra.byStaft.isLoading}
+          isFetching={extra.byStaft.isFetching}
+          error={extra.byStaft.error}
+          onRetry={() => extra.byStaft.refetch()}
+        />
+      </div>
+
+      {/* ROW 5 — Vendedores por día */}
+      <ByStaftDailyChart
+        data={extra.byStaftByDay.data}
+        isLoading={extra.byStaftByDay.isLoading}
+        isFetching={extra.byStaftByDay.isFetching}
+        error={extra.byStaftByDay.error}
+        onRetry={() => extra.byStaftByDay.refetch()}
+      />
+
+      {/* ROW 6 — Contexto operacional + tienda/NCF */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
         {/* Recent Transactions */}
-        <div className="bg-white rounded-sm p-3 border border-table-border">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-text-primary">Transacciones Recientes</span>
-            <span className="text-2xs text-text-muted">{recentTransactions.length}</span>
+        <div className="bg-white rounded-sm border border-table-border">
+          <div className="flex items-center gap-2 px-3 h-8 bg-table-header border-b border-table-border">
+            <CreditCard className="w-3.5 h-3.5 text-blue-600" />
+            <span className="text-xs font-semibold text-text-primary uppercase tracking-wide">
+              Transacciones Recientes
+            </span>
+            <span className="ml-auto text-2xs text-text-muted">{recentTransactions.length}</span>
           </div>
-          <div className="space-y-1">
+          <div className="p-2 space-y-1">
             {recentTransactions.length > 0 ? (
-              recentTransactions.map((transaction, index) => (
-                <div key={index} className="flex items-center justify-between py-1 px-2 bg-gray-50 rounded-sm">
+              recentTransactions.map((tx, i) => (
+                <div key={i} className="flex items-center justify-between py-1 px-2 bg-gray-50 rounded-sm">
                   <div className="flex items-center gap-2">
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
-                      transaction.taxpayerName && transaction.taxpayerName !== 'Consumidor Final' ? 'bg-green-100' : 'bg-blue-100'
-                    }`}>
-                      {transaction.taxpayerName && transaction.taxpayerName !== 'Consumidor Final' ? (
+                    <div
+                      className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                        tx.taxpayerName && tx.taxpayerName !== 'Consumidor Final'
+                          ? 'bg-green-100'
+                          : 'bg-blue-100'
+                      }`}
+                    >
+                      {tx.taxpayerName && tx.taxpayerName !== 'Consumidor Final' ? (
                         <Building2 className="w-3 h-3 text-green-600" />
                       ) : (
                         <User className="w-3 h-3 text-blue-600" />
                       )}
                     </div>
                     <div>
-                      <p className="text-sm text-text-primary font-medium">#{transaction.transNumber} · {transaction.cfNumber}</p>
-                      <p className="text-2xs text-text-muted">{transaction.taxpayerName || 'Consumidor Final'}</p>
+                      <p className="text-sm text-text-primary font-medium">
+                        #{tx.transNumber} · {tx.cfNumber}
+                      </p>
+                      <p className="text-2xs text-text-muted">
+                        {tx.taxpayerName || 'Consumidor Final'}
+                      </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-medium text-text-primary">{formatCurrency(transaction.total || 0)}</p>
-                    <p className="text-2xs text-text-muted">{transaction.transDate ? formatRelativeTime(transaction.transDate) : 'Reciente'}</p>
+                    <p className="text-sm font-medium text-text-primary">
+                      {formatCurrency(tx.total || 0)}
+                    </p>
+                    <p className="text-2xs text-text-muted">
+                      {tx.transDate ? formatRelativeTime(tx.transDate) : 'Reciente'}
+                    </p>
                   </div>
                 </div>
               ))
@@ -171,64 +243,20 @@ const DashboardHome: React.FC = () => {
           </div>
         </div>
 
-        {/* Sales by Vendor */}
-        <div className="bg-white rounded-sm p-3 border border-table-border">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-text-primary">Ventas por Vendedor</span>
-            <span className="text-2xs text-text-muted">Top {salesByVendor?.length || 0}</span>
+        {/* TopProducts (tienda) + CfType apilados */}
+        <div className="space-y-2">
+          <div className="bg-white rounded-sm border border-table-border p-2">
+            <TopProductsChart
+              data={allTransactions}
+              topProducts={topProducts}
+              loading={false}
+              error={legacyError}
+            />
           </div>
-          <div className="space-y-1">
-            {salesByVendor && salesByVendor.length > 0 ? (
-              salesByVendor.slice(0, 5).map((vendor, index) => (
-                <div key={vendor.staftId} className="flex items-center justify-between py-1 px-2 bg-gray-50 rounded-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-2xs font-medium text-blue-600">#{index + 1}</span>
-                    </div>
-                    <div>
-                      <p className="text-sm text-text-primary font-medium">{vendor.staftName}</p>
-                      <p className="text-2xs text-text-muted">ID: {vendor.staftId} · {vendor.transactionCount} trans.</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-text-primary">{formatCurrency(vendor.totalSales)}</p>
-                    <p className="text-2xs text-text-muted">{totalSales > 0 ? `${Math.round((vendor.totalSales / totalSales) * 100)}%` : "0%"}</p>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-4 text-text-muted text-sm">No hay datos</div>
-            )}
+          <div className="bg-white rounded-sm border border-table-border p-2">
+            <CfTypePieChart data={cfTypeData} loading={false} error={legacyError} />
           </div>
         </div>
-      </div>
-
-      {/* Charts */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="bg-white rounded-sm border border-table-border p-2">
-          <TopProductsChart data={allTransactions} topProducts={topProducts} loading={loading} error={error} />
-        </div>
-        <div className="bg-white rounded-sm border border-table-border p-2">
-          <CfTypePieChart data={cfTypeData} loading={loading} error={error} />
-        </div>
-      </div>
-
-      <div className="bg-white rounded-sm border border-table-border p-2">
-        <DailySalesChart data={dailySales} loading={chartLoading} error={chartError}
-          chartFilters={chartFilters} onUpdateFilters={updateChartFilters}
-          onRefresh={refreshChartData} chartStats={getChartStats} />
-      </div>
-
-      <div className="bg-white rounded-sm border border-table-border p-2">
-        <SiteSalesChart data={siteSales} loading={siteLoading} error={siteError}
-          chartFilters={siteChartFilters} onUpdateFilters={updateSiteChartFilters}
-          onRefresh={refreshSiteData} siteStats={getSiteStats} />
-      </div>
-
-      {/* Combustible — últimos 7 días */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-        <FuelDailyTrendChart data={fuelDash.dailyTrend} loading={fuelDash.loading} error={fuelDash.error} />
-        <FuelByFuelGradeChart data={fuelDash.byFuelGrade} loading={fuelDash.loading} error={fuelDash.error} />
       </div>
 
       {/* Quick Actions */}
@@ -236,12 +264,15 @@ const DashboardHome: React.FC = () => {
         <span className="text-sm font-semibold text-text-primary block mb-2">Acciones Rápidas</span>
         <div className="grid grid-cols-3 gap-2">
           {[
-            { title: "Usuarios", icon: Users, color: "blue", onClick: () => navigate("/dashboard/users") },
-            { title: "Transacciones", icon: CreditCard, color: "green", onClick: () => navigate("/dashboard/transactions") },
-            { title: "Reportes", icon: BarChart3, color: "purple", onClick: () => navigate("/dashboard/reports") },
+            { title: 'Usuarios', icon: Users, color: 'blue', onClick: () => navigate('/dashboard/users') },
+            { title: 'Transacciones', icon: CreditCard, color: 'green', onClick: () => navigate('/dashboard/transactions') },
+            { title: 'Reportes', icon: BarChart3, color: 'purple', onClick: () => navigate('/dashboard/reports') },
           ].map((action) => (
-            <button key={action.title} onClick={action.onClick}
-              className={`p-2 text-left bg-${action.color}-50 hover:bg-${action.color}-100 rounded-sm border border-${action.color}-200 transition-colors`}>
+            <button
+              key={action.title}
+              onClick={action.onClick}
+              className={`p-2 text-left bg-${action.color}-50 hover:bg-${action.color}-100 rounded-sm border border-${action.color}-200 transition-colors`}
+            >
               <action.icon className={`w-4 h-4 text-${action.color}-600 mb-1`} />
               <p className="text-sm font-medium text-text-primary">{action.title}</p>
             </button>

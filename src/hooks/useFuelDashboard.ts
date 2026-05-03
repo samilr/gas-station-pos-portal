@@ -35,6 +35,12 @@ export interface UseFuelDashboardOptions {
     top?: boolean;
   };
   autoLoad?: boolean;
+  /**
+   * Si se pasan filtros controlados, el hook los usa directamente y omite
+   * su state interno (period, range). Útil cuando un filterbar global
+   * gobierna varios hooks a la vez.
+   */
+  controlledFilters?: FuelDashboardFilters;
 }
 
 const ALL_ENABLED = {
@@ -78,6 +84,7 @@ export function useFuelDashboard(options: UseFuelDashboardOptions = {}) {
     topLimit = 10,
     enabled = ALL_ENABLED,
     autoLoad = true,
+    controlledFilters,
   } = options;
 
   const globalSiteId = useSelectedSiteId();
@@ -91,8 +98,11 @@ export function useFuelDashboard(options: UseFuelDashboardOptions = {}) {
   }));
 
   const filters = useMemo<FuelDashboardFilters>(
-    () => ({ ...localFilters, siteId: effectiveSiteId ?? null }),
-    [localFilters, effectiveSiteId]
+    () =>
+      controlledFilters
+        ? controlledFilters
+        : { ...localFilters, siteId: effectiveSiteId ?? null },
+    [controlledFilters, localFilters, effectiveSiteId]
   );
 
   const skip = !autoLoad;
